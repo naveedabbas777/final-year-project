@@ -1,0 +1,256 @@
+{
+    "@appTitle": {
+        "description": "The title of the application"
+    },
+    "appTitle": "Digital Kissan App",
+    "@appTagline": {
+        "description": "The tagline for the application"
+    },
+    "appTagline": "Smart Agriculture for Farmers",
+    "@settings": {
+        "description": "Settings screen title"
+    },
+    "settings": "Settings",
+    "@language": {
+        "description": "Language setting label"
+    },
+    "language": "Language",
+    "@notifications": {
+        "description": "Notifications setting label"
+    },
+    "notifications": "Notifications",
+    "@location": {
+        "description": "Location setting label"
+    },
+    "location": "Location",
+    "useDeviceLocation": "Use device location",
+    "allowLocationPermissions": "Allow location permissions to auto-detect",
+    "searchEnterLocation": "Search / Enter location name",
+    "save": "Save",
+    "use": "Use",
+    "savedLocations": "Saved locations",
+    "noSavedLocations": "No saved locations",
+    "locationSaved": "Location saved",
+    "failedToGetPosition": "Failed to get position",
+    "@aboutApp": {
+        "description": "About app section"
+    },
+    "aboutApp": "About App",
+    "@contactSupport": {
+        "description": "Contact support option"
+    },
+    "contactSupport": "Contact Support",
+    "@home": {
+        "description": "Home navigation label"
+    },
+    "home": "Home",
+    "@forecast": {
+        "description": "Forecast navigation label"
+    },
+    "forecast": "Forecast",
+    "@alerts": {
+        "description": "Alerts navigation label"
+    },
+    "alerts": "Alerts",
+    "@suggestions": {
+        "description": "Suggestions navigation label"
+    },
+    "suggestions": "Suggestions",
+    "@welcomeMessage": {
+        "description": "Welcome message on login screen"
+    },
+    "welcomeMessage": "Welcome to Digital Kissan",
+    "@loginDescription": {
+        "description": "Login screen description"
+    },
+    "loginDescription": "Helping farmers with real-time weather alerts.",
+    "@loginButton": {
+        "description": "Login button text"
+    },
+    "loginButton": "Login with Phone Number",
+    "@guestButton": {
+        "description": "Guest login button text"
+    },
+    "guestButton": "Continue as Guest",
+    "@languageLabel": {
+        "description": "Language label on login screen"
+    },
+    "languageLabel": "Language:",
+    "@dashboard": {
+        "description": "Dashboard screen title"
+    },
+    "dashboard": "Dashboard",
+    "@sunny": {
+        "description": "Sunny weather condition"
+    },
+    "sunny": "Sunny",
+    "@rainExpected": {
+        "description": "Rain alert message"
+    },
+    "rainExpected": "Rain expected at 3 PM",
+    "@takePrecautions": {
+        "description": "Precaution message"
+    },
+    "takePrecautions": "Take precautions to protect your crops.",
+    "@quickTips": {
+        "description": "Quick tips section title"
+    },
+    "quickTips": "Quick Tips",
+    "@avoidPesticide": {
+        "description": "Pesticide tip"
+    },
+    "avoidPesticide": "Avoid pesticide spraying today",
+    "@irrigateFields": {
+        "description": "Irrigation tip"
+    },
+    "irrigateFields": "Irrigate fields tomorrow",
+    "@checkSoilMoisture": {
+        "description": "Soil moisture tip"
+    },
+    "checkSoilMoisture": "Check soil moisture",
+    "irrigateFieldsReason": "Light irrigation now reduces heat stress and keeps topsoil moisture for seedling roots.",
+    "delayFertilizerReason": "Heavy rain can wash away nutrients; delay to avoid waste and patchy growth.",
+    "harvestEarlyReason": "Expected rain can spoil standing crops; early harvest protects quality and price.",
+    "checkSoilMoistureReason": "Measuring moisture prevents overwatering and reduces fungus risk.",
+    "avoidPesticideReason": "Wind or rain can spread chemicals and reduce effectiveness; wait for calm, dry conditions.",
+    "@forecastTitle": {
+        "description": "Forecast screen title"
+    },
+    "forecastTitle": "7-Day Forecast",
+    "@high": {
+        "description": "High temperature label"
+    },
+    "high": "High",
+    "@low": {
+        "description": "Low temperature label"
+    },
+    "low": "Low",
+    "@alertsTitle": {
+        "description": "Alerts screen title"
+    },
+    "alertsTitle": "Alerts",
+    "@rainAlert": {
+        "description": "Rain alert type"
+    },
+    "rainAlert": "Rain Alert",
+    "@heatwaveAlert": {
+        "description": "Heatwave alert type"
+    },
+    "heatwaveAlert": "Heatwave Alert",
+    "@stormAlert": {
+        "description": "Storm alert type"
+    },
+    "stormAlert": "Storm Alert",
+    "@heavyRainExpected": {
+        "description": "Heavy rain alert description"
+    },
+    "heavyRainExpected": "Heavy rain expected at 3 PM.",
+    "@highTempWarning": {
+        "description": "High temperature warning"
+    },
+    "highTempWarning": "High temperature warning.",
+    "@strongWindsExpected": {
+        "description": "Strong winds alert"
+    },
+    "strongWindsExpected": "Strong winds expected.",
+    "@date": {
+        "description": "Date label"
+    },
+    "date": "Date",
+    "@suggestionsTitle": {
+        "description": "Suggestions screen title"
+    },
+    "suggestionsTitle": "Farming Suggestions",
+    "@delayFertilizer": {
+        "description": "Fertilizer suggestion"
+    },
+    "delayFertilizer": "Delay fertilizer application",
+    "@harvestEarly": {
+        "description": "Harvest suggestion"
+    },
+    "harvestEarly": "Harvest early due to rain",
+    "@errorFetchingWeather": {
+        "description": "Error message when weather data fetching fails"
+    },
+    "errorFetchingWeather": "Error fetching weather data",
+    "@noWeatherDataAvailable": {
+        "description": "Message when no weather data is available"
+    },
+    "noWeatherDataAvailable": "No weather data available for this location",
+    "@errorFetchingForecast": {
+        "description": "Error message when forecast data fetching fails"
+    },
+    "errorFetchingForecast": "Error fetching forecast data",
+    "@noForecastDataAvailable": {
+        "description": "Message when no forecast data is available"
+    },
+    "noForecastDataAvailable": "No forecast data available for this location",
+    "@locationPermissionsDenied": {
+        "description": "Location permissions denied message"
+    },
+    "locationPermissionsDenied": "Location permissions are denied.",
+    "@locationPermissionsPermanentlyDenied": {
+        "description": "Location permissions permanently denied message"
+    },
+    "locationPermissionsPermanentlyDenied": "Location permissions are permanently denied. Please enable them in app settings.",
+    "@settingsButtonLabel": {
+        "description": "Settings button label in snackbar"
+    },
+    "settingsButtonLabel": "Settings",
+    "@failedToGetPosition": {
+        "description": "Failed to get position message"
+    },
+    "failedToGetPosition": "Failed to get position",
+    "@locationNotFound": {
+        "description": "Location not found message"
+    },
+    "locationNotFound": "Location not found.",
+    "@failedToSearchLocation": {
+        "description": "Failed to search for location message"
+    },
+    "failedToSearchLocation": "Failed to search for location.",
+    "@chooseLocationOption": {
+        "description": "Choose location option message"
+    },
+    "chooseLocationOption": "Choose a location option",
+    "@gettingLocation": {
+        "description": "Getting location message"
+    },
+    "gettingLocation": "Getting Location...",
+    "@useCurrentGpsLocation": {
+        "description": "Use current GPS location button label"
+    },
+    "useCurrentGpsLocation": "Use current GPS location",
+    "@orEnterLocationManually": {
+        "description": "Or enter your location manually message"
+    },
+    "orEnterLocationManually": "Or enter your location manually",
+    "@searchOrEnterLocation": {
+        "description": "Search or enter location hint text"
+    },
+    "searchOrEnterLocation": "Search or enter location",
+    "@orTapOnMapToSelect": {
+        "description": "Or tap on the map to select message"
+    },
+    "orTapOnMapToSelect": "Or tap on the map to select",
+    "@currentSelectedLocation": {
+        "description": "Current selected location label"
+    },
+    "currentSelectedLocation": "Current selected location:",
+    "@noLocationSelectedYet": {
+        "description": "No location selected yet message"
+    },
+    "noLocationSelectedYet": "No location selected yet",
+    "@coordinates": {
+        "description": "Coordinates label"
+    },
+    "coordinates": "Coordinates:",
+    "@couldNotGetAddress": {
+        "description": "Could not get address for the location message"
+    },
+    "couldNotGetAddress": "Could not get address for the location.",
+    "@setUpdateLocation": {
+        "description": "Set/Update Location title"
+    },
+    "setUpdateLocation": "Set/Update Location"
+}

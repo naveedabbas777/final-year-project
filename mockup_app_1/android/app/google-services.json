@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "548153370522",
+    "firebase_url": "https://digital-kissan-app-default-rtdb.firebaseio.com",
+    "project_id": "digital-kissan-app",
+    "storage_bucket": "digital-kissan-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:548153370522:android:2e1dffe318502bdc767c23",
+        "android_client_info": {
+          "package_name": "com.example.mockup_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-8T4j-rlpBi0KhzxP6npQyDX3vkoTYGE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

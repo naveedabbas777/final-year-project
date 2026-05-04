@@ -1,0 +1,256 @@
+{
+    "@appTitle": {
+        "description": "The title of the application"
+    },
+    "appTitle": "ڈیجیٹل کسان ایپ",
+    "@appTagline": {
+        "description": "The tagline for the application"
+    },
+    "appTagline": "کسانوں کے لیے سمارٹ زراعت",
+    "@settings": {
+        "description": "Settings screen title"
+    },
+    "settings": "ترتیبات",
+    "@language": {
+        "description": "Language setting label"
+    },
+    "language": "زبان",
+    "@notifications": {
+        "description": "Notifications setting label"
+    },
+    "notifications": "اطلاعات",
+    "@location": {
+        "description": "Location setting label"
+    },
+    "location": "مقام",
+    "useDeviceLocation": "آپ کا مقام استعمال کریں",
+    "allowLocationPermissions": "خودکار ڈھونڈنے کے لیے مقام کی اجازت دیں",
+    "searchEnterLocation": "مقام تلاش کریں / درج کریں",
+    "save": "محفوظ کریں",
+    "use": "استعمال کریں",
+    "savedLocations": "محفوظ شدہ مقامات",
+    "noSavedLocations": "کوئی محفوظ شدہ مقام نہیں",
+    "locationSaved": "مقام محفوظ ہو گیا",
+    "failedToGetPosition": "مقام حاصل کرنے میں ناکام",
+    "@aboutApp": {
+        "description": "About app section"
+    },
+    "aboutApp": "ایپ کے بارے میں",
+    "@contactSupport": {
+        "description": "Contact support option"
+    },
+    "contactSupport": "سپورٹ سے رابطہ",
+    "@home": {
+        "description": "Home navigation label"
+    },
+    "home": "ہوم",
+    "@forecast": {
+        "description": "Forecast navigation label"
+    },
+    "forecast": "پیشن گوئی",
+    "@alerts": {
+        "description": "Alerts navigation label"
+    },
+    "alerts": "الرٹس",
+    "@suggestions": {
+        "description": "Suggestions navigation label"
+    },
+    "suggestions": "تجاویز",
+    "@welcomeMessage": {
+        "description": "Welcome message on login screen"
+    },
+    "welcomeMessage": "ڈیجیٹل کسان میں خوش آمدید",
+    "@loginDescription": {
+        "description": "Login screen description"
+    },
+    "loginDescription": "کسانوں کی مدد کے لیے حقیقی وقت کی موسمی الرٹس۔",
+    "@loginButton": {
+        "description": "Login button text"
+    },
+    "loginButton": "فون نمبر سے لاگ ان",
+    "@guestButton": {
+        "description": "Guest login button text"
+    },
+    "guestButton": "مہمان کے طور پر جاری رکھیں",
+    "@languageLabel": {
+        "description": "Language label on login screen"
+    },
+    "languageLabel": "زبان:",
+    "@dashboard": {
+        "description": "Dashboard screen title"
+    },
+    "dashboard": "ڈیش بورڈ",
+    "@sunny": {
+        "description": "Sunny weather condition"
+    },
+    "sunny": "دھوپ",
+    "@rainExpected": {
+        "description": "Rain alert message"
+    },
+    "rainExpected": "3 بجے بارش متوقع",
+    "@takePrecautions": {
+        "description": "Precaution message"
+    },
+    "takePrecautions": "اپنی فصلیں محفوظ رکھنے کے لیے احتیاطی تدابیر اختیار کریں۔",
+    "@quickTips": {
+        "description": "Quick tips section title"
+    },
+    "quickTips": "فوری تجاویز",
+    "@avoidPesticide": {
+        "description": "Pesticide tip"
+    },
+    "avoidPesticide": "آج کیڑے مار دوا کا چھڑکاؤ نہ کریں",
+    "@irrigateFields": {
+        "description": "Irrigation tip"
+    },
+    "irrigateFields": "کل کھیتوں میں آبپاشی کریں",
+    "@checkSoilMoisture": {
+        "description": "Soil moisture tip"
+    },
+    "checkSoilMoisture": "مٹی کی نمی چیک کریں",
+    "irrigateFieldsReason": "ہلکی آبپاشی سے گرمی کا دباؤ کم ہوتا ہے اور اوپری مٹی نم رہتی ہے تاکہ پودوں کی جڑیں مضبوط ہوں۔",
+    "delayFertilizerReason": "تیز بارش غذائی اجزاء بہا دیتی ہے؛ ضائع ہونے اور غیر یکساں بڑھوتری سے بچنے کے لیے تاخیر کریں۔",
+    "harvestEarlyReason": "متوقع بارش کھڑی فصل کو خراب کر سکتی ہے؛ جلدی کٹائی سے معیار اور قیمت محفوظ رہتی ہے۔",
+    "checkSoilMoistureReason": "نمی کی پیمائش سے زائد آبپاشی اور فنگس کے خطرے سے بچت ہوتی ہے۔",
+    "avoidPesticideReason": "ہوا یا بارش کیمیکلز پھیلا کر اثر کم کرتی ہے؛ پرسکون اور خشک موسم کا انتظار کریں۔",
+    "@forecastTitle": {
+        "description": "Forecast screen title"
+    },
+    "forecastTitle": "7 دن کی پیشن گوئی",
+    "@high": {
+        "description": "High temperature label"
+    },
+    "high": "زیادہ",
+    "@low": {
+        "description": "Low temperature label"
+    },
+    "low": "کم",
+    "@alertsTitle": {
+        "description": "Alerts screen title"
+    },
+    "alertsTitle": "الرٹس",
+    "@rainAlert": {
+        "description": "Rain alert type"
+    },
+    "rainAlert": "بارش کا الرٹ",
+    "@heatwaveAlert": {
+        "description": "Heatwave alert type"
+    },
+    "heatwaveAlert": "گرمی کی لہر کا الرٹ",
+    "@stormAlert": {
+        "description": "Storm alert type"
+    },
+    "stormAlert": "طوفان کا الرٹ",
+    "@heavyRainExpected": {
+        "description": "Heavy rain alert description"
+    },
+    "heavyRainExpected": "3 بجے شدید بارش متوقع۔",
+    "@highTempWarning": {
+        "description": "High temperature warning"
+    },
+    "highTempWarning": "زیادہ درجہ حرارت کی انتباہ۔",
+    "@strongWindsExpected": {
+        "description": "Strong winds alert"
+    },
+    "strongWindsExpected": "تیز ہوائیں متوقع۔",
+    "@date": {
+        "description": "Date label"
+    },
+    "date": "تاریخ",
+    "@suggestionsTitle": {
+        "description": "Suggestions screen title"
+    },
+    "suggestionsTitle": "کاشتکاری کی تجاویز",
+    "@delayFertilizer": {
+        "description": "Fertilizer suggestion"
+    },
+    "delayFertilizer": "کھاد کا استعمال ملتوی کریں",
+    "@harvestEarly": {
+        "description": "Harvest suggestion"
+    },
+    "harvestEarly": "بارش کی وجہ سے جلدی فصل کاٹیں",
+    "@errorFetchingWeather": {
+        "description": "Error message when weather data fetching fails"
+    },
+    "errorFetchingWeather": "موسم کی معلومات حاصل کرنے میں خرابی",
+    "@noWeatherDataAvailable": {
+        "description": "Message when no weather data is available"
+    },
+    "noWeatherDataAvailable": "اس مقام کے لیے موسم کی کوئی معلومات دستیاب نہیں",
+    "@errorFetchingForecast": {
+        "description": "Error message when forecast data fetching fails"
+    },
+    "errorFetchingForecast": "پیشن گوئی کی معلومات حاصل کرنے میں خرابی",
+    "@noForecastDataAvailable": {
+        "description": "Message when no forecast data is available"
+    },
+    "noForecastDataAvailable": "اس مقام کے لیے پیشن گوئی کی کوئی معلومات دستیاب نہیں",
+    "@locationPermissionsDenied": {
+        "description": "Location permissions denied message"
+    },
+    "locationPermissionsDenied": "مقام کی اجازتیں مسترد کر دی گئی ہیں۔",
+    "@locationPermissionsPermanentlyDenied": {
+        "description": "Location permissions permanently denied message"
+    },
+    "locationPermissionsPermanentlyDenied": "مقام کی اجازتیں مستقل طور پر مسترد کر دی گئی ہیں۔ براہ کرم انہیں ایپ کی ترتیبات میں فعال کریں۔",
+    "@settingsButtonLabel": {
+        "description": "Settings button label in snackbar"
+    },
+    "settingsButtonLabel": "ترتیبات",
+    "@failedToGetPosition": {
+        "description": "Failed to get position message"
+    },
+    "failedToGetPosition": "مقام حاصل کرنے میں ناکام",
+    "@locationNotFound": {
+        "description": "Location not found message"
+    },
+    "locationNotFound": "مقام نہیں ملا۔",
+    "@failedToSearchLocation": {
+        "description": "Failed to search for location message"
+    },
+    "failedToSearchLocation": "مقام تلاش کرنے میں ناکام رہا۔",
+    "@chooseLocationOption": {
+        "description": "Choose location option message"
+    },
+    "chooseLocationOption": "مقام کا ایک اختیار منتخب کریں",
+    "@gettingLocation": {
+        "description": "Getting location message"
+    },
+    "gettingLocation": "مقام حاصل ہو رہا ہے...",
+    "@useCurrentGpsLocation": {
+        "description": "Use current GPS location button label"
+    },
+    "useCurrentGpsLocation": "موجودہ GPS مقام استعمال کریں",
+    "@orEnterLocationManually": {
+        "description": "Or enter your location manually message"
+    },
+    "orEnterLocationManually": "یا اپنا مقام دستی طور پر درج کریں",
+    "@searchOrEnterLocation": {
+        "description": "Search or enter location hint text"
+    },
+    "searchOrEnterLocation": "مقام تلاش کریں یا درج کریں",
+    "@orTapOnMapToSelect": {
+        "description": "Or tap on the map to select message"
+    },
+    "orTapOnMapToSelect": "یا منتخب کرنے کے لیے نقشے پر ٹیپ کریں",
+    "@currentSelectedLocation": {
+        "description": "Current selected location label"
+    },
+    "currentSelectedLocation": "موجودہ منتخب کردہ مقام:",
+    "@noLocationSelectedYet": {
+        "description": "No location selected yet message"
+    },
+    "noLocationSelectedYet": "ابھی تک کوئی مقام منتخب نہیں کیا گیا۔",
+    "@coordinates": {
+        "description": "Coordinates label"
+    },
+    "coordinates": "کوآرڈینیٹس:",
+    "@couldNotGetAddress": {
+        "description": "Could not get address for the location message"
+    },
+    "couldNotGetAddress": "مقام کا پتہ حاصل نہیں کیا جاسکا۔",
+    "@setUpdateLocation": {
+        "description": "Set/Update Location title"
+    },
+    "setUpdateLocation": "مقام سیٹ کریں/اپ ڈیٹ کریں"
+}

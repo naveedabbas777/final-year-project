@@ -1,0 +1,128 @@
+import 'dart:convert';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+
+import '../config/app_config.dart';
+
+class ApiClient {
+  ApiClient({http.Client? httpClient}) : _http = httpClient ?? http.Client();
+
+  final http.Client _http;
+
+  Uri _uri(String path, [Map<String, String>? query]) {
+    final base =
+        AppConfig.apiBaseUrl.endsWith('/')
+            ? AppConfig.apiBaseUrl.substring(0, AppConfig.apiBaseUrl.length - 1)
+            : AppConfig.apiBaseUrl;
+    return Uri.parse('$base$path').replace(queryParameters: query);
+  }
+
+  Future<Map<String, String>> _headers({bool auth = false}) async {
+    final headers = <String, String>{'Content-Type': 'application/json'};
+
+    if (auth) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('You must sign in first to perform this action.');
+      }
+      final token = await user.getIdToken(true);
+      headers['Authorization'] = 'Bearer $token';
+    }
+
+    return headers;
+  }
+
+  Future<dynamic> get(
+    String path, {
+    Map<String, String>? query,
+    bool auth = false,
+  }) async {
+    try {
+      final url = _uri(path, query);
+      if (kDebugMode) {
+        debugPrint('[ApiClient] GET $url (auth=$auth)');
+      }
+      final res = await _http.get(
+        url,
+        headers: await _headers(auth: auth),
+      );
+      return _decode(res);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[ApiClient] GET Error: $e');
+      }
+      rethrow;
+    }
+  }
+
+  Future<dynamic> post(
+    String path, {
+    Map<String, dynamic>? body,
+    bool auth = false,
+  }) async {
+    final res = await _http.post(
+      _uri(path),
+      headers: await _headers(auth: auth),
+      body: jsonEncode(body ?? <String, dynamic>{}),
+    );
+    return _decode(res);
+  }
+
+  Future<dynamic> patch(
+    String path, {
+    Map<String, dynamic>? body,
+    bool auth = false,
+  }) async {
+    final res = await _http.patch(
+      _uri(path),
+      headers: await _headers(auth: auth),
+      body: jsonEncode(body ?? <String, dynamic>{}),
+    );
+    return _decode(res);
+  }
+
+  dynamic _decode(http.Response res) {
+    if (kDebugMode) {
+      debugPrint('[ApiClient] Response: ${res.statusCode} - ${res.body.substring(0, minCharacters(res.body.length, 200))}');
+    }
+    
+    final data = res.body.isNotEmpty ? jsonDecode(res.body) : null;
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      return data;
+    }
+
+    if (data is Map && data['message'] is String) {
+      final errorMsg = data['message'];
+      if (kDebugMode) {
+        debugPrint('[ApiClient] Error: $errorMsg');
+      }
+      throw Exception(errorMsg);
+    }
+
+    final errorMsg = 'Request failed (${res.statusCode}): ${res.body}';
+    if (kDebugMode) {
+      debugPrint('[ApiClient] Error: $errorMsg');
+    }
+    throw Exception(errorMsg);
+  }
+  
+  int minCharacters(int a, int b) => a < b ? a : b;
+
+  Future<dynamic> uploadFile(
+    String path, {
+    required String fieldName,
+    required String filePath,
+    bool auth = false,
+  }) async {
+    final req = http.MultipartRequest('POST', _uri(path));
+    req.headers.addAll(await _headers(auth: auth));
+    req.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+
+    final streamed = await req.send();
+    final body = await streamed.stream.bytesToString();
+    final response = http.Response(body, streamed.statusCode);
+    return _decode(response);
+  }
+}

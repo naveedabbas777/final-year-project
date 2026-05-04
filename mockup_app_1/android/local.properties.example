@@ -1,0 +1,8 @@
+ # Example local.properties for development (DO NOT COMMIT real secrets)
+# Add this file to understand required entries; copy to android/local.properties
+
+# Flutter SDK path is set by users; example below is placeholder:
+# flutter.sdk=C:\\path\\to\\flutter
+
+# Add your Mapbox downloads token here (used for Mapbox Maven repository access):
+MAPBOX_DOWNLOADS_TOKEN=pk.eyJ1IjoibmF2ZWVkMTI0Nzc3IiwiYSI6ImNtaWozMDBuMDB0d28zZXM4eW9sdGV1ZWEifQ.bIslQv6Rkw6FkYLEv_lOwA
