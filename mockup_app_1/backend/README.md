@@ -13,6 +13,8 @@ This backend uses:
    - `GOOGLE_APPLICATION_CREDENTIALS=./serviceAccountKey.json`
 3. Ensure MongoDB is running locally:
    - `mongodb://127.0.0.1:27017/digital_kissan`
+4. Add the Mapbox access token in `.env` so the Flutter app can load it from the backend:
+   - `MAPBOX_ACCESS_TOKEN=your_mapbox_access_token`
 
 ## 2) Run
 
@@ -53,6 +55,7 @@ Backend verifies token using Firebase Admin SDK.
 - `GET /api/users/me` (auth)
 - `PATCH /api/users/me` (auth)
 - `GET /api/rates/latest`
+- `GET /api/config/public`
 - `POST /api/rates` (auth + admin)
 - `POST /api/rates/ingest/official` (auth + admin, placeholder)
 - `GET /api/listings`
@@ -73,6 +76,8 @@ flutter run --dart-define=API_BASE_URL=http://192.168.X.X:5000
 
 Use LAN IP for physical devices.
 Use `10.0.2.2` for Android emulator.
+
+The app loads the Mapbox access token from `GET /api/config/public` at startup, so keep `MAPBOX_ACCESS_TOKEN` in the backend environment instead of Flutter source.
 
 For this machine currently, your detected LAN IP is `10.192.10.221`, so for a physical phone use:
 

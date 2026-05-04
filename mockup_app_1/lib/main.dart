@@ -16,6 +16,7 @@ import 'package:mockup_app/providers/language_provider.dart';
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/notification_service.dart'; // Import the new service
 import 'package:mockup_app/services/alert_service.dart';
+import 'package:mockup_app/services/api_client.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'; // Import for MapboxOptions
 import 'package:mockup_app/providers/plant_disease_provider.dart';
@@ -32,11 +33,20 @@ Future<void> main() async {
   // `android/app/google-services.json` (Android) and the web config when on web.
   await Firebase.initializeApp();
 
-  const mapboxAccessToken = String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
-  if (mapboxAccessToken.isNotEmpty) {
-    MapboxOptions.setAccessToken(mapboxAccessToken);
-  } else {
-    debugPrint('MAPBOX_ACCESS_TOKEN is not set; Mapbox features may fail.');
+  try {
+    final config = await ApiClient().get('/api/config/public');
+    final mapboxAccessToken =
+        config is Map<String, dynamic>
+            ? config['mapboxAccessToken'] as String? ?? ''
+            : '';
+
+    if (mapboxAccessToken.isNotEmpty) {
+      MapboxOptions.setAccessToken(mapboxAccessToken);
+    } else {
+      debugPrint('MAPBOX_ACCESS_TOKEN is not set; Mapbox features may fail.');
+    }
+  } catch (error) {
+    debugPrint('Failed to load Mapbox token from backend: $error');
   }
 
   // Initialize Notification Service

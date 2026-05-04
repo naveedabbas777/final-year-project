@@ -11,4 +11,5 @@ export const env = {
     .filter(Boolean),
   firebaseProjectId: process.env.FIREBASE_PROJECT_ID || '',
   openWeatherKey: process.env.OPENWEATHER_KEY || '',
+  mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN || '',
 };
