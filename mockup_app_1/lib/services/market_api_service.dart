@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
+import '../utils/json_response.dart';
 
 class UserProfileDto {
   UserProfileDto({
@@ -23,12 +24,15 @@ class UserProfileDto {
 
   factory UserProfileDto.fromJson(Map<String, dynamic> json) {
     return UserProfileDto(
-      firebaseUid: (json['firebaseUid'] ?? '').toString(),
-      name: (json['name'] ?? '').toString(),
-      phone: (json['phone'] ?? '').toString(),
-      role: (json['role'] ?? 'farmer').toString(),
-      district: (json['district'] ?? '').toString(),
-      province: (json['province'] ?? '').toString(),
+      firebaseUid: toStringOrEmpty(json['firebaseUid']),
+      name: toStringOrEmpty(json['name']),
+      phone: toStringOrEmpty(json['phone']),
+      role:
+          toStringOrEmpty(json['role']).isEmpty
+              ? 'farmer'
+              : toStringOrEmpty(json['role']),
+      district: toStringOrEmpty(json['district']),
+      province: toStringOrEmpty(json['province']),
     );
   }
 }
@@ -60,18 +64,16 @@ class CropRateDto {
 
   factory CropRateDto.fromJson(Map<String, dynamic> json) {
     return CropRateDto(
-      id: (json['_id'] ?? '').toString(),
-      cropName: (json['cropName'] ?? '').toString(),
-      marketName: (json['marketName'] ?? '').toString(),
-      district: (json['district'] ?? '').toString(),
-      minPrice: (json['minPrice'] as num?)?.toDouble() ?? 0,
-      maxPrice: (json['maxPrice'] as num?)?.toDouble() ?? 0,
-      unit: (json['unit'] ?? '').toString(),
-      sourceName: (json['sourceName'] ?? '').toString(),
-      sourceUrl: (json['sourceUrl'] ?? '').toString(),
-      rateDate:
-          DateTime.tryParse((json['rateDate'] ?? '').toString()) ??
-          DateTime.now(),
+      id: toStringOrEmpty(json['_id']),
+      cropName: toStringOrEmpty(json['cropName']),
+      marketName: toStringOrEmpty(json['marketName']),
+      district: toStringOrEmpty(json['district']),
+      minPrice: toDoubleOrZero(json['minPrice']),
+      maxPrice: toDoubleOrZero(json['maxPrice']),
+      unit: toStringOrEmpty(json['unit']),
+      sourceName: toStringOrEmpty(json['sourceName']),
+      sourceUrl: toStringOrEmpty(json['sourceUrl']),
+      rateDate: toDateTimeOrNow(json['rateDate']),
     );
   }
 }
@@ -105,25 +107,20 @@ class ListingDto {
 
   factory ListingDto.fromJson(Map<String, dynamic> json) {
     return ListingDto(
-      id: (json['_id'] ?? '').toString(),
-      cropName: (json['cropName'] ?? '').toString(),
-      qualityGrade: (json['qualityGrade'] ?? 'A').toString(),
-      quantity: (json['quantity'] as num?)?.toDouble() ?? 0,
-      unit: (json['unit'] ?? '').toString(),
-      askingPrice: (json['askingPrice'] as num?)?.toDouble() ?? 0,
-      district: (json['district'] ?? '').toString(),
-      sellerUid: (json['sellerUid'] ?? '').toString(),
-      status: (json['status'] ?? '').toString(),
-      createdAt:
-          DateTime.tryParse((json['createdAt'] ?? '').toString()) ??
-          DateTime.now(),
-      imageUrls:
-          (json['imageUrls'] is List<dynamic>)
-              ? (json['imageUrls'] as List<dynamic>)
-                  .map((e) => e.toString())
-                  .where((e) => e.isNotEmpty)
-                  .toList()
-              : const [],
+      id: toStringOrEmpty(json['_id']),
+      cropName: toStringOrEmpty(json['cropName']),
+      qualityGrade:
+          toStringOrEmpty(json['qualityGrade']).isEmpty
+              ? 'A'
+              : toStringOrEmpty(json['qualityGrade']),
+      quantity: toDoubleOrZero(json['quantity']),
+      unit: toStringOrEmpty(json['unit']),
+      askingPrice: toDoubleOrZero(json['askingPrice']),
+      district: toStringOrEmpty(json['district']),
+      sellerUid: toStringOrEmpty(json['sellerUid']),
+      status: toStringOrEmpty(json['status']),
+      createdAt: toDateTimeOrNow(json['createdAt']),
+      imageUrls: toStringListOrEmpty(json['imageUrls']),
     );
   }
 }
@@ -157,16 +154,13 @@ class OfferDto {
     }
 
     return OfferDto(
-      id: (json['_id'] ?? '').toString(),
-      listingId:
-          listing != null ? listing.id : (json['listingId'] ?? '').toString(),
-      buyerUid: (json['buyerUid'] ?? '').toString(),
-      offerPrice: (json['offerPrice'] as num?)?.toDouble() ?? 0,
-      quantity: (json['quantity'] as num?)?.toDouble() ?? 0,
-      status: (json['status'] ?? '').toString(),
-      createdAt:
-          DateTime.tryParse((json['createdAt'] ?? '').toString()) ??
-          DateTime.now(),
+      id: toStringOrEmpty(json['_id']),
+      listingId: listing?.id ?? toStringOrEmpty(json['listingId']),
+      buyerUid: toStringOrEmpty(json['buyerUid']),
+      offerPrice: toDoubleOrZero(json['offerPrice']),
+      quantity: toDoubleOrZero(json['quantity']),
+      status: toStringOrEmpty(json['status']),
+      createdAt: toDateTimeOrNow(json['createdAt']),
       listing: listing,
     );
   }
@@ -199,18 +193,16 @@ class OrderDto {
 
   factory OrderDto.fromJson(Map<String, dynamic> json) {
     return OrderDto(
-      id: (json['_id'] ?? '').toString(),
-      listingId: (json['listingId'] ?? '').toString(),
-      offerId: (json['offerId'] ?? '').toString(),
-      buyerUid: (json['buyerUid'] ?? '').toString(),
-      sellerUid: (json['sellerUid'] ?? '').toString(),
-      finalPrice: (json['finalPrice'] as num?)?.toDouble() ?? 0,
-      quantity: (json['quantity'] as num?)?.toDouble() ?? 0,
-      unit: (json['unit'] ?? '').toString(),
-      status: (json['status'] ?? '').toString(),
-      createdAt:
-          DateTime.tryParse((json['createdAt'] ?? '').toString()) ??
-          DateTime.now(),
+      id: toStringOrEmpty(json['_id']),
+      listingId: toStringOrEmpty(json['listingId']),
+      offerId: toStringOrEmpty(json['offerId']),
+      buyerUid: toStringOrEmpty(json['buyerUid']),
+      sellerUid: toStringOrEmpty(json['sellerUid']),
+      finalPrice: toDoubleOrZero(json['finalPrice']),
+      quantity: toDoubleOrZero(json['quantity']),
+      unit: toStringOrEmpty(json['unit']),
+      status: toStringOrEmpty(json['status']),
+      createdAt: toDateTimeOrNow(json['createdAt']),
     );
   }
 }
@@ -227,7 +219,7 @@ class MarketApiService {
     if (kDebugMode) {
       debugPrint('[MarketApi] Fetching rates (crop=$crop, district=$district)');
     }
-    
+
     final query = <String, String>{};
     if (crop != null && crop.trim().isNotEmpty) query['crop'] = crop.trim();
     if (district != null && district.trim().isNotEmpty) {
@@ -243,10 +235,7 @@ class MarketApiService {
         debugPrint('[MarketApi] Got rates data: $data');
       }
       if (data is! List<dynamic>) return const [];
-      return data
-          .whereType<Map<String, dynamic>>()
-          .map((e) => CropRateDto.fromJson(e))
-          .toList();
+      return asMapList(data).map(CropRateDto.fromJson).toList();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[MarketApi] Error fetching rates: $e');
@@ -260,9 +249,11 @@ class MarketApiService {
     String? district,
   }) async {
     if (kDebugMode) {
-      debugPrint('[MarketApi] Fetching listings (crop=$crop, district=$district)');
+      debugPrint(
+        '[MarketApi] Fetching listings (crop=$crop, district=$district)',
+      );
     }
-    
+
     final query = <String, String>{};
     if (crop != null && crop.trim().isNotEmpty) query['crop'] = crop.trim();
     if (district != null && district.trim().isNotEmpty) {
@@ -278,10 +269,7 @@ class MarketApiService {
         debugPrint('[MarketApi] Got listings data: $data');
       }
       if (data is! List<dynamic>) return const [];
-      return data
-          .whereType<Map<String, dynamic>>()
-          .map((e) => ListingDto.fromJson(e))
-          .toList();
+      return asMapList(data).map(ListingDto.fromJson).toList();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[MarketApi] Error fetching listings: $e');
@@ -371,19 +359,13 @@ class MarketApiService {
   Future<List<OfferDto>> fetchMyOffers() async {
     final data = await _client.get('/api/offers/me', auth: true);
     if (data is! List<dynamic>) return const [];
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map((e) => OfferDto.fromJson(e))
-        .toList();
+    return asMapList(data).map(OfferDto.fromJson).toList();
   }
 
   Future<List<OfferDto>> fetchIncomingOffers() async {
     final data = await _client.get('/api/offers/incoming', auth: true);
     if (data is! List<dynamic>) return const [];
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map((e) => OfferDto.fromJson(e))
-        .toList();
+    return asMapList(data).map(OfferDto.fromJson).toList();
   }
 
   Future<void> acceptOffer(String offerId) async {
@@ -401,10 +383,7 @@ class MarketApiService {
   Future<List<OrderDto>> fetchMyOrders() async {
     final data = await _client.get('/api/orders/me', auth: true);
     if (data is! List<dynamic>) return const [];
-    return data
-        .whereType<Map<String, dynamic>>()
-        .map((e) => OrderDto.fromJson(e))
-        .toList();
+    return asMapList(data).map(OrderDto.fromJson).toList();
   }
 
   Future<void> updateOrderStatus({

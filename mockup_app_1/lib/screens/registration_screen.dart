@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/auth_service.dart';
 import 'package:mockup_app/services/firebase_service.dart';
+import 'package:mockup_app/utils/form_validators.dart';
+import 'package:mockup_app/utils/error_presenter.dart';
 import 'email_verification_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -30,7 +32,17 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _obscureConfirmPassword = true;
 
   // Common country codes
-  final _countryCodes = ['+92', '+1', '+44', '+91', '+86', '+81', '+33', '+39', '+34'];
+  final _countryCodes = [
+    '+92',
+    '+1',
+    '+44',
+    '+91',
+    '+86',
+    '+81',
+    '+33',
+    '+39',
+    '+34',
+  ];
 
   @override
   void dispose() {
@@ -42,30 +54,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     super.dispose();
   }
 
-  bool _looksLikeEmail(String value) {
-    final email = value.trim();
-    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
-  }
-
-  String _friendlyRegistrationError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'email-already-in-use':
-        return 'This email is already registered. Please login or use forgot password.';
-      case 'invalid-email':
-        return 'Please enter a valid email address.';
-      case 'weak-password':
-        return 'Password is too weak. Use at least 6 characters.';
-      case 'operation-not-allowed':
-        return 'Email/password registration is currently disabled in Firebase.';
-      case 'network-request-failed':
-        return 'Network issue detected. Please check internet and try again.';
-      case 'too-many-requests':
-        return 'Too many attempts. Please wait a moment and try again.';
-      default:
-        return e.message ?? 'Registration failed. Please try again.';
-    }
-  }
-
   Future<void> _startRegistration() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
@@ -74,24 +62,28 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     final pass = _passController.text;
     final confirmPass = _confirmPassController.text;
 
-    // Validation
-    if (name.isEmpty) {
-      _showError('Please enter your full name');
+    // Validation using form validators
+    final nameError = FormValidators.validateName(name);
+    if (nameError != null) {
+      _showError(nameError);
       return;
     }
 
-    if (!_looksLikeEmail(email)) {
-      _showError('Please enter a valid email address');
+    final emailError = FormValidators.validateEmail(email);
+    if (emailError != null) {
+      _showError(emailError);
       return;
     }
 
-    if (phone.isEmpty) {
-      _showError('Please enter your phone number');
+    final phoneError = FormValidators.validatePhone(phone);
+    if (phoneError != null) {
+      _showError(phoneError);
       return;
     }
 
-    if (pass.length < 6) {
-      _showError('Password must be at least 6 characters');
+    final passwordError = FormValidators.validatePassword(pass);
+    if (passwordError != null) {
+      _showError(passwordError);
       return;
     }
 
@@ -105,21 +97,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     try {
       // Step 1: Create Firebase account with email and password
       debugPrint('Step 1: Creating Firebase account...');
-      UserCredential? cred;
       try {
-        cred = await _auth.registerWithEmailPassword(
-          email: email,
-          password: pass,
-        ).timeout(const Duration(seconds: 45));
+        await _auth
+            .registerWithEmailPassword(email: email, password: pass)
+            .timeout(const Duration(seconds: 45));
       } catch (e) {
         debugPrint('Firebase account creation error: $e');
-        if (e is TimeoutException) {
-          _showError('Account creation timed out. Check your internet connection and try again.');
-        } else if (e is FirebaseAuthException) {
-          _showError(_friendlyRegistrationError(e));
-        } else {
-          _showError('Failed to create account: ${e.toString()}');
-        }
+        final message = ErrorPresenter.present(e);
+        _showError(message);
         if (mounted) setState(() => _sending = false);
         return;
       }
@@ -127,7 +112,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       // Get current user directly from FirebaseAuth (avoids Pigeon call)
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        _showError('Account created but verification failed. Please login manually.');
+        _showError(
+          'Account created but verification failed. Please login manually.',
+        );
         if (mounted) setState(() => _sending = false);
         return;
       }
@@ -136,11 +123,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
       // Step 3: Update user profile in Firestore (non-critical)
       try {
-        await _firebaseService.createUserIfNotExists(
-          user,
-          displayName: name,
-          phoneNumber: fullPhone,
-        ).timeout(const Duration(seconds: 15));
+        await _firebaseService
+            .createUserIfNotExists(
+              user,
+              displayName: name,
+              phoneNumber: fullPhone,
+            )
+            .timeout(const Duration(seconds: 15));
         debugPrint('Step 3: User profile saved to Firestore');
       } catch (e) {
         debugPrint('Warning: Could not save to Firestore: $e');
@@ -175,9 +164,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -246,11 +235,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 12,
+                            ),
                           ),
-                          items: _countryCodes.map((code) => DropdownMenuItem(value: code, child: Text(code))).toList(),
+                          items:
+                              _countryCodes
+                                  .map(
+                                    (code) => DropdownMenuItem(
+                                      value: code,
+                                      child: Text(code),
+                                    ),
+                                  )
+                                  .toList(),
                           onChanged: (value) {
-                            if (value != null) setState(() => _countryCode = value);
+                            if (value != null)
+                              setState(() => _countryCode = value);
                           },
                         ),
                       ),

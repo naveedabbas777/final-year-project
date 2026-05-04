@@ -1,5 +1,32 @@
 import { admin } from '../config/firebaseAdmin.js';
 
+const allowDevAuthFallback =
+  (process.env.ALLOW_DEV_AUTH_FALLBACK || '').toLowerCase() === 'true';
+
+function buildDevUser(token) {
+  const parts = token.split('.');
+  if (parts.length === 3) {
+    try {
+      const decoded = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+      return {
+        uid: decoded.uid || decoded.user_id || 'dev-user-123',
+        email: decoded.email || 'dev@example.com',
+        phoneNumber: decoded.phone || null,
+        name: decoded.name || 'Dev User',
+      };
+    } catch (_error) {
+      // Fall through to the default mock user.
+    }
+  }
+
+  return {
+    uid: 'dev-user-123',
+    email: 'dev@example.com',
+    phoneNumber: null,
+    name: 'Dev User',
+  };
+}
+
 export async function requireAuth(req, res, next) {
   try {
     const authHeader = req.headers.authorization || '';
@@ -19,40 +46,14 @@ export async function requireAuth(req, res, next) {
         name: decoded.name || null,
       };
     } catch (firebaseError) {
-      // Firebase not initialized (no service account key)
-      // In development, create a mock user from the token
-      // In production, this should fail
-      console.warn('[Auth] Firebase token verification failed, using mock auth for development');
-      
-      // For development: extract basic info from token if it's a valid JWT
-      const parts = token.split('.');
-      if (parts.length === 3) {
-        try {
-          const decoded = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-          req.user = {
-            uid: decoded.uid || decoded.user_id || 'dev-user-123',
-            email: decoded.email || 'dev@example.com',
-            phoneNumber: decoded.phone || null,
-            name: decoded.name || 'Dev User',
-          };
-        } catch (e) {
-          // If we can't parse, use a default dev user
-          req.user = {
-            uid: 'dev-user-123',
-            email: 'dev@example.com',
-            phoneNumber: null,
-            name: 'Dev User',
-          };
-        }
-      } else {
-        // Not a valid JWT format, use default dev user
-        req.user = {
-          uid: 'dev-user-123',
-          email: 'dev@example.com',
-          phoneNumber: null,
-          name: 'Dev User',
-        };
+      if (!allowDevAuthFallback) {
+        console.warn('[Auth] Firebase token verification failed:', firebaseError.message);
+        res.status(401).json({ message: 'Invalid or expired auth token' });
+        return;
       }
+
+      console.warn('[Auth] Using dev auth fallback because ALLOW_DEV_AUTH_FALLBACK=true');
+      req.user = buildDevUser(token);
     }
 
     next();

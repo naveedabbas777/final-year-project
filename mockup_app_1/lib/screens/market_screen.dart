@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/market_api_service.dart';
+import '../utils/form_validators.dart';
+import '../utils/error_presenter.dart';
 import 'offers_screen.dart';
 import 'orders_screen.dart';
 
@@ -133,6 +135,52 @@ class _RatesTabState extends State<_RatesTab> {
     }
   }
 
+  Widget _buildEmptyOrError({required bool isRatesTab}) {
+    final message =
+        _error != null
+            ? ErrorPresenter.present(_error!)
+            : isRatesTab
+            ? 'No rates available yet. Ingest official rates from backend.'
+            : 'No active listings found.';
+
+    final actionLabel = _error != null ? 'Retry' : 'Refresh';
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_error != null)
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Colors.red.shade400,
+            ),
+          if (_error != null) const SizedBox(height: 12),
+          Text(message, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _loading ? null : _load,
+                icon: const Icon(Icons.refresh),
+                label: Text(actionLabel),
+              ),
+              if (_error != null) ...[
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Go Back'),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _triggerIngestion() async {
     setState(() => _ingesting = true);
     try {
@@ -241,60 +289,144 @@ class _RatesTabState extends State<_RatesTab> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           if (_loading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
-          else if (_error != null)
-            Expanded(
-              child: Center(
-                child: Text(_error!, style: const TextStyle(color: Colors.red)),
-              ),
-            )
-          else if (_rates.isEmpty)
-            const Expanded(
-              child: Center(
-                child: Text(
-                  'No rates available yet. Ingest official rates from backend.',
-                ),
-              ),
-            )
+          else if (_error != null || _rates.isEmpty)
+            Expanded(child: _buildEmptyOrError(isRatesTab: true))
           else
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _load,
                 child: ListView.separated(
                   itemCount: _rates.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final row = _rates[index];
                     return Card(
                       color: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: 2,
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.green.shade100,
-                          child: Icon(
-                            Icons.storefront,
-                            color: Colors.green.shade700,
-                          ),
-                        ),
-                        title: Text('${row.cropName} - ${row.marketName}'),
-                        subtitle: Text(
-                          '${row.district}\n${row.sourceName}\n${row.sourceUrl}',
-                        ),
-                        isThreeLine: true,
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                      elevation: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Min: ${row.minPrice.toStringAsFixed(0)}'),
-                            Text('Max: ${row.maxPrice.toStringAsFixed(0)}'),
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.green.shade100,
+                                  radius: 22,
+                                  child: Icon(
+                                    Icons.storefront,
+                                    color: Colors.green.shade700,
+                                    size: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${row.cropName} - ${row.marketName}',
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        row.district,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Divider(height: 1, color: Colors.grey.shade300),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Min Price',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${row.minPrice.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.green.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Max Price',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${row.maxPrice.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.green.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Unit',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      row.unit,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
                             Text(
-                              row.unit,
-                              style: const TextStyle(fontSize: 12),
+                              row.sourceName,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
                             ),
                           ],
                         ),
@@ -308,6 +440,7 @@ class _RatesTabState extends State<_RatesTab> {
       ),
     );
   }
+
 }
 
 class _MarketplaceTab extends StatefulWidget {
@@ -354,12 +487,40 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final picker = ImagePicker();
     final picked = await picker.pickMultiImage(limit: 5);
     if (picked.isEmpty) return;
+
+    // Validate file sizes (max 5MB per image)
+    const maxFileSizeBytes = 5 * 1024 * 1024; // 5MB
+    final invalidImages = <String>[];
+
+    for (final xfile in picked) {
+      final fileSize = await xfile.length();
+      if (fileSize > maxFileSizeBytes) {
+        invalidImages.add(
+          '${xfile.name} (${_formatFileSize(fileSize)})',
+        );
+      }
+    }
+
+    if (invalidImages.isNotEmpty) {
+      if (!mounted) return;
+      _showError(
+        'Some images are too large (max 5MB each):\n${invalidImages.join('\n')}',
+      );
+      return;
+    }
+
     if (!mounted) return;
     setState(() {
       _selectedImages
         ..clear()
         ..addAll(picked);
     });
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
   Future<void> _load() async {
@@ -383,18 +544,86 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     }
   }
 
+  Widget _buildEmptyOrError() {
+    final message =
+        _error != null ? ErrorPresenter.present(_error!) : 'No active listings found.';
+    final actionLabel = _error != null ? 'Retry' : 'Refresh';
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_error != null)
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Colors.red.shade400,
+            ),
+          if (_error != null) const SizedBox(height: 12),
+          Text(message, textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _loading ? null : _load,
+                icon: const Icon(Icons.refresh),
+                label: Text(actionLabel),
+              ),
+              if (_error != null) ...[
+                const SizedBox(width: 12),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Go Back'),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _createListing() async {
     final crop = _cropController.text.trim();
     final district = _districtController.text.trim();
     final qty = double.tryParse(_qtyController.text.trim());
     final price = double.tryParse(_priceController.text.trim());
 
-    if (crop.isEmpty || district.isEmpty || qty == null || price == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Fill crop, district, quantity, and price'),
-        ),
-      );
+    // Validate crop name
+    final cropError = FormValidators.validateCropName(crop);
+    if (cropError != null) {
+      _showError(cropError);
+      return;
+    }
+
+    // Validate district
+    final districtError = FormValidators.validateDistrict(district);
+    if (districtError != null) {
+      _showError(districtError);
+      return;
+    }
+
+    // Validate quantity
+    if (qty == null) {
+      _showError('Please enter a valid quantity');
+      return;
+    }
+    final qtyError = FormValidators.validateQuantity(qty.toString());
+    if (qtyError != null) {
+      _showError(qtyError);
+      return;
+    }
+
+    // Validate price
+    if (price == null) {
+      _showError('Please enter a valid price');
+      return;
+    }
+    final priceError = FormValidators.validatePrice(price.toString());
+    if (priceError != null) {
+      _showError(priceError);
       return;
     }
 
@@ -426,50 +655,91 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      _showError(ErrorPresenter.present(e));
     } finally {
       if (!mounted) return;
       setState(() => _creating = false);
     }
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+
+      Future<int> _getTotalImageSize() async {
+        int total = 0;
+        for (final image in _selectedImages) {
+          total += await image.length();
+        }
+        return total;
+      }
+    );
+  }
+
   Future<void> _offerDialog(ListingDto row) async {
     final offerPriceController = TextEditingController();
     final quantityController = TextEditingController();
 
-    final approved = await showDialog<bool>(
+    final approved = await showModalBottomSheet<bool>(
       context: context,
       builder:
-          (_) => AlertDialog(
-            title: Text('Make Offer - ${row.cropName}'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: offerPriceController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Offer Price'),
+          (_) => Padding(
+            padding: MediaQuery.of(context).viewInsets,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Make Offer - ${row.cropName}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: offerPriceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Offer Price',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: quantityController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Send'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                TextField(
-                  controller: quantityController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Quantity'),
-                ),
-              ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Send'),
-              ),
-            ],
           ),
+      isScrollControlled: true,
     );
 
     if (approved != true) return;
@@ -478,9 +748,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final qty = double.tryParse(quantityController.text.trim());
     if (price == null || qty == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Invalid offer values')));
+      _showError('Invalid offer values');
       return;
     }
 
@@ -510,20 +778,21 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
         children: [
           Card(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
             ),
             elevation: 2,
             child: ExpansionTile(
               title: Text(
                 'Create Sell Listing',
                 style: TextStyle(
+                  fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: Colors.green.shade800,
                 ),
               ),
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: Column(
                     children: [
                       TextField(
@@ -561,11 +830,31 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                             label: const Text('Attach Images'),
                           ),
                           const SizedBox(width: 8),
-                          Text('${_selectedImages.length} selected'),
+                          Text(
+                            _selectedImages.isEmpty
+                                ? 'No images'
+                                : '${_selectedImages.length} selected',
+                          ),
                         ],
                       ),
                       if (_selectedImages.isNotEmpty) ...[
                         const SizedBox(height: 8),
+                        FutureBuilder<int>(
+                          future: _getTotalImageSize(),
+                          builder: (context, snapshot) {
+                            final sizeText =
+                                snapshot.hasData
+                                    ? _formatFileSize(snapshot.data!)
+                                    : 'Calculating...';
+                            return Text(
+                              'Total: $sizeText',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            );
+                          },
+                        ),
                         SizedBox(
                           height: 72,
                           child: ListView.separated(
@@ -622,14 +911,14 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Card(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12),
             ),
             elevation: 2,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
                   Expanded(
@@ -664,64 +953,134 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           if (_loading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
-          else if (_error != null)
-            Expanded(
-              child: Center(
-                child: Text(_error!, style: const TextStyle(color: Colors.red)),
-              ),
-            )
-          else if (_rows.isEmpty)
-            const Expanded(
-              child: Center(child: Text('No active listings found.')),
-            )
+          else if (_error != null || _rows.isEmpty)
+            Expanded(child: _buildEmptyOrError())
           else
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _load,
                 child: ListView.separated(
                   itemCount: _rows.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final row = _rows[index];
                     return Card(
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: 2,
-                      child: ListTile(
-                        leading:
-                            row.imageUrls.isNotEmpty
-                                ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Image.network(
-                                    row.imageUrls.first,
-                                    width: 52,
-                                    height: 52,
-                                    fit: BoxFit.cover,
-                                    errorBuilder:
-                                        (_, __, ___) => const Icon(Icons.image),
-                                  ),
-                                )
-                                : const Icon(Icons.agriculture),
-                        title: Text('${row.cropName} (${row.qualityGrade})'),
-                        subtitle: Text(
-                          '${row.district} • Qty: ${row.quantity.toStringAsFixed(0)} ${row.unit} • Seller: ${row.sellerUid.substring(0, row.sellerUid.length > 6 ? 6 : row.sellerUid.length)}',
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                      elevation: 3,
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('PKR ${row.askingPrice.toStringAsFixed(0)}'),
-                            const SizedBox(height: 4),
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green.shade700,
-                                foregroundColor: Colors.white,
-                              ),
-                              onPressed: () => _offerDialog(row),
-                              child: const Text('Offer'),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (row.imageUrls.isNotEmpty)
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.network(
+                                      row.imageUrls.first,
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          Container(
+                                            width: 60,
+                                            height: 60,
+                                            color: Colors.grey.shade200,
+                                            child: const Icon(Icons.image),
+                                          ),
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade100,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      Icons.agriculture,
+                                      color: Colors.green.shade700,
+                                    ),
+                                  ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${row.cropName} (${row.qualityGrade})',
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        row.district,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Qty: ${row.quantity.toStringAsFixed(0)} ${row.unit}',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Divider(height: 1, color: Colors.grey.shade300),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Asking Price',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'PKR ${row.askingPrice.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.green.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green.shade700,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  onPressed: () => _offerDialog(row),
+                                  icon: const Icon(Icons.local_offer, size: 18),
+                                  label: const Text('Make Offer'),
+                                ),
+                              ],
                             ),
                           ],
                         ),

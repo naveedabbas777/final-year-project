@@ -1,69 +1,81 @@
 import 'dart:convert';
+import 'dart:async';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import '../utils/json_response.dart';
+import '../config/app_config.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../config/app_config.dart';
 
 class WeatherService {
-  Future<Map<String, dynamic>> fetchWeatherData([double? lat, double? lon]) async {
-    final base = AppConfig.apiBaseUrl;
-    final useSavedLocation = lat == null || lon == null;
-    final uri =
-        useSavedLocation
-            ? Uri.parse('$base/api/weather/me')
-            : Uri.parse('$base/api/weather?lat=$lat&lon=$lon');
+  WeatherService({http.Client? httpClient})
+    : _client = httpClient ?? http.Client();
 
-    final headers = <String, String>{};
-    if (useSavedLocation) {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception('You must sign in first to load weather for your saved location.');
+  final http.Client _client;
+
+  Future<Map<String, dynamic>> fetchWeatherData([
+    double? lat,
+    double? lon,
+  ]) async {
+    try {
+      final base = AppConfig.apiBaseUrl;
+      final useSavedLocation = lat == null || lon == null;
+      final uri =
+          useSavedLocation
+              ? Uri.parse('$base/api/weather/me')
+              : Uri.parse('$base/api/weather?lat=$lat&lon=$lon');
+
+      final headers = <String, String>{};
+      if (useSavedLocation) {
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          throw Exception(
+            'You must sign in first to load weather for your saved location.',
+          );
+        }
+        headers['Authorization'] = 'Bearer ${await user.getIdToken(true)}';
       }
-      headers['Authorization'] = 'Bearer ${await user.getIdToken(true)}';
+
+      final resp = await _client
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 20));
+
+      if (resp.statusCode != 200) {
+        throw Exception(
+          'Failed to load weather from backend (${resp.statusCode})',
+        );
+      }
+
+      final body = json.decode(resp.body) as Map<String, dynamic>;
+      final currentData = asMap(body['current']) ?? {};
+      final forecastData = asMap(body['forecast']) ?? {'daily': []};
+
+      final currentOneCallLike =
+          currentData.containsKey('temp') && currentData.containsKey('weather')
+              ? currentData
+              : _toOneCallCurrent(currentData);
+
+      final dailySynthesized =
+          forecastData['daily'] is List
+              ? asMapList(
+                forecastData['daily'],
+              ).map((item) => DailyForecast.fromJson(item)).toList()
+              : _toDailyFromForecast(
+                forecastData,
+              ).map((item) => DailyForecast.fromJson(item)).toList();
+
+      return {
+        'current': currentOneCallLike,
+        'forecast': {'daily': dailySynthesized},
+        'cached': body,
+      };
+    } on TimeoutException {
+      throw Exception('Weather request timed out. Please try again.');
+    } on SocketException {
+      throw Exception(
+        'Weather request failed. Check your internet connection.',
+      );
     }
-
-    final resp = await http.get(uri, headers: headers);
-    if (resp.statusCode != 200) {
-      // Log and surface the error
-      // ignore: avoid_print
-      print('[WeatherService] backend weather failed: ${resp.statusCode}');
-      // ignore: avoid_print
-      print('[WeatherService] body: ${resp.body}');
-      throw Exception('Failed to load weather from backend');
-    }
-
-    final body = json.decode(resp.body) as Map<String, dynamic>;
-
-    final raw = body['raw'] as Map<String, dynamic>?;
-    final currentData =
-        (body['current'] as Map?) != null
-            ? Map<String, dynamic>.from(body['current'] as Map)
-            : Map<String, dynamic>.from(raw?['current'] as Map? ?? {});
-    final forecastData =
-        (body['forecast'] as Map?) != null
-            ? Map<String, dynamic>.from(body['forecast'] as Map)
-            : {'daily': _toDailyFromForecast(Map<String, dynamic>.from(raw?['forecast'] as Map? ?? {}))};
-
-    final currentOneCallLike =
-        currentData.containsKey('temp') && currentData.containsKey('weather')
-            ? currentData
-            : _toOneCallCurrent(currentData);
-    final dailySynthesized =
-        forecastData['daily'] is List
-            ? (forecastData['daily'] as List)
-                .whereType<Map<String, dynamic>>()
-                .toList()
-            : _toDailyFromForecast(forecastData);
-
-    return {
-      'current': currentOneCallLike,
-      'forecast': {'daily': dailySynthesized},
-      'raw': raw ?? {
-        'current': currentData,
-        'forecast': forecastData,
-      },
-      'cached': body,
-    };
   }
 }
 
@@ -99,7 +111,9 @@ class CurrentWeather {
     // json is the `current` map from OpenWeather One Call
     final weatherArr = json['weather'] as List<dynamic>?;
     final weather =
-        weatherArr != null && weatherArr.isNotEmpty && weatherArr.first is Map<String, dynamic>
+        weatherArr != null &&
+                weatherArr.isNotEmpty &&
+                weatherArr.first is Map<String, dynamic>
             ? weatherArr.first as Map<String, dynamic>
             : null;
 
@@ -173,7 +187,9 @@ class DailyForecast {
 
     final weatherArr = json['weather'] as List<dynamic>?;
     final weather =
-        weatherArr != null && weatherArr.isNotEmpty && weatherArr.first is Map<String, dynamic>
+        weatherArr != null &&
+                weatherArr.isNotEmpty &&
+                weatherArr.first is Map<String, dynamic>
             ? weatherArr.first as Map<String, dynamic>
             : null;
     final temp = json['temp'] as Map<String, dynamic>?;
@@ -183,9 +199,7 @@ class DailyForecast {
         hourlyRaw is List<dynamic>
             ? hourlyRaw
                 .whereType<Map<String, dynamic>>()
-                .map(
-                  (h) => HourlyForecast.fromJson(h),
-                )
+                .map((h) => HourlyForecast.fromJson(h))
                 .toList()
             : <HourlyForecast>[];
 
@@ -238,7 +252,9 @@ class HourlyForecast {
             : DateTime.now();
     final weatherArr = json['weather'] as List<dynamic>?;
     final weather =
-        weatherArr != null && weatherArr.isNotEmpty && weatherArr.first is Map<String, dynamic>
+        weatherArr != null &&
+                weatherArr.isNotEmpty &&
+                weatherArr.first is Map<String, dynamic>
             ? weatherArr.first as Map<String, dynamic>
             : null;
     return HourlyForecast(
