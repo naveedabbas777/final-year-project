@@ -32,10 +32,12 @@ Future<void> main() async {
   // `android/app/google-services.json` (Android) and the web config when on web.
   await Firebase.initializeApp();
 
-  // Set Mapbox Access Token globally
-  MapboxOptions.setAccessToken(
-    "pk.eyJ1IjoibmF2ZWVkMTI0Nzc3IiwiYSI6ImNtaWozMDBuMDB0d28zZXM4eW9sdGV1ZWEifQ.bIslQv6Rkw6FkYLEv_lOwA",
-  ); // <<< IMPORTANT: Replace with your actual Mapbox Access Token
+  const mapboxAccessToken = String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
+  if (mapboxAccessToken.isNotEmpty) {
+    MapboxOptions.setAccessToken(mapboxAccessToken);
+  } else {
+    debugPrint('MAPBOX_ACCESS_TOKEN is not set; Mapbox features may fail.');
+  }
 
   // Initialize Notification Service
   final notificationService = NotificationService();

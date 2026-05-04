@@ -34,9 +34,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <meta-data
-            android:name="MAPBOX_ACCESS_TOKEN"
-            android:value="pk.eyJ1IjoibmF2ZWVkMTI0Nzc3IiwiYSI6ImNtaWozMDBuMDB0d28zZXM4eW9sdGV1ZWEifQ.bIslQv6Rkw6FkYLEv_lOwA" />
     </application>
     <!-- Notifications (Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
