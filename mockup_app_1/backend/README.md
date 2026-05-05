@@ -15,6 +15,10 @@ This backend uses:
    - `mongodb://127.0.0.1:27017/digital_kissan`
 4. Add the Mapbox access token in `.env` so the Flutter app can load it from the backend:
    - `MAPBOX_ACCESS_TOKEN=your_mapbox_access_token`
+5. Add Cloudinary credentials to `.env` for server-side image uploads:
+   - `CLOUDINARY_CLOUD_NAME=your_cloud_name`
+   - `CLOUDINARY_API_KEY=your_api_key`
+   - `CLOUDINARY_API_SECRET=your_api_secret`
 
 ## 2) Run
 

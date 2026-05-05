@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:mockup_app/providers/language_provider.dart';
 import 'package:mockup_app/services/auth_service.dart';
+import 'package:mockup_app/utils/error_presenter.dart';
 import 'package:provider/provider.dart';
 
 import 'forgot_password_screen.dart';
@@ -39,28 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
   }
 
-  String _friendlyAuthError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'user-not-found':
-        return 'No account found for this email. Please register first.';
-      case 'wrong-password':
-      case 'invalid-credential':
-        return 'Incorrect password or invalid credentials.';
-      case 'invalid-email':
-        return 'Please enter a valid email address.';
-      case 'user-disabled':
-        return 'This account has been disabled.';
-      case 'operation-not-allowed':
-        return 'Email/password login is currently disabled in Firebase.';
-      case 'network-request-failed':
-        return 'Network issue detected. Please check internet and try again.';
-      case 'too-many-requests':
-        return 'Too many attempts. Please wait a moment and try again.';
-      default:
-        return e.message ?? 'Login failed. Please try again.';
-    }
-  }
-
   Future<void> _attemptLogin() async {
     final email = _emailController.text.trim();
     final pass = _passwordController.text;
@@ -79,20 +58,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       debugPrint('Attempting login with email: $email');
-      
+
       // Sign in with email and password
       try {
         await _auth.signInWithEmailPassword(email: email, password: pass)
             .timeout(const Duration(seconds: 45));
       } catch (e) {
         debugPrint('Sign in error: $e');
-        if (e is TimeoutException) {
-          _showError('Login timed out. Check your internet connection and try again.');
-        } else if (e is FirebaseAuthException) {
-          _showError(_friendlyAuthError(e));
-        } else {
-          _showError('Login failed: ${e.toString()}');
-        }
+        _showError(ErrorPresenter.present(e));
         if (mounted) setState(() => _sending = false);
         return;
       }
@@ -149,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
       widget.onLogin();
     } catch (e) {
       debugPrint('Unexpected error during login: $e');
-      _showError('Login failed: ${e.toString()}');
+      _showError(ErrorPresenter.present(e));
       if (mounted) setState(() => _sending = false);
     }
   }

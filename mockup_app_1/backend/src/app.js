@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import { formatErrorResponse } from './utils/errors.js';
 
 import { env } from './config/env.js';
 import { healthRouter } from './routes/health.routes.js';
@@ -17,6 +20,18 @@ import { configRouter } from './routes/config.routes.js';
 
 export function createApp() {
   const app = express();
+
+  // Security headers
+  app.use(helmet());
+
+  // Basic rate limiter for all API endpoints
+  const limiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 120, // limit each IP to 120 requests per windowMs
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use(limiter);
 
   app.use(
     cors({
@@ -68,9 +83,9 @@ export function createApp() {
   app.use((err, _req, res, _next) => {
     // eslint-disable-next-line no-console
     console.error(err);
-    res.status(err.statusCode || 500).json({
-      message: err.message || 'Internal server error',
-    });
+    const statusCode = err.statusCode || 500;
+    const response = formatErrorResponse(err);
+    res.status(statusCode).json(response);
   });
 
   return app;

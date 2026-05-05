@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -25,6 +26,21 @@ class ErrorPresenter {
 
     final message = error.toString();
 
+    // Check for structured backend error response
+    if (message.contains('"error"') || message.contains('"code"')) {
+      return _parseStructuredError(message);
+    }
+
+    // Upload-specific errors
+    if (message.contains('upload') || message.contains('Upload')) {
+      return _presentUploadError(message);
+    }
+
+    // Validation errors
+    if (message.contains('validation') || message.contains('Validation')) {
+      return _presentValidationError(message);
+    }
+
     // HTTP status codes
     if (message.contains('400')) {
       return 'Invalid request. Please check your input.';
@@ -37,6 +53,9 @@ class ErrorPresenter {
     }
     if (message.contains('404')) {
       return 'The requested resource was not found.';
+    }
+    if (message.contains('409')) {
+      return 'This resource already exists.';
     }
     if (message.contains('429')) {
       return 'Too many requests. Please wait a moment and try again.';
@@ -77,5 +96,60 @@ class ErrorPresenter {
       default:
         return error.message ?? 'Authentication failed. Please try again.';
     }
+  }
+
+  static String _presentUploadError(String message) {
+    if (message.contains('Image too large')) {
+      return 'Image is too large. Maximum size is 5 MB.';
+    }
+    if (message.contains('Only image')) {
+      return 'Only image files are allowed.';
+    }
+    if (message.contains('Cloudinary')) {
+      return 'Failed to upload image to cloud storage. Please try again.';
+    }
+    if (message.contains('timeout')) {
+      return 'Image upload timed out. Please try again.';
+    }
+    return 'Failed to upload image. Please try again.';
+  }
+
+  static String _presentValidationError(String message) {
+    if (message.contains('required')) {
+      return 'Please fill in all required fields.';
+    }
+    if (message.contains('password')) {
+      return 'Password must be at least 6 characters.';
+    }
+    if (message.contains('email')) {
+      return 'Please enter a valid email address.';
+    }
+    if (message.contains('crop')) {
+      return 'Crop name must be 2-50 characters and alphanumeric.';
+    }
+    if (message.contains('quantity')) {
+      return 'Quantity must be between 0.1 and 999999.';
+    }
+    if (message.contains('price')) {
+      return 'Price must be between 0.01 and 999999.';
+    }
+    return 'Please check your input and try again.';
+  }
+
+  static String _parseStructuredError(String message) {
+    try {
+      // Try to extract JSON from error message
+      final start = message.indexOf('{');
+      final end = message.lastIndexOf('}');
+      if (start > -1 && end > -1) {
+        final json = jsonDecode(message.substring(start, end + 1)) as Map<String, dynamic>;
+        if (json['error'] is String) {
+          return json['error'] as String;
+        }
+      }
+    } catch (e) {
+      // Ignore JSON parsing errors
+    }
+    return present(message);
   }
 }

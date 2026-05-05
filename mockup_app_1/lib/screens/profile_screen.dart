@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 
 import 'package:mockup_app/config/app_config.dart';
 import 'package:mockup_app/utils/retry_helper.dart';
+import 'package:mockup_app/utils/error_presenter.dart';
 
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/firebase_service.dart';
@@ -231,7 +232,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload failed')));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload error: ${e.toString()}')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorPresenter.present(e))));
     } finally {
       if (!mounted) return;
       setState(() => _uploading = false);

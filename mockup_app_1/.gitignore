@@ -50,3 +50,6 @@ app.*.map.json
 /android/local.properties
 /backend/.env
 /backend/serviceAccountKey.json
+/.env
+/.env.local
+/.env.*.local
