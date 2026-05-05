@@ -665,15 +665,15 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
-
-      Future<int> _getTotalImageSize() async {
-        int total = 0;
-        for (final image in _selectedImages) {
-          total += await image.length();
-        }
-        return total;
-      }
     );
+  }
+
+  Future<int> _getTotalImageSize() async {
+    int total = 0;
+    for (final image in _selectedImages) {
+      total += await image.length();
+    }
+    return total;
   }
 
   Future<void> _offerDialog(ListingDto row) async {

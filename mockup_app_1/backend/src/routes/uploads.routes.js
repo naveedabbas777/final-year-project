@@ -6,6 +6,8 @@ import multer from 'multer';
 
 import { requireAuth } from '../middlewares/auth.js';
 import { attachDbUser } from '../middlewares/attachDbUser.js';
+import { env } from '../config/env.js';
+import crypto from 'node:crypto';
 
 export const uploadsRouter = Router();
 
@@ -60,3 +62,34 @@ uploadsRouter.post(
     });
   },
 );
+
+// Cloudinary signing endpoint for client-side signed uploads
+uploadsRouter.post('/cloudinary/sign', requireAuth, attachDbUser, (req, res) => {
+  try {
+    const { folder, public_id } = req.body || {};
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    // Build params string in alphabetical order of keys
+    const parts = [];
+    if (folder) parts.push(`folder=${folder}`);
+    if (public_id) parts.push(`public_id=${public_id}`);
+    parts.push(`timestamp=${timestamp}`);
+    const paramsToSign = parts.join('&');
+
+    const apiSecret = env.cloudinary.apiSecret || '';
+    if (!apiSecret) {
+      return res.status(500).json({ message: 'Cloudinary not configured on server' });
+    }
+
+    const signature = crypto.createHash('sha1').update(paramsToSign + apiSecret).digest('hex');
+
+    res.json({
+      apiKey: env.cloudinary.apiKey || '',
+      cloudName: env.cloudinary.cloudName || '',
+      timestamp,
+      signature,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to compute signature' });
+  }
+});

@@ -94,6 +94,7 @@ class FirebaseService {
     String uid, {
     String? displayName,
     String? phoneNumber,
+    String? photoUrl,
   }) async {
     final updates = <String, dynamic>{};
     if (displayName != null) {
@@ -103,6 +104,10 @@ class FirebaseService {
     if (phoneNumber != null) {
       updates['phoneNumber'] = phoneNumber;
       updates['phone'] = phoneNumber;
+    }
+    if (photoUrl != null) {
+      updates['photoUrl'] = photoUrl;
+      updates['photo'] = photoUrl;
     }
     if (updates.isNotEmpty) {
       await _client.patch('/api/users/me', auth: true, body: updates);

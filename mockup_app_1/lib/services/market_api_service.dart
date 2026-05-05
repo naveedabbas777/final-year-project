@@ -1,7 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import 'api_client.dart';
 import '../utils/json_response.dart';
+import '../config/app_config.dart';
+import '../utils/retry_helper.dart';
 
 class UserProfileDto {
   UserProfileDto({
@@ -342,18 +347,48 @@ class MarketApiService {
   }
 
   Future<String> uploadListingImage(String filePath) async {
-    final data = await _client.uploadFile(
-      '/api/uploads/listing-image',
-      fieldName: 'image',
-      filePath: filePath,
+    // Request a server-signed Cloudinary upload signature
+    final signResp = await _client.post(
+      '/api/uploads/cloudinary/sign',
       auth: true,
+      body: {'folder': 'listings'},
     );
 
-    if (data is! Map<String, dynamic> || data['imageUrl'] == null) {
-      throw Exception('Invalid upload response');
+    if (signResp is! Map<String, dynamic>) {
+      throw Exception('Invalid signing response from server');
     }
 
-    return data['imageUrl'].toString();
+    final timestamp = signResp['timestamp']?.toString() ?? '';
+    final signature = signResp['signature']?.toString() ?? '';
+    final apiKey = signResp['apiKey']?.toString() ?? '';
+    final cloudName = signResp['cloudName']?.toString() ?? AppConfig.cloudinaryCloudName;
+
+    if (timestamp.isEmpty || signature.isEmpty || apiKey.isEmpty || cloudName.isEmpty) {
+      throw Exception('Missing Cloudinary signing data');
+    }
+
+    return await RetryHelper.retry<String>(() async {
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+      final req = http.MultipartRequest('POST', uri);
+      req.fields['api_key'] = apiKey;
+      req.fields['timestamp'] = timestamp;
+      req.fields['signature'] = signature;
+      req.fields['folder'] = 'listings';
+      req.files.add(await http.MultipartFile.fromPath('file', filePath));
+
+      final streamed = await req.send();
+      final resp = await http.Response.fromStream(streamed);
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        throw Exception('Cloudinary upload failed (${resp.statusCode})');
+      }
+
+      final body = json.decode(resp.body) as Map<String, dynamic>;
+      final url = body['secure_url'] as String? ?? body['url'] as String? ?? '';
+      if (url.isEmpty) throw Exception('Cloudinary did not return a URL');
+      return url;
+    }, maxAttempts: 3, initialDelayMs: 500, onRetry: (attempt, delay) {
+      if (kDebugMode) debugPrint('[MarketApi] Retry upload attempt $attempt after ${delay.inMilliseconds}ms');
+    });
   }
 
   Future<List<OfferDto>> fetchMyOffers() async {
