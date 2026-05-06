@@ -61,7 +61,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Sign in with email and password
       try {
-        await _auth.signInWithEmailPassword(email: email, password: pass)
+        await _auth
+            .signInWithEmailPassword(email: email, password: pass)
             .timeout(const Duration(seconds: 45));
       } catch (e) {
         debugPrint('Sign in error: $e');
@@ -78,22 +79,25 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      debugPrint('Login successful. User: ${user.email}, Verified: ${user.emailVerified}');
+      debugPrint(
+        'Login successful. User: ${user.email}, Verified: ${user.emailVerified}',
+      );
 
       // Check if email is verified
       if (!user.emailVerified) {
         debugPrint('Email not verified, redirecting to verification screen');
-        
+
         // Try to send verification email silently
         try {
-          await _auth.sendCurrentUserVerificationEmail()
-              .timeout(const Duration(seconds: 10));
+          await _auth.sendCurrentUserVerificationEmail().timeout(
+            const Duration(seconds: 10),
+          );
         } catch (e) {
           debugPrint('Could not send verification email: $e');
         }
 
         if (!mounted) return;
-        
+
         // Navigate to verification screen
         final result = await Navigator.of(context).push(
           MaterialPageRoute(
@@ -129,9 +133,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override

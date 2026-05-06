@@ -1,7 +1,3 @@
-import 'dart:typed_data';
-
-import 'package:flutter/services.dart' show rootBundle;
-import 'package:image/image.dart' as img;
 // import 'package:tflite_flutter/tflite_flutter.dart';
 // NOTE: tflite_flutter requires Git. Commented out to avoid git dependency.
 // To re-enable: Install Git from https://git-scm.com/download/win

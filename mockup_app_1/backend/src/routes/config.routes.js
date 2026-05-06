@@ -7,5 +7,6 @@ export const configRouter = express.Router();
 configRouter.get('/public', (_req, res) => {
   res.json({
     mapboxAccessToken: env.mapboxAccessToken,
+    openWeatherConfigured: Boolean(env.openWeatherKey && env.openWeatherKey.length > 0),
   });
 });

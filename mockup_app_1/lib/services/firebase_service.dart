@@ -11,11 +11,7 @@ class FirebaseService {
 
   /// Writes a simple message through the backend.
   Future<void> writeSampleMessage(String message) async {
-    await _client.post(
-      '/api/messages',
-      auth: true,
-      body: {'message': message},
-    );
+    await _client.post('/api/messages', auth: true, body: {'message': message});
   }
 
   /// Reads the last N messages through the backend.
@@ -32,9 +28,9 @@ class FirebaseService {
   /// Polling-based stream for live updates from the backend.
   Stream<List<Map<String, dynamic>>> messagesStream({int limit = 50}) async* {
     yield await readLastMessages(limit: limit);
-    yield* Stream.periodic(const Duration(seconds: 10)).asyncMap(
-      (_) => readLastMessages(limit: limit),
-    );
+    yield* Stream.periodic(
+      const Duration(seconds: 10),
+    ).asyncMap((_) => readLastMessages(limit: limit));
   }
 
   /// Ensure the backend creates or refreshes the current user profile.
@@ -72,7 +68,10 @@ class FirebaseService {
 
   Future<Map<String, dynamic>?> getUserByPhone(String phoneNumber) async {
     try {
-      final data = await _client.get('/api/users/by-phone/$phoneNumber', auth: true);
+      final data = await _client.get(
+        '/api/users/by-phone/$phoneNumber',
+        auth: true,
+      );
       if (data is Map<String, dynamic>) return data;
       return null;
     } catch (_) {
@@ -82,7 +81,7 @@ class FirebaseService {
 
   Future<Map<String, dynamic>?> getUserByUid(String uid) async {
     try {
-      final data = await _client.get('/api/users/me', auth: true);
+      final data = await _client.get('/api/users/$uid', auth: true);
       if (data is Map<String, dynamic>) return data;
       return null;
     } catch (_) {
@@ -154,11 +153,13 @@ class FirebaseService {
   }) async {
     final updates = <String, dynamic>{};
     if (fcmToken != null) updates['fcmToken'] = fcmToken;
-    if (notificationsEnabled != null) updates['notificationsEnabled'] = notificationsEnabled;
+    if (notificationsEnabled != null)
+      updates['notificationsEnabled'] = notificationsEnabled;
     if (lat != null) updates['lat'] = lat;
     if (lon != null) updates['lon'] = lon;
     if (address != null) updates['address'] = address;
-    if (lastNotifiedAt != null) updates['lastNotifiedAt'] = lastNotifiedAt.toIso8601String();
+    if (lastNotifiedAt != null)
+      updates['lastNotifiedAt'] = lastNotifiedAt.toIso8601String();
 
     if (updates.isNotEmpty) {
       await _client.patch('/api/users/me', auth: true, body: updates);

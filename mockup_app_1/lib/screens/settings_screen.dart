@@ -34,38 +34,97 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final user = authProvider.user;
 
     if (user == null) {
-      setState(() {
-        _savedLocation = 'No location set';
-      });
+      if (mounted) {
+        setState(() {
+          _savedLocation = 'No location set';
+        });
+      }
       return;
     }
 
-    setState(() {
-      _savedLocation = 'Loading location...';
-    });
+    if (mounted) {
+      setState(() {
+        _savedLocation = 'Loading location...';
+      });
+    }
 
     try {
+      // Try to load from Firebase first
       final doc = await _firebaseService.getUserByUid(user.uid);
       final address = doc?['address'] as String?;
       final lat = (doc?['lat'] as num?)?.toDouble();
       final lon = (doc?['lon'] as num?)?.toDouble();
+      final locationUpdatedAt = doc?['locationUpdatedAt'] as String?;
 
-      final display =
-          (address != null && address.isNotEmpty && lat != null && lon != null)
-              ? '$address (${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)})'
-              : (address?.isNotEmpty == true ? address! : 'No location set');
+      String display = 'No location set';
+      if (address != null && address.isNotEmpty && lat != null && lon != null) {
+        display =
+            '$address\n(${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)})';
+        if (locationUpdatedAt != null && locationUpdatedAt.isNotEmpty) {
+          display += '\nUpdated: ${_formatTimestamp(locationUpdatedAt)}';
+        }
+      } else if (address?.isNotEmpty == true) {
+        display = address!;
+      }
 
       if (mounted) {
         setState(() {
           _savedLocation = display;
         });
       }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _savedLocation = 'No location set';
-        });
+    } catch (e) {
+      debugPrint(
+        'Failed to load from Firebase: $e. Trying SharedPreferences...',
+      );
+
+      // Fallback: Try to load from SharedPreferences
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final lat = prefs.getDouble('last_latitude');
+        final lng = prefs.getDouble('last_longitude');
+        final address = prefs.getString('last_address');
+
+        String display = 'No location set';
+        if (address != null &&
+            address.isNotEmpty &&
+            lat != null &&
+            lng != null) {
+          display =
+              '$address\n(${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)})';
+        }
+
+        if (mounted) {
+          setState(() {
+            _savedLocation = display;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _savedLocation = 'No location set';
+          });
+        }
       }
+    }
+  }
+
+  String _formatTimestamp(String isoString) {
+    try {
+      final dateTime = DateTime.parse(isoString);
+      final now = DateTime.now();
+      final difference = now.difference(dateTime);
+
+      if (difference.inMinutes < 60) {
+        return '${difference.inMinutes}m ago';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours}h ago';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays}d ago';
+      } else {
+        return dateTime.toString().split('.')[0];
+      }
+    } catch (_) {
+      return '';
     }
   }
 

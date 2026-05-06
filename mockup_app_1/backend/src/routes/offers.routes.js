@@ -5,6 +5,7 @@ import { ListingModel } from '../models/listing.model.js';
 import { OrderModel } from '../models/order.model.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { attachDbUser } from '../middlewares/attachDbUser.js';
+import { admin } from '../config/firebaseAdmin.js';
 
 export const offersRouter = Router();
 
@@ -54,6 +55,41 @@ offersRouter.post('/', requireAuth, attachDbUser, async (req, res) => {
     quantity: Number(payload.quantity),
     status: 'pending',
   });
+
+  // Notify the seller via FCM (if they have tokens)
+  try {
+    const listingDoc = await admin.firestore().collection('users').doc(listing.sellerUid).get();
+    const seller = listingDoc.exists ? listingDoc.data() : null;
+    const tokens = Array.isArray(seller?.fcmTokens) ? seller.fcmTokens.filter(Boolean) : [];
+    if (tokens.length > 0) {
+      const payload = {
+        notification: {
+          title: 'New Offer Received',
+          body: `You have a new offer for ${listing.cropName}: PKR ${offer.offerPrice}`,
+        },
+        data: {
+          type: 'offer',
+          listingId: listing._id.toString(),
+          offerId: offer._id.toString(),
+        },
+      };
+
+      const resp = await admin.messaging().sendMulticast({ tokens, ...payload });
+      if (resp.failureCount > 0) {
+        const invalidTokens = [];
+        resp.responses.forEach((r, i) => {
+          if (!r.success) invalidTokens.push(tokens[i]);
+        });
+        if (invalidTokens.length > 0) {
+          await admin.firestore().collection('users').doc(listing.sellerUid).set({ fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens) }, { merge: true });
+        }
+      }
+    }
+  } catch (err) {
+    // do not block primary flow on notification errors
+    // eslint-disable-next-line no-console
+    console.error('FCM notify error', err);
+  }
 
   res.status(201).json(offer);
 });

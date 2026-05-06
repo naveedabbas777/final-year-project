@@ -1,11 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:shared_preferences/shared_preferences.dart'; // Import for SharedPreferences
 import 'package:mockup_app/services/weather_service.dart'; // Import WeatherService and DailyForecast
+import 'package:mockup_app/services/connectivity_service.dart';
 import 'package:mockup_app/screens/detailed_forecast_screen.dart'; // Import DetailedForecastScreen
 import 'package:mockup_app/l10n/app_localizations.dart'; // Corrected import
 import 'package:mockup_app/utils/error_presenter.dart';
+import 'package:mockup_app/services/firebase_service.dart';
 
 class ForecastScreen extends StatefulWidget {
   const ForecastScreen({Key? key}) : super(key: key);
@@ -18,6 +21,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
   double? _latitude;
   double? _longitude;
   Future<List<DailyForecast>>? _dailyForecastFuture;
+  bool _backendUnreachable = false;
 
   Icon _buildWeatherIcon(String iconUrl) {
     final match = RegExp(r"/(\d{2}[dn])@").firstMatch(iconUrl);
@@ -64,10 +68,55 @@ class _ForecastScreenState extends State<ForecastScreen> {
   }
 
   Future<void> _loadForecastData() async {
+    // Check backend connectivity first
+    final connectivityService = ConnectivityService();
+    final isBackendHealthy = await connectivityService.checkBackendHealth();
+
+    if (!isBackendHealthy) {
+      if (mounted) {
+        setState(() {
+          _backendUnreachable = true;
+          // Keep FutureBuilder stable; unreachable state is handled by _backendUnreachable UI branch.
+          _dailyForecastFuture = Future.value(<DailyForecast>[]);
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _backendUnreachable = false;
+      });
+    }
+
     final prefs = await SharedPreferences.getInstance();
+    final savedLat = prefs.getDouble('last_latitude');
+    final savedLon = prefs.getDouble('last_longitude');
+
+    double? backendLat;
+    double? backendLon;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final profile = await FirebaseService().getUserByUid(user.uid);
+        backendLat = (profile?['lat'] as num?)?.toDouble();
+        backendLon = (profile?['lon'] as num?)?.toDouble();
+        if (backendLat != null &&
+            backendLon != null &&
+            (savedLat != backendLat || savedLon != backendLon)) {
+          await prefs.setDouble('last_latitude', backendLat);
+          await prefs.setDouble('last_longitude', backendLon);
+        }
+      } catch (e) {
+        debugPrint('Error loading user profile: $e');
+      }
+    }
+
+    if (!mounted) return;
+
     setState(() {
-      _latitude = prefs.getDouble('last_latitude');
-      _longitude = prefs.getDouble('last_longitude');
+      _latitude = savedLat ?? backendLat;
+      _longitude = savedLon ?? backendLon;
       if (kDebugMode) {
         debugPrint(
           'ForecastScreen: Loaded latitude: $_latitude, longitude: $_longitude',
@@ -85,12 +134,19 @@ class _ForecastScreenState extends State<ForecastScreen> {
                 final daily = forecastMap['daily'];
                 if (daily is List) {
                   return daily
-                      .where((item) => item is Map<String, dynamic>)
-                      .map(
-                        (item) => DailyForecast.fromJson(
-                          Map<String, dynamic>.from(item as Map),
-                        ),
-                      )
+                      .map((item) {
+                        if (item is DailyForecast) return item;
+                        if (item is Map<String, dynamic>) {
+                          return DailyForecast.fromJson(item);
+                        }
+                        if (item is Map) {
+                          return DailyForecast.fromJson(
+                            Map<String, dynamic>.from(item),
+                          );
+                        }
+                        return null;
+                      })
+                      .whereType<DailyForecast>()
                       .toList();
                 }
                 if (kDebugMode) {
@@ -157,6 +213,50 @@ class _ForecastScreenState extends State<ForecastScreen> {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
+            } else if (_backendUnreachable) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.cloud_off, size: 48, color: Colors.red.shade400),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Backend Unreachable',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red.shade700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Unable to connect to the server. Please check your network and try again.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.red.shade600),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _loadForecastData,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Retry'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red.shade500,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.arrow_back),
+                          label: const Text('Go Back'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
             } else if (snapshot.hasError) {
               return Center(
                 child: Column(

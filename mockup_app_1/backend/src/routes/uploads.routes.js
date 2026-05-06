@@ -22,6 +22,8 @@ cloudinary.config({
 
 const uploadsDir = path.resolve(process.cwd(), 'uploads', 'listings');
 fs.mkdirSync(uploadsDir, { recursive: true });
+const profilesDir = path.resolve(process.cwd(), 'uploads', 'profiles');
+fs.mkdirSync(profilesDir, { recursive: true });
 
 const storage = multer.diskStorage({
   destination(_req, _file, cb) {
@@ -47,6 +49,10 @@ const upload = multer({
   },
 });
 
+function publicFileUrl(req, folder, filename) {
+  return `${req.protocol}://${req.get('host')}/uploads/${folder}/${filename}`;
+}
+
 // Server-side upload to Cloudinary for listings
 uploadsRouter.post(
   '/listing-image',
@@ -58,12 +64,18 @@ uploadsRouter.post(
       throw new ValidationError('Image file is required');
     }
 
-    if (!env.cloudinary.cloudName || !env.cloudinary.apiKey || !env.cloudinary.apiSecret) {
-      throw new ServiceError('Cloudinary not configured on server', 'CLOUDINARY_CONFIG_ERROR');
-    }
-
     const localPath = req.file.path;
     const folder = 'listings';
+    const cloudConfigured =
+      env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret;
+
+    if (!cloudConfigured) {
+      return res.status(201).json({
+        message: 'Image uploaded locally',
+        imageUrl: publicFileUrl(req, folder, req.file.filename),
+        localPath: `/uploads/${folder}/${req.file.filename}`,
+      });
+    }
 
     try {
       const result = await cloudinary.uploader.upload(localPath, {
@@ -99,6 +111,28 @@ uploadsRouter.post(
   }),
 );
 
+uploadsRouter.post(
+  '/profile-image',
+  requireAuth,
+  attachDbUser,
+  upload.single('image'),
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      throw new ValidationError('Image file is required');
+    }
+
+    // Move from listings temp dir to profiles dir for profile images.
+    const targetPath = path.join(profilesDir, req.file.filename);
+    fs.renameSync(req.file.path, targetPath);
+
+    res.status(201).json({
+      message: 'Profile image uploaded',
+      imageUrl: publicFileUrl(req, 'profiles', req.file.filename),
+      localPath: `/uploads/profiles/${req.file.filename}`,
+    });
+  }),
+);
+
 // Cloudinary signing endpoint for client-side signed uploads
 uploadsRouter.post(
   '/cloudinary/sign',
@@ -108,8 +142,11 @@ uploadsRouter.post(
     const { folder, public_id } = req.body || {};
     const timestamp = Math.floor(Date.now() / 1000);
 
-    if (!env.cloudinary.apiSecret) {
-      throw new ServiceError('Cloudinary not configured on server', 'CLOUDINARY_CONFIG_ERROR');
+    if (!env.cloudinary.cloudName || !env.cloudinary.apiKey || !env.cloudinary.apiSecret) {
+      return res.status(200).json({
+        cloudinaryEnabled: false,
+        message: 'Cloudinary not configured on server',
+      });
     }
 
     // Build params string in alphabetical order of keys

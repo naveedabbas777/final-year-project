@@ -7,7 +7,10 @@ import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/firebase_service.dart';
+import '../services/weather_service.dart';
+import '../utils/error_presenter.dart';
 
 class LocationScreen extends StatefulWidget {
   const LocationScreen({super.key});
@@ -19,7 +22,9 @@ class LocationScreen extends StatefulWidget {
 class _LocationScreenState extends State<LocationScreen>
     with WidgetsBindingObserver {
   String? _currentAddress;
-  bool _loading = false;
+  bool _isFetchingGps = false;
+  bool _isSearching = false;
+  bool _isSavingLocation = false;
   MapboxMap? _mapboxMap;
   PointAnnotationManager? _pointAnnotationManager;
   Uint8List? _markerImage;
@@ -28,6 +33,8 @@ class _LocationScreenState extends State<LocationScreen>
   double? _lastLng;
   bool _didRequestSettings = false;
   bool _isSatelliteView = false;
+
+  bool get _isBusy => _isFetchingGps || _isSearching || _isSavingLocation;
 
   @override
   void initState() {
@@ -115,23 +122,30 @@ class _LocationScreenState extends State<LocationScreen>
     final hasPermission = await _handleLocationPermission();
     if (!hasPermission) return;
 
-    setState(() => _loading = true);
+    if (mounted) {
+      setState(() => _isFetchingGps = true);
+    }
 
     try {
       geolocator.Position position = await geolocator
           .Geolocator.getCurrentPosition(
         desiredAccuracy: geolocator.LocationAccuracy.high,
       );
-
-      setState(() => _loading = false);
-
-      _updateLocation(position.latitude, position.longitude);
+      await _updateLocation(position.latitude, position.longitude);
     } catch (e) {
       debugPrint(e.toString());
-      setState(() {
-        _currentAddress = AppLocalizations.of(context)!.failedToGetPosition;
-        _loading = false;
-      });
+      if (mounted) {
+        final message = ErrorPresenter.present(e);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFetchingGps = false;
+        });
+      }
     }
   }
 
@@ -149,25 +163,54 @@ class _LocationScreenState extends State<LocationScreen>
       final address = doc?['address'] as String?;
 
       if (lat != null && lng != null && address != null && address.isNotEmpty) {
-        setState(() {
-          _lastLat = lat;
-          _lastLng = lng;
-          _currentAddress = address;
-        });
+        if (mounted) {
+          setState(() {
+            _lastLat = lat;
+            _lastLng = lng;
+            _currentAddress = address;
+          });
+        }
         _centerMapOnLocation(lat, lng);
         _addMarker(Point(coordinates: Position(lng, lat)));
-      } else {
-        _getCurrentPosition();
+        return;
       }
-    } catch (_) {
-      _getCurrentPosition();
+    } catch (e) {
+      debugPrint(
+        'Failed to load from Firebase: $e. Trying SharedPreferences...',
+      );
     }
+
+    // Fallback: Try to load from SharedPreferences
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lat = prefs.getDouble('last_latitude');
+      final lng = prefs.getDouble('last_longitude');
+      final address = prefs.getString('last_address');
+
+      if (lat != null && lng != null && address != null && address.isNotEmpty) {
+        if (mounted) {
+          setState(() {
+            _lastLat = lat;
+            _lastLng = lng;
+            _currentAddress = address;
+          });
+        }
+        _centerMapOnLocation(lat, lng);
+        _addMarker(Point(coordinates: Position(lng, lat)));
+        return;
+      }
+    } catch (e) {
+      debugPrint('Failed to load from SharedPreferences: $e');
+    }
+
+    // If no saved location, get current position
+    _getCurrentPosition();
   }
 
   Future<void> _searchAndSaveLocation(String address) async {
     if (address.isEmpty) return;
 
-    setState(() => _loading = true);
+    setState(() => _isSearching = true);
 
     try {
       List<geocoding.Location> locations = await geocoding.locationFromAddress(
@@ -188,11 +231,14 @@ class _LocationScreenState extends State<LocationScreen>
       debugPrint('Error searching location: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.failedToSearchLocation),
+          content: Text(ErrorPresenter.present(e)),
+          backgroundColor: Colors.red,
         ),
       );
     } finally {
-      setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _isSearching = false);
+      }
     }
   }
 
@@ -216,15 +262,17 @@ class _LocationScreenState extends State<LocationScreen>
         ];
 
         final address = addressParts
-          .where((part) => part != null && part.isNotEmpty)
-          .join(', ');
+            .where((part) => part != null && part.isNotEmpty)
+            .join(', ');
 
-        setState(() {
-          _currentAddress = address;
-          _textController.clear();
-          _lastLat = lat;
-          _lastLng = lng;
-        });
+        if (mounted) {
+          setState(() {
+            _currentAddress = address;
+            _textController.clear();
+            _lastLat = lat;
+            _lastLng = lng;
+          });
+        }
 
         if (shouldCenterMap) {
           _centerMapOnLocation(lat, lng);
@@ -232,7 +280,7 @@ class _LocationScreenState extends State<LocationScreen>
 
         _addMarker(Point(coordinates: Position(lng, lat)));
 
-        _saveLocation(
+        await _saveLocation(
           address,
           geolocator.Position(
             latitude: lat,
@@ -248,15 +296,19 @@ class _LocationScreenState extends State<LocationScreen>
           ),
         );
       } else {
+        if (mounted) {
+          setState(() {
+            _currentAddress = AppLocalizations.of(context)!.couldNotGetAddress;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting address: $e');
+      if (mounted) {
         setState(() {
           _currentAddress = AppLocalizations.of(context)!.couldNotGetAddress;
         });
       }
-    } catch (e) {
-      debugPrint('Error getting address: $e');
-      setState(() {
-        _currentAddress = AppLocalizations.of(context)!.couldNotGetAddress;
-      });
     }
   }
 
@@ -264,18 +316,106 @@ class _LocationScreenState extends State<LocationScreen>
     String address,
     geolocator.Position position,
   ) async {
-    // Sync location to the backend Firestore document so Flutter stays UI-only.
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        await FirebaseService().updateUserLocation(
-          user.uid,
-          address: address,
-          lat: position.latitude,
-          lon: position.longitude,
+    if (mounted) {
+      setState(() => _isSavingLocation = true);
+    }
+
+    // Always save locally first so user sees an immediate result.
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble('last_latitude', position.latitude);
+      await prefs.setDouble('last_longitude', position.longitude);
+      await prefs.setString('last_address', address);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${AppLocalizations.of(context)!.location} saved locally',
+            ),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
         );
+      }
+    } catch (e) {
+      debugPrint('Error saving location locally: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ErrorPresenter.present(e)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      if (mounted) {
+        setState(() => _isSavingLocation = false);
+      }
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted) {
+        setState(() => _isSavingLocation = false);
+      }
+      return;
+    }
+
+    try {
+      await FirebaseService().updateUserLocation(
+        user.uid,
+        address: address,
+        lat: position.latitude,
+        lon: position.longitude,
+      );
+
+      try {
+        await WeatherService().fetchWeatherData(
+          position.latitude,
+          position.longitude,
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '${AppLocalizations.of(context)!.location} synced to server and weather updated',
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
       } catch (e) {
-        debugPrint('Failed to sync location to backend Firestore: $e');
+        debugPrint('Weather fetch after sync failed: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Location synced, but weather refresh failed. ${ErrorPresenter.present(e)}',
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to sync location to backend: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Saved locally. Server sync failed: ${ErrorPresenter.present(e)}',
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSavingLocation = false);
       }
     }
   }
@@ -299,6 +439,7 @@ class _LocationScreenState extends State<LocationScreen>
 
   // Changed signature to directly receive MapContentGestureContext
   void _onMapTap(MapContentGestureContext context) async {
+    if (_isBusy) return;
     final point = context.point; // Extract Point from context
     final lat = point.coordinates.lat.toDouble(); // Ensure double type
     final lng = point.coordinates.lng.toDouble(); // Ensure double type
@@ -386,11 +527,23 @@ class _LocationScreenState extends State<LocationScreen>
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton.icon(
-                      onPressed: _loading ? null : _getCurrentPosition,
-                      icon: const Icon(Icons.gps_fixed),
+                      onPressed: _isBusy ? null : _getCurrentPosition,
+                      icon:
+                          _isFetchingGps || _isSavingLocation
+                              ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                              : const Icon(Icons.gps_fixed),
                       label: Text(
-                        _loading
+                        _isFetchingGps
                             ? AppLocalizations.of(context)!.gettingLocation
+                            : _isSavingLocation
+                            ? 'Saving location...'
                             : AppLocalizations.of(
                               context,
                             )!.useCurrentGpsLocation,
@@ -421,11 +574,23 @@ class _LocationScreenState extends State<LocationScreen>
                       ),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: const Icon(Icons.search),
-                        onPressed: () {
-                          FocusScope.of(context).unfocus();
-                          _searchAndSaveLocation(_textController.text);
-                        },
+                        icon:
+                            _isSearching
+                                ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Icon(Icons.search),
+                        onPressed:
+                            _isBusy
+                                ? null
+                                : () {
+                                  FocusScope.of(context).unfocus();
+                                  _searchAndSaveLocation(_textController.text);
+                                },
                       ),
                     ),
                   ),

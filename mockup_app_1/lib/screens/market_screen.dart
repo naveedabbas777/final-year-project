@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../services/market_api_service.dart';
+import 'listing_detail_screen.dart';
 import '../utils/form_validators.dart';
 import '../utils/error_presenter.dart';
 import 'offers_screen.dart';
@@ -12,28 +13,6 @@ import 'orders_screen.dart';
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
 
-  @override
-  State<MarketScreen> createState() => _MarketScreenState();
-}
-
-class _MarketScreenState extends State<MarketScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.green.shade50,
       appBar: AppBar(
@@ -71,107 +50,21 @@ class _MarketScreenState extends State<MarketScreen>
         children: const [_RatesTab(), _MarketplaceTab()],
       ),
     );
-  }
-}
-
-class _RatesTab extends StatefulWidget {
-  const _RatesTab();
-
-  @override
-  State<_RatesTab> createState() => _RatesTabState();
-}
-
-class _RatesTabState extends State<_RatesTab> {
-  final _service = MarketApiService();
-  final _cropController = TextEditingController();
-  final _districtController = TextEditingController();
-  bool _loading = false;
-  bool _ingesting = false;
-  String? _error;
-  List<CropRateDto> _rates = const [];
-  UserProfileDto? _me;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadMe();
-    _load();
-  }
-
-  @override
-  void dispose() {
-    _cropController.dispose();
-    _districtController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadMe() async {
-    try {
-      final me = await _service.fetchMe();
-      if (!mounted) return;
-      setState(() => _me = me);
-    } catch (_) {}
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      final rows = await _service.fetchLatestRates(
-        crop: _cropController.text,
-        district: _districtController.text,
-      );
-      if (!mounted) return;
-      setState(() => _rates = rows);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = e.toString());
-    } finally {
-      if (!mounted) return;
-      setState(() => _loading = false);
-    }
-  }
-
-  Widget _buildEmptyOrError({required bool isRatesTab}) {
-    final message =
-        _error != null
-            ? ErrorPresenter.present(_error!)
-            : isRatesTab
-            ? 'No rates available yet. Ingest official rates from backend.'
-            : 'No active listings found.';
-
-    final actionLabel = _error != null ? 'Retry' : 'Refresh';
-
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_error != null)
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Colors.red.shade400,
-            ),
-          if (_error != null) const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                onPressed: _loading ? null : _load,
-                icon: const Icon(Icons.refresh),
-                label: Text(actionLabel),
-              ),
-              if (_error != null) ...[
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Go Back'),
+                                    )
+                                    : const Icon(Icons.add),
+                            label: const Text('Create Listing'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  crossFadeState:
+                      _showCreateListingForm
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                  duration: const Duration(milliseconds: 200),
+                ),
+              ],
                 ),
               ],
             ],
@@ -328,7 +221,8 @@ class _RatesTabState extends State<_RatesTab> {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '${row.cropName} - ${row.marketName}',
@@ -440,7 +334,6 @@ class _RatesTabState extends State<_RatesTab> {
       ),
     );
   }
-
 }
 
 class _MarketplaceTab extends StatefulWidget {
@@ -452,8 +345,11 @@ class _MarketplaceTab extends StatefulWidget {
 
 class _MarketplaceTabState extends State<_MarketplaceTab> {
   final _service = MarketApiService();
-  final _cropFilter = TextEditingController();
-  final _districtFilter = TextEditingController();
+  bool _showCreateListingForm = false;
+  String? _selectedCropFilter;
+  String? _selectedDistrictFilter;
+  List<String> _cropOptions = const [];
+  List<String> _districtOptions = const [];
 
   final _cropController = TextEditingController();
   final _districtController = TextEditingController();
@@ -465,6 +361,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   String? _error;
   List<ListingDto> _rows = const [];
   final List<XFile> _selectedImages = [];
+  final Map<String, int> _unreadCounts = <String, int>{};
 
   @override
   void initState() {
@@ -474,8 +371,6 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
 
   @override
   void dispose() {
-    _cropFilter.dispose();
-    _districtFilter.dispose();
     _cropController.dispose();
     _districtController.dispose();
     _qtyController.dispose();
@@ -495,9 +390,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     for (final xfile in picked) {
       final fileSize = await xfile.length();
       if (fileSize > maxFileSizeBytes) {
-        invalidImages.add(
-          '${xfile.name} (${_formatFileSize(fileSize)})',
-        );
+        invalidImages.add('${xfile.name} (${_formatFileSize(fileSize)})');
       }
     }
 
@@ -530,11 +423,28 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     });
     try {
       final data = await _service.fetchListings(
-        crop: _cropFilter.text,
-        district: _districtFilter.text,
+        crop: _selectedCropFilter ?? '',
+        district: _selectedDistrictFilter ?? '',
       );
       if (!mounted) return;
-      setState(() => _rows = data);
+      setState(() {
+        _rows = data;
+        _cropOptions = _buildUniqueOptions(data.map((row) => row.cropName));
+        _districtOptions = _buildUniqueOptions(data.map((row) => row.district));
+      });
+      
+      // Fetch unread counts for each listing
+      _unreadCounts.clear();
+      for (final listing in data) {
+        try {
+          final count = await _service.getUnreadCount(listing.id);
+          if (mounted) {
+            setState(() => _unreadCounts[listing.id] = count);
+          }
+        } catch (e) {
+          // ignore errors for individual unread count fetches
+        }
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString());
@@ -544,9 +454,21 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     }
   }
 
+  List<String> _buildUniqueOptions(Iterable<String> values) {
+    final options = values
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toSet()
+        .toList();
+    options.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return options;
+  }
+
   Widget _buildEmptyOrError() {
     final message =
-        _error != null ? ErrorPresenter.present(_error!) : 'No active listings found.';
+        _error != null
+            ? ErrorPresenter.present(_error!)
+            : 'No active listings found.';
     final actionLabel = _error != null ? 'Retry' : 'Refresh';
 
     return Center(
@@ -554,11 +476,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_error != null)
-            Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Colors.red.shade400,
-            ),
+            Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
           if (_error != null) const SizedBox(height: 12),
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 12),
@@ -663,9 +581,9 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<int> _getTotalImageSize() async {
@@ -767,6 +685,119 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  Future<void> _messageSellerDialog(ListingDto row) async {
+    final messageController = TextEditingController();
+    final service = _service;
+
+    final sent = await showModalBottomSheet<bool>(
+      context: context,
+      builder:
+          (_) => Padding(
+            padding: MediaQuery.of(context).viewInsets,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Message Seller - ${row.cropName}',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FutureBuilder<Map<String, dynamic>>(
+                      future: service.fetchUserProfileByUid(row.sellerUid),
+                      builder: (context, snap) {
+                        if (snap.connectionState == ConnectionState.waiting) {
+                          return const SizedBox.shrink();
+                        }
+                        if (!snap.hasData) {
+                          return const SizedBox.shrink();
+                        }
+                        final prof = snap.data!;
+                        return Column(
+                          children: [
+                            ListTile(
+                              leading:
+                                  prof['photoUrl'] != null &&
+                                          prof['photoUrl'].toString().isNotEmpty
+                                      ? CircleAvatar(
+                                        backgroundImage: NetworkImage(
+                                          prof['photoUrl'],
+                                        ),
+                                      )
+                                      : const CircleAvatar(
+                                        child: Icon(Icons.person),
+                                      ),
+                              title: Text(prof['displayName'] ?? 'Seller'),
+                              subtitle: Text(prof['phoneNumber'] ?? ''),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                        );
+                      },
+                    ),
+                    TextField(
+                      controller: messageController,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Message',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('Send'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      isScrollControlled: true,
+    );
+
+    if (sent != true) return;
+    final text = messageController.text.trim();
+    if (text.isEmpty) {
+      if (!mounted) return;
+      _showError('Please enter a message');
+      return;
+    }
+
+    try {
+      await service.sendMessage(
+        message: text,
+        listingId: row.id,
+        toUid: row.sellerUid,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Message sent')));
+    } catch (e) {
+      if (!mounted) return;
+      _showError(ErrorPresenter.present(e));
     }
   }
 
@@ -967,40 +998,32 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final row = _rows[index];
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 3,
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (row.imageUrls.isNotEmpty)
-                                  ClipRRect(
+                    final unreadCount = _unreadCounts[row.id] ?? 0;
+                    return InkWell(
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ListingDetailScreen(listing: row))),
+                      child: Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 3,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              row.imageUrls.isNotEmpty
+                                  ? ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: Image.network(
                                       row.imageUrls.first,
-                                      width: 60,
-                                      height: 60,
+                                      width: 64,
+                                      height: 64,
                                       fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          Container(
-                                            width: 60,
-                                            height: 60,
-                                            color: Colors.grey.shade200,
-                                            child: const Icon(Icons.image),
-                                          ),
                                     ),
                                   )
-                                else
-                                  Container(
-                                    width: 60,
-                                    height: 60,
+                                  : Container(
+                                    width: 64,
+                                    height: 64,
                                     decoration: BoxDecoration(
                                       color: Colors.green.shade100,
                                       borderRadius: BorderRadius.circular(8),
@@ -1010,79 +1033,87 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                       color: Colors.green.shade700,
                                     ),
                                   ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${row.cropName} (${row.qualityGrade})',
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        row.district,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Qty: ${row.quantity.toStringAsFixed(0)} ${row.unit}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Divider(height: 1, color: Colors.grey.shade300),
-                            const SizedBox(height: 12),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Asking Price',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey.shade600,
+                                      '${row.cropName} • ${row.qualityGrade}',
+                                      style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'PKR ${row.askingPrice.toStringAsFixed(0)}',
+                                      row.district,
                                       style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: Colors.green.shade700,
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700,
                                       ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Qty: ${row.quantity.toStringAsFixed(0)} ${row.unit}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        if (unreadCount > 0)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.shade100,
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              '$unreadCount unread',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.red.shade900,
+                                              ),
+                                            ),
+                                          ),
+                                        const Spacer(),
+                                        Text(
+                                          'PKR ${row.askingPrice.toStringAsFixed(0)}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.green.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Wrap(
+                                      spacing: 10,
+                                      runSpacing: 10,
+                                      alignment: WrapAlignment.end,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () => _offerDialog(row),
+                                          child: const Text('Offer'),
+                                        ),
+                                        OutlinedButton(
+                                          onPressed: () => _messageSellerDialog(row),
+                                          child: const Text('Message'),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                ElevatedButton.icon(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green.shade700,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  onPressed: () => _offerDialog(row),
-                                  icon: const Icon(Icons.local_offer, size: 18),
-                                  label: const Text('Make Offer'),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );

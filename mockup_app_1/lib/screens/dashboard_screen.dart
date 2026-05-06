@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/tip_card.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:mockup_app/screens/profile_screen.dart';
 import 'package:mockup_app/services/weather_service.dart'; // Import WeatherService
+import 'package:mockup_app/services/connectivity_service.dart';
 import 'package:mockup_app/screens/location_screen.dart';
 import 'package:mockup_app/screens/detailed_forecast_screen.dart';
 import 'package:mockup_app/screens/alerts_screen.dart';
@@ -21,11 +23,12 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  String _savedAddress = 'Loading...';
+  String _locationName = 'Loading...';
   double? _latitude;
   double? _longitude;
   Future<CurrentWeather?>? _currentWeatherFuture;
   Future<List<DailyForecast>>? _todayForecastFuture;
+  bool _backendUnreachable = false;
   final PageController _tipsPageController = PageController(
     viewportFraction: 0.78,
   );
@@ -40,7 +43,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'delayFertilizer',
     'harvestEarly',
   ];
-  static const Duration _alertInterval = Duration(minutes: 60);
 
   Icon _buildWeatherIcon(String iconUrl, {int? cloudCover}) {
     // Extract code like "10d" or "01n" from the OpenWeather icon URL.
@@ -178,51 +180,118 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _loadDashboardData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      setState(() {
-        _savedAddress = 'No location set';
-        _currentWeatherFuture = Future.value(null);
-        _todayForecastFuture = Future.value(<DailyForecast>[]);
-      });
+      if (mounted) {
+        setState(() {
+          _locationName = 'No location set';
+          _currentWeatherFuture = Future.value(null);
+          _todayForecastFuture = Future.value(<DailyForecast>[]);
+          _backendUnreachable = false;
+        });
+      }
       return;
     }
 
     try {
+      // Check backend connectivity first
+      final connectivityService = ConnectivityService();
+      final isBackendHealthy = await connectivityService.checkBackendHealth();
+
+      if (!isBackendHealthy) {
+        // Try to load from cache (SharedPreferences)
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final lat = prefs.getDouble('last_latitude');
+          final lng = prefs.getDouble('last_longitude');
+          final address = prefs.getString('last_address');
+
+          _latitude = lat;
+          _longitude = lng;
+          _locationName = address ?? 'No location set';
+        } catch (_) {
+          _locationName = 'No location set';
+          _latitude = null;
+          _longitude = null;
+        }
+
+        if (mounted) {
+          setState(() {
+            _backendUnreachable = true;
+            // Keep FutureBuilder stable; unreachable state is handled by _backendUnreachable UI branch.
+            _currentWeatherFuture = Future.value(null);
+            _todayForecastFuture = Future.value(<DailyForecast>[]);
+          });
+        }
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          _backendUnreachable = false;
+        });
+      }
+
       final profile = await FirebaseService().getUserByUid(user.uid);
-      _savedAddress = profile?['address'] as String? ?? 'No location set';
+      final address = profile?['address'] as String?;
       _latitude = (profile?['lat'] as num?)?.toDouble();
       _longitude = (profile?['lon'] as num?)?.toDouble();
+      _locationName =
+          address?.trim().isNotEmpty == true
+              ? address!.trim()
+              : 'No location set';
+
+      // If backend profile has no location yet, fall back to last local selection.
+      if (_latitude == null || _longitude == null) {
+        final prefs = await SharedPreferences.getInstance();
+        _latitude ??= prefs.getDouble('last_latitude');
+        _longitude ??= prefs.getDouble('last_longitude');
+        final cachedAddress = prefs.getString('last_address');
+        if ((_locationName == 'No location set' ||
+                _locationName.trim().isEmpty) &&
+            cachedAddress != null &&
+            cachedAddress.trim().isNotEmpty) {
+          _locationName = cachedAddress.trim();
+        }
+      }
 
       final service = WeatherService();
-      final fetch = service.fetchWeatherData();
+      final fetch =
+          _latitude != null && _longitude != null
+              ? service.fetchWeatherData(_latitude, _longitude)
+              : service.fetchWeatherData();
       fetch.then(_processAlertsFromData).catchError((_) {});
       _currentWeatherFuture = fetch.then(
-        (data) => CurrentWeather.fromJson(data['current'] as Map<String, dynamic>? ?? {}),
+        (data) => CurrentWeather.fromJson(
+          data['current'] as Map<String, dynamic>? ?? {},
+        ),
       );
       _todayForecastFuture = fetch.then((data) {
         final daily = data['forecast']?['daily'] as List<dynamic>?;
-        if (daily != null && daily.isNotEmpty && daily.first is Map<String, dynamic>) {
-          return [
-            DailyForecast.fromJson(
-              daily.first as Map<String, dynamic>,
-            ),
-          ];
+        if (daily != null && daily.isNotEmpty) {
+          final first = daily.first;
+          if (first is DailyForecast) {
+            return [first];
+          }
+          if (first is Map<String, dynamic>) {
+            return [DailyForecast.fromJson(first)];
+          }
+          if (first is Map) {
+            return [DailyForecast.fromJson(Map<String, dynamic>.from(first))];
+          }
         }
         return <DailyForecast>[];
       });
-      if (_latitude == null || _longitude == null) {
-        _currentWeatherFuture = Future.value(null);
-        _todayForecastFuture = Future.value(<DailyForecast>[]);
-      }
-
       if (mounted) {
         setState(() {});
       }
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _savedAddress = 'No location set';
+        // Keep last known local location when backend calls fail.
+        _locationName =
+            _locationName.trim().isNotEmpty ? _locationName : 'No location set';
         _currentWeatherFuture = Future.value(null);
         _todayForecastFuture = Future.value(<DailyForecast>[]);
+        _backendUnreachable = true;
       });
     }
   }
@@ -232,33 +301,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final current =
         data['current'] is Map<String, dynamic>
-            ? CurrentWeather.fromJson(
-              data['current'] as Map<String, dynamic>,
-            )
+            ? CurrentWeather.fromJson(data['current'] as Map<String, dynamic>)
             : null;
     DailyForecast? todayForecast;
     final daily = data['forecast']?['daily'] as List<dynamic>?;
-    if (daily != null && daily.isNotEmpty && daily.first is Map<String, dynamic>) {
+    if (daily != null &&
+        daily.isNotEmpty &&
+        daily.first is Map<String, dynamic>) {
       todayForecast = DailyForecast.fromJson(
         daily.first as Map<String, dynamic>,
       );
     }
 
     await alertService.processWeather(current, todayForecast);
-  }
-
-  void _startAlertTimerIfNeeded() {
-    if (_alertTimer != null) return;
-    if (_latitude == null || _longitude == null) return;
-    _alertTimer = Timer.periodic(_alertInterval, (_) => _runAlertCheck());
-    _runAlertCheck();
-  }
-
-  Future<void> _runAlertCheck() async {
-    try {
-      final data = await WeatherService().fetchWeatherData();
-      await _processAlertsFromData(data);
-    } catch (_) {}
   }
 
   @override
@@ -270,13 +325,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(24),
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.white,
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.green.shade100,
+                  backgroundImage: FirebaseAuth.instance.currentUser?.photoURL != null &&
+                          FirebaseAuth.instance.currentUser!.photoURL!.isNotEmpty
+                      ? NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!)
+                      : null,
+                  child: FirebaseAuth.instance.currentUser?.photoURL == null ||
+                          FirebaseAuth.instance.currentUser!.photoURL!.isEmpty
+                      ? Text(
+                          (FirebaseAuth.instance.currentUser?.displayName?.trim().isNotEmpty == true
+                                  ? FirebaseAuth.instance.currentUser!.displayName!.trim()[0]
+                                  : (FirebaseAuth.instance.currentUser?.email?.trim().isNotEmpty == true
+                                      ? FirebaseAuth.instance.currentUser!.email!.trim()[0]
+                                      : 'U'))
+                              .toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.green.shade800,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -318,10 +404,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  Navigator.of(context).push(
+                onTap: () async {
+                  await Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const LocationScreen()),
                   );
+                  if (mounted) {
+                    await _loadDashboardData();
+                  }
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -351,7 +440,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Padding(
                         padding: const EdgeInsets.only(left: 32.0),
                         child: Text(
-                          _savedAddress,
+                          _locationName,
                           style: TextStyle(
                             color: Colors.grey.shade700,
                             fontSize: 16,
@@ -368,6 +457,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
+                  } else if (_backendUnreachable) {
+                    return Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 4,
+                      color: Colors.red.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.cloud_off,
+                              size: 48,
+                              color: Colors.red.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Backend Unreachable',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red.shade700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Unable to connect to the server. Please check your network and try again.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.red.shade600),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                _loadDashboardData();
+                              },
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   } else if (snapshot.hasError) {
                     return Card(
                       shape: RoundedRectangleBorder(
@@ -376,9 +511,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       elevation: 4,
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
-                        child: Text(
-                          AppLocalizations.of(context)!.errorFetchingWeather,
-                          style: const TextStyle(color: Colors.red),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 48,
+                              color: Colors.orange.shade400,
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              AppLocalizations.of(
+                                context,
+                              )!.errorFetchingWeather,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                _loadDashboardData();
+                              },
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry'),
+                            ),
+                          ],
                         ),
                       ),
                     );

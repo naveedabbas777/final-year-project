@@ -10,7 +10,8 @@ listingsRouter.get('/', async (req, res) => {
   const {
     crop,
     district,
-    status = 'open',
+    sellerUid,
+    status,
     sort = 'new',
     limit = 50,
   } = req.query;
@@ -20,7 +21,10 @@ listingsRouter.get('/', async (req, res) => {
   if (typeof district === 'string' && district.trim()) {
     query.district = district.trim();
   }
-  if (typeof status === 'string' && status.trim()) query.status = status.trim();
+  if (typeof sellerUid === 'string' && sellerUid.trim()) {
+    query.sellerUid = sellerUid.trim();
+  }
+  if (typeof status === 'string' && status.trim() && status.trim() !== 'all') query.status = status.trim();
 
   const order = sort === 'price_asc' ? { askingPrice: 1 } : sort === 'price_desc' ? { askingPrice: -1 } : { createdAt: -1 };
 

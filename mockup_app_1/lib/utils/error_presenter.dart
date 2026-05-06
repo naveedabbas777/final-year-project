@@ -142,7 +142,9 @@ class ErrorPresenter {
       final start = message.indexOf('{');
       final end = message.lastIndexOf('}');
       if (start > -1 && end > -1) {
-        final json = jsonDecode(message.substring(start, end + 1)) as Map<String, dynamic>;
+        final json =
+            jsonDecode(message.substring(start, end + 1))
+                as Map<String, dynamic>;
         if (json['error'] is String) {
           return json['error'] as String;
         }

@@ -69,13 +69,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _displayName() {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
-    return _data?['displayName'] ?? user?.displayName ?? 'User';
+    return (_data?['displayName'] ?? _data?['name'] ?? user?.displayName ?? user?.email ?? 'User').toString();
+  }
+
+  String _userName() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final user = auth.user;
+    final email = _emailAddress();
+    if (email.isNotEmpty) {
+      return email.split('@').first;
+    }
+    return (_data?['name'] ?? _data?['displayName'] ?? user?.displayName ?? user?.uid ?? 'User').toString();
+  }
+
+  String _emailAddress() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final user = auth.user;
+    return (_data?['email'] ?? user?.email ?? '').toString();
   }
 
   String _phoneNumber() {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
-    return _data?['phoneNumber'] ?? user?.phoneNumber ?? '';
+    return (_data?['phoneNumber'] ?? _data?['phone'] ?? user?.phoneNumber ?? '').toString();
   }
 
   String? _formatCreatedAt() {
@@ -88,8 +104,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
       dt = created.toDate();
     else if (created is int)
       dt = DateTime.fromMillisecondsSinceEpoch(created);
+    else if (created is String)
+      dt = DateTime.tryParse(created);
     if (dt == null) return null;
     return DateFormat.yMMMMd().add_jm().format(dt);
+  }
+
+  String _accountType() {
+    final role = (_data?['role'] ?? '').toString().trim();
+    if (role.isNotEmpty) return role[0].toUpperCase() + role.substring(1);
+    return 'User';
+  }
+
+  String _profileInitial() {
+    final name = _displayName().trim();
+    if (name.isNotEmpty) return name[0].toUpperCase();
+    final email = _emailAddress().trim();
+    if (email.isNotEmpty) return email[0].toUpperCase();
+    return 'U';
   }
 
   String? _locationSummary() {
@@ -196,29 +228,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (bytes > maxBytes) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Image too large (${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB). Max 5 MB.')),
-      );
-      return;
-    }
-
-    final cloudName = AppConfig.cloudinaryCloudName;
-    final preset = AppConfig.cloudinaryUploadPreset;
-    if (cloudName.isEmpty || preset.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME and CLOUDINARY_UPLOAD_PRESET.')),
+        SnackBar(
+          content: Text(
+            'Image too large (${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB). Max 5 MB.',
+          ),
+        ),
       );
       return;
     }
 
     setState(() => _uploading = true);
     try {
-      final url = await RetryHelper.retry<String>(() => _uploadToCloudinary(picked.path, cloudName, preset),
-          maxAttempts: 3, onRetry: (attempt, delay) {
-        if (mounted) {
-          debugPrint('Retry upload attempt $attempt after $delay');
-        }
-      });
+      final url = await RetryHelper.retry<String>(
+        () => _uploadProfileImage(picked.path),
+        maxAttempts: 3,
+        onRetry: (attempt, delay) {
+          if (mounted) {
+            debugPrint('Retry upload attempt $attempt after $delay');
+          }
+        },
+      );
 
       if (url.isNotEmpty) {
         final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -226,71 +255,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (uidToUpdate != null) {
           await _svc.updateUserProfile(uidToUpdate, photoUrl: url);
           await _loadProfile();
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile photo updated')));
+          if (mounted)
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Profile photo updated')),
+            );
         }
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Upload failed')));
+        if (mounted)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Upload failed')));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorPresenter.present(e))));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(ErrorPresenter.present(e))));
     } finally {
       if (!mounted) return;
       setState(() => _uploading = false);
     }
   }
 
-  Future<String> _uploadToCloudinary(String filePath, String cloudName, String uploadPreset) async {
-    // Request signature from backend
+  Future<String> _uploadProfileImage(String filePath) async {
     final user = fb.FirebaseAuth.instance.currentUser;
     String? idToken;
     if (user != null) idToken = await user.getIdToken();
 
-    final signUri = Uri.parse('${AppConfig.apiBaseUrl}/api/uploads/cloudinary/sign');
-    final signResp = await http.post(
-      signUri,
-      headers: {
-        if (idToken != null) 'Authorization': 'Bearer $idToken',
-        'Content-Type': 'application/json',
-      },
-      body: json.encode({'folder': 'profiles'}),
-    ).timeout(const Duration(seconds: 10));
-
-    if (signResp.statusCode < 200 || signResp.statusCode >= 300) {
-      throw Exception('Failed to obtain upload signature (${signResp.statusCode})');
-    }
-
-    final signBody = json.decode(signResp.body) as Map<String, dynamic>;
-    final timestamp = signBody['timestamp']?.toString() ?? '';
-    final signature = signBody['signature'] ?? '';
-    final apiKey = signBody['apiKey'] ?? '';
-    final cloud = signBody['cloudName'] ?? cloudName;
-
-    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloud/image/upload');
+    final uri = Uri.parse('${AppConfig.apiBaseUrl}/api/uploads/profile-image');
     final request = http.MultipartRequest('POST', uri);
-    request.fields['api_key'] = apiKey;
-    request.fields['timestamp'] = timestamp;
-    request.fields['signature'] = signature;
-    request.fields['folder'] = 'profiles';
-    request.files.add(await http.MultipartFile.fromPath('file', filePath));
+    if (idToken != null) {
+      request.headers['Authorization'] = 'Bearer $idToken';
+    }
+    request.files.add(await http.MultipartFile.fromPath('image', filePath));
 
     final streamed = await request.send();
     final resp = await http.Response.fromStream(streamed);
     if (resp.statusCode < 200 || resp.statusCode >= 300) {
-      throw Exception('Cloudinary upload failed (${resp.statusCode})');
+      throw Exception('Profile image upload failed (${resp.statusCode})');
     }
 
     final body = json.decode(resp.body) as Map<String, dynamic>;
-    final url = body['secure_url'] as String? ?? body['url'] as String? ?? '';
+    final url = body['imageUrl'] as String? ?? '';
     return url;
   }
 
   @override
   Widget build(BuildContext context) {
     final name = _displayName();
+    final username = _userName();
+    final email = _emailAddress();
     final phone = _phoneNumber();
     final memberSince = _formatCreatedAt();
+    final accountType = _accountType();
     final location = _locationSummary();
-    final photoUrl = _data?['photoUrl'] as String? ?? Provider.of<AuthProvider>(context, listen: false).user?.photoURL;
+    final photoUrl =
+        _data?['photoUrl'] as String? ??
+        Provider.of<AuthProvider>(context, listen: false).user?.photoURL;
 
     return Scaffold(
       appBar: AppBar(
@@ -313,25 +334,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           CircleAvatar(
                             radius: 50,
                             backgroundColor: Colors.green.shade700,
-                            backgroundImage: photoUrl != null && photoUrl.isNotEmpty
-                                ? NetworkImage(photoUrl) as ImageProvider
-                                : null,
-                            child: photoUrl == null || photoUrl.isEmpty
-                                ? Text(
-                                    name.isNotEmpty ? name[0].toUpperCase() : 'U',
-                                    style: const TextStyle(
-                                      fontSize: 36,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  )
-                                : null,
+                            backgroundImage:
+                                photoUrl != null && photoUrl.isNotEmpty
+                                    ? NetworkImage(photoUrl) as ImageProvider
+                                    : null,
+                            child:
+                                photoUrl == null || photoUrl.isEmpty
+                                    ? Text(
+                                            _profileInitial(),
+                                      style: const TextStyle(
+                                        fontSize: 36,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                    : null,
                           ),
                           Positioned(
                             right: 0,
                             bottom: 0,
                             child: InkWell(
-                              onTap: _uploading ? null : _pickAndUploadProfileImage,
+                              onTap:
+                                  _uploading
+                                      ? null
+                                      : _pickAndUploadProfileImage,
                               child: Container(
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
@@ -340,12 +366,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.1),
                                       blurRadius: 4,
-                                    )
+                                    ),
                                   ],
                                 ),
                                 padding: const EdgeInsets.all(6),
                                 child: Icon(
-                                  _uploading ? Icons.autorenew : Icons.camera_alt_outlined,
+                                  _uploading
+                                      ? Icons.autorenew
+                                      : Icons.camera_alt_outlined,
                                   size: 18,
                                   color: Colors.green.shade700,
                                 ),
@@ -362,36 +390,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       elevation: 2,
-                      child: Column(
-                        children: [
-                          ListTile(
-                            leading: const Icon(Icons.person),
-                            title: const Text('Full name'),
-                            subtitle: Text(name),
-                          ),
-                          const Divider(height: 1),
-                          ListTile(
-                            leading: const Icon(Icons.phone_iphone),
-                            title: const Text('Phone'),
-                            subtitle: Text(phone),
-                          ),
-                          if (location != null) ...[
-                            const Divider(height: 1),
-                            ListTile(
-                              leading: const Icon(Icons.location_on),
-                              title: const Text('Location'),
-                              subtitle: Text(location),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Account Summary',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.green.shade800,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        accountType,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.green.shade700,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (email.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(color: Colors.green.shade200),
+                                    ),
+                                    child: Text(
+                                      'Verified account',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.green.shade800,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            _ProfileFieldTile(
+                              icon: Icons.person,
+                              label: 'Full name',
+                              value: name,
+                            ),
+                            _ProfileFieldTile(
+                              icon: Icons.badge_outlined,
+                              label: 'Username',
+                              value: username,
+                            ),
+                            _ProfileFieldTile(
+                              icon: Icons.email_outlined,
+                              label: 'Email',
+                              value: email.isEmpty ? 'Not available' : email,
+                            ),
+                            _ProfileFieldTile(
+                              icon: Icons.phone_iphone,
+                              label: 'Contact',
+                              value: phone.isEmpty ? 'Not available' : phone,
+                            ),
+                            if (location != null)
+                              _ProfileFieldTile(
+                                icon: Icons.location_on_outlined,
+                                label: 'Location',
+                                value: location,
+                              ),
+                            _ProfileFieldTile(
+                              icon: Icons.date_range,
+                              label: 'Joining date',
+                              value: memberSince ?? 'Not available',
                             ),
                           ],
-                          if (memberSince != null) ...[
-                            const Divider(height: 1),
-                            ListTile(
-                              leading: const Icon(Icons.date_range),
-                              title: const Text('Joined'),
-                              subtitle: Text(memberSince),
-                            ),
-                          ],
-                        ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -423,6 +505,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
               ),
+    );
+  }
+}
+
+class _ProfileFieldTile extends StatelessWidget {
+  const _ProfileFieldTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: Colors.green.shade700),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

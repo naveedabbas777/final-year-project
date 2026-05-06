@@ -8,7 +8,6 @@ import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 import '../utils/retry_helper.dart';
-import '../utils/error_presenter.dart';
 
 class ApiClient {
   ApiClient({http.Client? httpClient}) : _http = httpClient ?? http.Client();
@@ -24,8 +23,15 @@ class ApiClient {
     return Uri.parse('$base$path').replace(queryParameters: query);
   }
 
-  Future<Map<String, String>> _headers({bool auth = false}) async {
-    final headers = <String, String>{'Content-Type': 'application/json'};
+  Future<Map<String, String>> _headers({
+    bool auth = false,
+    bool includeContentType = true,
+  }) async {
+    final headers = <String, String>{};
+
+    if (includeContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     if (auth) {
       final user = FirebaseAuth.instance.currentUser;
@@ -186,7 +192,7 @@ class ApiClient {
     bool auth = false,
   }) async {
     final req = http.MultipartRequest('POST', _uri(path));
-    req.headers.addAll(await _headers(auth: auth));
+    req.headers.addAll(await _headers(auth: auth, includeContentType: false));
     req.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
 
     final streamed = await req.send().timeout(_requestTimeout);

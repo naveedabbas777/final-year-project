@@ -33,8 +33,8 @@ function toOneCallCurrent(current) {
     wind_deg: current?.wind?.deg ?? null,
     humidity: current?.main?.humidity ?? null,
     clouds: current?.clouds?.all ?? null,
-    rain: current?.rain,
-    snow: current?.snow,
+    rain: current?.rain ?? null,
+    snow: current?.snow ?? null,
     sunrise: current?.sys?.sunrise ?? null,
     sunset: current?.sys?.sunset ?? null,
   };
@@ -262,6 +262,21 @@ function normalizeWeatherCache(data) {
   };
 }
 
+function removeUndefinedValues(obj) {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return obj.map((item) => removeUndefinedValues(item)).filter((item) => item !== undefined);
+  }
+  return Object.entries(obj).reduce((acc, [key, value]) => {
+    const cleaned = removeUndefinedValues(value);
+    if (cleaned !== undefined) {
+      acc[key] = cleaned;
+    }
+    return acc;
+  }, {});
+}
+
 function hasSameDayAlertToday(alerts, type) {
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -346,7 +361,7 @@ export async function refreshWeatherForUser(userDoc, { force = false } = {}) {
     derived: payload.derived,
   };
 
-  await cacheRef.set(cacheData, { merge: true });
+  await cacheRef.set(removeUndefinedValues(cacheData), { merge: true });
   return normalizeWeatherCache({
     id: cacheRef.id,
     userId: userDoc.firebaseUid,

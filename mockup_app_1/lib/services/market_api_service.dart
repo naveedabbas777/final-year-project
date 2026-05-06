@@ -1,11 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
 
 import 'api_client.dart';
 import '../utils/json_response.dart';
-import '../config/app_config.dart';
 import '../utils/retry_helper.dart';
 
 class UserProfileDto {
@@ -94,6 +90,7 @@ class ListingDto {
     required this.district,
     required this.sellerUid,
     required this.status,
+    required this.description,
     required this.createdAt,
     required this.imageUrls,
   });
@@ -107,6 +104,7 @@ class ListingDto {
   final String district;
   final String sellerUid;
   final String status;
+  final String description;
   final DateTime createdAt;
   final List<String> imageUrls;
 
@@ -124,6 +122,7 @@ class ListingDto {
       district: toStringOrEmpty(json['district']),
       sellerUid: toStringOrEmpty(json['sellerUid']),
       status: toStringOrEmpty(json['status']),
+      description: toStringOrEmpty(json['description']),
       createdAt: toDateTimeOrNow(json['createdAt']),
       imageUrls: toStringListOrEmpty(json['imageUrls']),
     );
@@ -252,6 +251,7 @@ class MarketApiService {
   Future<List<ListingDto>> fetchListings({
     String? crop,
     String? district,
+    String? sellerUid,
   }) async {
     if (kDebugMode) {
       debugPrint(
@@ -263,6 +263,9 @@ class MarketApiService {
     if (crop != null && crop.trim().isNotEmpty) query['crop'] = crop.trim();
     if (district != null && district.trim().isNotEmpty) {
       query['district'] = district.trim();
+    }
+    if (sellerUid != null && sellerUid.trim().isNotEmpty) {
+      query['sellerUid'] = sellerUid.trim();
     }
 
     try {
@@ -347,48 +350,32 @@ class MarketApiService {
   }
 
   Future<String> uploadListingImage(String filePath) async {
-    // Request a server-signed Cloudinary upload signature
-    final signResp = await _client.post(
-      '/api/uploads/cloudinary/sign',
-      auth: true,
-      body: {'folder': 'listings'},
+    return await RetryHelper.retry<String>(
+      () async {
+        final resp = await _client.uploadFile(
+          '/api/uploads/listing-image',
+          fieldName: 'image',
+          filePath: filePath,
+          auth: true,
+        );
+        if (resp is! Map<String, dynamic>) {
+          throw Exception('Invalid upload response from server');
+        }
+
+        final url = resp['imageUrl']?.toString() ?? '';
+        if (url.isEmpty) throw Exception('Upload did not return an image URL');
+        return url;
+      },
+      maxAttempts: 3,
+      initialDelayMs: 500,
+      onRetry: (attempt, delay) {
+        if (kDebugMode) {
+          debugPrint(
+            '[MarketApi] Retry upload attempt $attempt after ${delay.inMilliseconds}ms',
+          );
+        }
+      },
     );
-
-    if (signResp is! Map<String, dynamic>) {
-      throw Exception('Invalid signing response from server');
-    }
-
-    final timestamp = signResp['timestamp']?.toString() ?? '';
-    final signature = signResp['signature']?.toString() ?? '';
-    final apiKey = signResp['apiKey']?.toString() ?? '';
-    final cloudName = signResp['cloudName']?.toString() ?? AppConfig.cloudinaryCloudName;
-
-    if (timestamp.isEmpty || signature.isEmpty || apiKey.isEmpty || cloudName.isEmpty) {
-      throw Exception('Missing Cloudinary signing data');
-    }
-
-    return await RetryHelper.retry<String>(() async {
-      final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
-      final req = http.MultipartRequest('POST', uri);
-      req.fields['api_key'] = apiKey;
-      req.fields['timestamp'] = timestamp;
-      req.fields['signature'] = signature;
-      req.fields['folder'] = 'listings';
-      req.files.add(await http.MultipartFile.fromPath('file', filePath));
-
-      final streamed = await req.send();
-      final resp = await http.Response.fromStream(streamed);
-      if (resp.statusCode < 200 || resp.statusCode >= 300) {
-        throw Exception('Cloudinary upload failed (${resp.statusCode})');
-      }
-
-      final body = json.decode(resp.body) as Map<String, dynamic>;
-      final url = body['secure_url'] as String? ?? body['url'] as String? ?? '';
-      if (url.isEmpty) throw Exception('Cloudinary did not return a URL');
-      return url;
-    }, maxAttempts: 3, initialDelayMs: 500, onRetry: (attempt, delay) {
-      if (kDebugMode) debugPrint('[MarketApi] Retry upload attempt $attempt after ${delay.inMilliseconds}ms');
-    });
   }
 
   Future<List<OfferDto>> fetchMyOffers() async {
@@ -421,6 +408,98 @@ class MarketApiService {
     return asMapList(data).map(OrderDto.fromJson).toList();
   }
 
+  // Messaging: send message to seller or generic message
+  Future<void> sendMessage({
+    required String message,
+    String? listingId,
+    String? toUid,
+  }) async {
+    await _client.post(
+      '/api/messages',
+      auth: true,
+      body: {
+        'message': message,
+        if (listingId != null) 'listingId': listingId,
+        if (toUid != null) 'toUid': toUid,
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMessagesForListing(
+    String listingId, {
+    int limit = 100,
+  }) async {
+    final data = await _client.get(
+      '/api/messages/listing/$listingId',
+      query: {'limit': limit.toString()},
+      auth: true,
+    );
+    if (data is! List<dynamic>) return const [];
+    return asMapList(data);
+  }
+
+  Future<void> markListingMessagesRead(String listingId) async {
+    await _client.post('/api/messages/listing/$listingId/read', auth: true);
+  }
+
+  Future<void> setTyping({
+    required String listingId,
+    required bool isTyping,
+  }) async {
+    await _client.post(
+      '/api/messages/typing',
+      auth: true,
+      body: {'listingId': listingId, 'isTyping': isTyping},
+    );
+  }
+
+  // User profiles and ratings
+  Future<Map<String, dynamic>> fetchUserProfileByUid(String uid) async {
+    final data = await _client.get('/api/users/$uid');
+    if (data is! Map<String, dynamic>) throw Exception('Invalid user profile');
+    return Map<String, dynamic>.from(data);
+  }
+
+  Future<void> rateUser({
+    required String targetUid,
+    required int score,
+    String? comment,
+  }) async {
+    await _client.post(
+      '/api/ratings',
+      auth: true,
+      body: {'targetUid': targetUid, 'score': score, 'comment': comment ?? ''},
+    );
+  }
+
+  Future<Map<String, dynamic>> fetchUserRatings(String uid) async {
+    final data = await _client.get('/api/ratings/$uid');
+    if (data is! Map<String, dynamic>) {
+      return {
+        'stats': {'avgScore': 0, 'count': 0},
+        'recent': [],
+      };
+    }
+    return Map<String, dynamic>.from(data);
+  }
+
+  // Device token registration for push notifications
+  Future<void> registerDeviceToken(String token) async {
+    await _client.post(
+      '/api/users/me/fcm-token',
+      auth: true,
+      body: {'token': token},
+    );
+  }
+
+  Future<void> unregisterDeviceToken(String token) async {
+    await _client.post(
+      '/api/users/me/fcm-token/remove',
+      auth: true,
+      body: {'token': token},
+    );
+  }
+
   Future<void> updateOrderStatus({
     required String orderId,
     required String status,
@@ -439,4 +518,40 @@ class MarketApiService {
     }
     return 'Ingestion triggered';
   }
+
+  // Presence: update user online/offline status
+  Future<void> setPresence({required bool isOnline}) async {
+    await _client.post(
+      '/api/users/me/presence',
+      auth: true,
+      body: {'isOnline': isOnline},
+    );
+  }
+
+  // Presence: get user presence status
+  Future<Map<String, dynamic>> getPresence(String uid) async {
+    final data = await _client.get('/api/users/$uid/presence');
+    if (data is! Map<String, dynamic>) {
+      return {'uid': uid, 'isOnline': false, 'lastSeen': null};
+    }
+    return Map<String, dynamic>.from(data);
+  }
+
+  // Unread messages: get count of unread messages for a listing
+  Future<int> getUnreadCount(String listingId) async {
+    try {
+      final data = await _client.get(
+        '/api/messages/listing/$listingId/unread-count',
+        auth: true,
+      );
+      if (data is! Map<String, dynamic>) return 0;
+      return (data['unreadCount'] as int?) ?? 0;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[MarketApi] Error fetching unread count: $e');
+      }
+      return 0;
+    }
+  }
 }
+

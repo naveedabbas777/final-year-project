@@ -15,6 +15,7 @@ import { ordersRouter } from './routes/orders.routes.js';
 import { uploadsRouter } from './routes/uploads.routes.js';
 import { weatherRouter } from './routes/weather.routes.js';
 import { messagesRouter } from './routes/messages.routes.js';
+import { ratingsRouter } from './routes/ratings.routes.js';
 import { alertsRouter } from './routes/alerts.routes.js';
 import { configRouter } from './routes/config.routes.js';
 
@@ -58,6 +59,7 @@ export function createApp() {
   app.use('/api/uploads', uploadsRouter);
   app.use('/api/weather', weatherRouter);
   app.use('/api/messages', messagesRouter);
+  app.use('/api/ratings', ratingsRouter);
   app.use('/api/alerts', alertsRouter);
   app.use('/api/config', configRouter);
 
