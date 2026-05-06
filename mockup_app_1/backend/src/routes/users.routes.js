@@ -115,6 +115,8 @@ usersRouter.patch('/me', requireAuth, attachDbUser, async (req, res) => {
     displayName,
     phone,
     phoneNumber,
+    photoUrl,
+    photo,
     district,
     province,
     address,
@@ -125,6 +127,7 @@ usersRouter.patch('/me', requireAuth, attachDbUser, async (req, res) => {
 
   const resolvedName = typeof name === 'string' ? name.trim() : typeof displayName === 'string' ? displayName.trim() : undefined;
   const resolvedPhone = typeof phone === 'string' ? phone.trim() : typeof phoneNumber === 'string' ? phoneNumber.trim() : undefined;
+  const resolvedPhotoUrl = typeof photoUrl === 'string' ? photoUrl.trim() : typeof photo === 'string' ? photo.trim() : undefined;
 
   if (typeof resolvedName === 'string') {
     req.dbUser.name = resolvedName;
@@ -133,6 +136,10 @@ usersRouter.patch('/me', requireAuth, attachDbUser, async (req, res) => {
   if (typeof resolvedPhone === 'string') {
     req.dbUser.phone = resolvedPhone;
     req.dbUser.phoneNumber = resolvedPhone;
+  }
+  if (typeof resolvedPhotoUrl === 'string' && resolvedPhotoUrl.length > 0) {
+    req.dbUser.photoUrl = resolvedPhotoUrl;
+    req.dbUser.photo = resolvedPhotoUrl;
   }
   if (typeof district === 'string') req.dbUser.district = district.trim();
   if (typeof province === 'string') req.dbUser.province = province.trim();
