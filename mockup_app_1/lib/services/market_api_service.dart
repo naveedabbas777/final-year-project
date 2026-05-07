@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
@@ -93,6 +94,8 @@ class ListingDto {
     required this.description,
     required this.createdAt,
     required this.imageUrls,
+    this.latitude,
+    this.longitude,
   });
 
   final String id;
@@ -107,6 +110,8 @@ class ListingDto {
   final String description;
   final DateTime createdAt;
   final List<String> imageUrls;
+  final double? latitude;
+  final double? longitude;
 
   factory ListingDto.fromJson(Map<String, dynamic> json) {
     return ListingDto(
@@ -125,6 +130,8 @@ class ListingDto {
       description: toStringOrEmpty(json['description']),
       createdAt: toDateTimeOrNow(json['createdAt']),
       imageUrls: toStringListOrEmpty(json['imageUrls']),
+      latitude: toDoubleOrNull(json['latitude']),
+      longitude: toDoubleOrNull(json['longitude']),
     );
   }
 }
@@ -295,6 +302,8 @@ class MarketApiService {
     String unit = '40kg',
     String description = '',
     List<String> imageUrls = const [],
+    double? latitude,
+    double? longitude,
   }) async {
     await _client.post(
       '/api/listings',
@@ -308,7 +317,41 @@ class MarketApiService {
         'unit': unit,
         'description': description,
         'imageUrls': imageUrls,
+        if (latitude != null) 'latitude': latitude,
+        if (longitude != null) 'longitude': longitude,
       },
+    );
+  }
+
+  Future<void> updateListing({
+    required String listingId,
+    String? cropName,
+    String? qualityGrade,
+    double? quantity,
+    String? unit,
+    double? askingPrice,
+    String? district,
+    String? description,
+    List<String>? imageUrls,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final body = <String, dynamic>{};
+    if (cropName != null) body['cropName'] = cropName;
+    if (qualityGrade != null) body['qualityGrade'] = qualityGrade;
+    if (quantity != null) body['quantity'] = quantity;
+    if (unit != null) body['unit'] = unit;
+    if (askingPrice != null) body['askingPrice'] = askingPrice;
+    if (district != null) body['district'] = district;
+    if (description != null) body['description'] = description;
+    if (imageUrls != null) body['imageUrls'] = imageUrls;
+    if (latitude != null) body['latitude'] = latitude;
+    if (longitude != null) body['longitude'] = longitude;
+
+    await _client.patch(
+      '/api/listings/$listingId',
+      auth: true,
+      body: body,
     );
   }
 
@@ -390,6 +433,11 @@ class MarketApiService {
     return asMapList(data).map(OfferDto.fromJson).toList();
   }
 
+  Future<List<OfferDto>> fetchIncomingOffersForListing(String listingId) async {
+    final rows = await fetchIncomingOffers();
+    return rows.where((offer) => offer.listingId == listingId).toList();
+  }
+
   Future<void> acceptOffer(String offerId) async {
     await _client.post('/api/offers/$offerId/accept', auth: true);
   }
@@ -455,7 +503,7 @@ class MarketApiService {
 
   // User profiles and ratings
   Future<Map<String, dynamic>> fetchUserProfileByUid(String uid) async {
-    final data = await _client.get('/api/users/$uid');
+    final data = await _client.get('/api/users/$uid', auth: true);
     if (data is! Map<String, dynamic>) throw Exception('Invalid user profile');
     return Map<String, dynamic>.from(data);
   }
@@ -511,6 +559,21 @@ class MarketApiService {
     );
   }
 
+  Future<void> updateListingStatus({
+    required String listingId,
+    required String status,
+  }) async {
+    await _client.patch(
+      '/api/listings/$listingId/status',
+      auth: true,
+      body: {'status': status},
+    );
+  }
+
+  Future<void> deleteListing(String listingId) async {
+    await _client.delete('/api/listings/$listingId', auth: true);
+  }
+
   Future<String> triggerOfficialRatesIngestion() async {
     final data = await _client.post('/api/rates/ingest/official', auth: true);
     if (data is Map<String, dynamic> && data['message'] != null) {
@@ -538,18 +601,21 @@ class MarketApiService {
   }
 
   // Unread messages: get count of unread messages for a listing
+  // Non-critical: returns 0 silently on error/timeout (including 403 if not participant)
   Future<int> getUnreadCount(String listingId) async {
     try {
       final data = await _client.get(
         '/api/messages/listing/$listingId/unread-count',
         auth: true,
+      ).timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => throw TimeoutException('Unread count request timed out'),
       );
       if (data is! Map<String, dynamic>) return 0;
       return (data['unreadCount'] as int?) ?? 0;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('[MarketApi] Error fetching unread count: $e');
-      }
+      // Silently return 0 on any error (timeout, 403, network, etc.)
+      // This prevents retries from blocking market screen rendering
       return 0;
     }
   }

@@ -37,20 +37,49 @@ const storage = multer.diskStorage({
   },
 });
 
+const allowedImageExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'];
+
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter(_req, file, cb) {
-    if (!file.mimetype.startsWith('image/')) {
-      cb(new Error('Only image uploads are allowed'));
+    // Check MIME type first
+    if (file.mimetype && file.mimetype.startsWith('image/')) {
+      cb(null, true);
       return;
     }
-    cb(null, true);
+    
+    // Fallback: check file extension
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedImageExts.includes(ext)) {
+      cb(null, true);
+      return;
+    }
+    
+    // If neither MIME type nor extension matches, reject
+    cb(new Error('Only image uploads are allowed (jpg, jpeg, png, gif, webp, bmp)'));
   },
 });
 
 function publicFileUrl(req, folder, filename) {
   return `${req.protocol}://${req.get('host')}/uploads/${folder}/${filename}`;
+}
+
+async function uploadFileToCloudinary(localPath, folder) {
+  const result = await cloudinary.uploader.upload(localPath, {
+    folder,
+    resource_type: 'image',
+    use_filename: true,
+    unique_filename: false,
+  });
+
+  try {
+    fs.unlinkSync(localPath);
+  } catch (_error) {
+    /* ignore cleanup failure */
+  }
+
+  return result;
 }
 
 // Server-side upload to Cloudinary for listings
@@ -78,19 +107,7 @@ uploadsRouter.post(
     }
 
     try {
-      const result = await cloudinary.uploader.upload(localPath, {
-        folder,
-        resource_type: 'image',
-        use_filename: true,
-        unique_filename: false,
-      });
-
-      // remove local file after upload
-      try {
-        fs.unlinkSync(localPath);
-      } catch (e) {
-        /* ignore */
-      }
+      const result = await uploadFileToCloudinary(localPath, folder);
 
       res.status(201).json({
         message: 'Image uploaded',
@@ -121,15 +138,42 @@ uploadsRouter.post(
       throw new ValidationError('Image file is required');
     }
 
-    // Move from listings temp dir to profiles dir for profile images.
-    const targetPath = path.join(profilesDir, req.file.filename);
-    fs.renameSync(req.file.path, targetPath);
+    const localPath = req.file.path;
+    const folder = 'profiles';
+    const cloudConfigured =
+      env.cloudinary.cloudName && env.cloudinary.apiKey && env.cloudinary.apiSecret;
 
-    res.status(201).json({
-      message: 'Profile image uploaded',
-      imageUrl: publicFileUrl(req, 'profiles', req.file.filename),
-      localPath: `/uploads/profiles/${req.file.filename}`,
-    });
+    if (!cloudConfigured) {
+      // Move from listings temp dir to profiles dir for local profile images.
+      const targetPath = path.join(profilesDir, req.file.filename);
+      fs.renameSync(localPath, targetPath);
+
+      res.status(201).json({
+        message: 'Profile image uploaded locally',
+        imageUrl: publicFileUrl(req, folder, req.file.filename),
+        localPath: `/uploads/${folder}/${req.file.filename}`,
+      });
+      return;
+    }
+
+    try {
+      const result = await uploadFileToCloudinary(localPath, folder);
+
+      res.status(201).json({
+        message: 'Profile image uploaded',
+        imageUrl: result.secure_url,
+        publicId: result.public_id,
+        width: result.width,
+        height: result.height,
+      });
+    } catch (err) {
+      try {
+        fs.unlinkSync(localPath);
+      } catch (_error) {
+        /* ignore cleanup failure */
+      }
+      throw new ServiceError(`Profile image upload failed: ${err.message}`, 'UPLOAD_FAILED');
+    }
   }),
 );
 

@@ -1,6 +1,57 @@
 import { admin } from '../config/firebaseAdmin.js';
 import { env } from '../config/env.js';
 
+function collectFcmTokens(userData) {
+  const tokens = [];
+  if (Array.isArray(userData?.fcmTokens)) {
+    tokens.push(...userData.fcmTokens.filter(Boolean));
+  }
+  if (typeof userData?.fcmToken === 'string' && userData.fcmToken.trim()) {
+    tokens.push(userData.fcmToken.trim());
+  }
+  return [...new Set(tokens)];
+}
+
+async function removeInvalidTokens(userId, invalidTokens) {
+  if (!userId || invalidTokens.length === 0) return;
+  await admin.firestore().collection('users').doc(userId).set(
+    { fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens) },
+    { merge: true },
+  );
+}
+
+async function sendWeatherAlertPushes(userDoc, alerts) {
+  if (!userDoc?.firebaseUid || !Array.isArray(alerts) || alerts.length === 0) return;
+
+  const userSnap = await admin.firestore().collection('users').doc(userDoc.firebaseUid).get();
+  const userData = userSnap.exists ? userSnap.data() : null;
+  const tokens = collectFcmTokens(userData);
+  if (tokens.length === 0) return;
+
+  for (const alert of alerts) {
+    const payload = {
+      notification: {
+        title: alert.title,
+        body: alert.body,
+      },
+      data: {
+        type: 'weather_alert',
+        alertType: alert.type,
+        userId: userDoc.firebaseUid,
+      },
+    };
+
+    const resp = await admin.messaging().sendMulticast({ tokens, ...payload });
+    if (resp.failureCount > 0) {
+      const invalidTokens = [];
+      resp.responses.forEach((r, i) => {
+        if (!r.success) invalidTokens.push(tokens[i]);
+      });
+      await removeInvalidTokens(userDoc.firebaseUid, invalidTokens);
+    }
+  }
+}
+
 function degToCompass(deg) {
   if (deg == null) return '';
   const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
@@ -348,6 +399,13 @@ export async function refreshWeatherForUser(userDoc, { force = false } = {}) {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       weatherUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+  }
+
+  try {
+    await sendWeatherAlertPushes(userDoc, alertsToCreate);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(`[WeatherJob] Push notify failed for ${userDoc.firebaseUid}:`, error.message);
   }
 
   const cacheData = {

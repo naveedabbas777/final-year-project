@@ -3,11 +3,60 @@ import { Router } from 'express';
 import { admin } from '../config/firebaseAdmin.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { ListingModel } from '../models/listing.model.js';
+import { OfferModel } from '../models/offer.model.js';
+import { OrderModel } from '../models/order.model.js';
 
 export const messagesRouter = Router();
 
 function firestoreReady() {
   return Boolean(admin?.apps && admin.apps.length > 0);
+}
+
+// SECURITY: Helper to verify user is a participant in listing chat
+async function isUserListingParticipant(userId, listingId) {
+  if (!firestoreReady()) return false;
+
+  try {
+    // Check if user is the listing seller (MongoDB)
+    const listing = await ListingModel.findById(listingId).select('sellerUid').lean();
+    if (listing && listing.sellerUid === userId) return true;
+
+    // Check if user is a valid buyer participant:
+    // - has an offer on this listing, OR
+    // - has an order tied to this listing
+    if (listing) {
+      const [offerExists, orderExists] = await Promise.all([
+        OfferModel.exists({ listingId, buyerUid: userId }),
+        OrderModel.exists({ listingId, buyerUid: userId }),
+      ]);
+      if (offerExists || orderExists) return true;
+    }
+
+    // Check if user has sent or received messages for this listing
+    const snapshot = await admin
+      .firestore()
+      .collection('messages')
+      .where('listingId', '==', listingId)
+      .where('fromUid', '==', userId)
+      .limit(1)
+      .get();
+
+    if (!snapshot.empty) return true;
+
+    // Check if user is recipient in any message for this listing
+    const recipientSnapshot = await admin
+      .firestore()
+      .collection('messages')
+      .where('listingId', '==', listingId)
+      .where('toUid', '==', userId)
+      .limit(1)
+      .get();
+
+    return !recipientSnapshot.empty;
+  } catch (error) {
+    console.error('[Auth] Error checking listing participant:', error);
+    return false;
+  }
 }
 
 messagesRouter.get('/', requireAuth, async (req, res, next) => {
@@ -131,6 +180,14 @@ messagesRouter.get('/listing/:listingId', requireAuth, async (req, res, next) =>
     }
 
     const listingId = req.params.listingId;
+
+    // SECURITY: Verify user is a participant
+    const isParticipant = await isUserListingParticipant(req.user.uid, listingId);
+    if (!isParticipant) {
+      res.status(403).json({ message: 'Unauthorized: not a participant in this chat' });
+      return;
+    }
+
     const limit = Math.min(Number(req.query.limit) || 50, 200);
 
     const snapshot = await admin
@@ -156,6 +213,14 @@ messagesRouter.post('/listing/:listingId/read', requireAuth, async (req, res, ne
     }
 
     const listingId = req.params.listingId;
+
+    // SECURITY: Verify user is a participant
+    const isParticipant = await isUserListingParticipant(req.user.uid, listingId);
+    if (!isParticipant) {
+      res.status(403).json({ message: 'Unauthorized: not a participant in this chat' });
+      return;
+    }
+
     const snapshot = await admin
       .firestore()
       .collection('messages')
@@ -229,6 +294,14 @@ messagesRouter.get('/stream/listing/:listingId', requireAuth, async (req, res, n
     }
 
     const listingId = req.params.listingId;
+
+    // SECURITY: Verify user is a participant before streaming
+    const isParticipant = await isUserListingParticipant(req.user.uid, listingId);
+    if (!isParticipant) {
+      res.status(403).json({ message: 'Unauthorized: not a participant in this chat' });
+      return;
+    }
+
     const limit = Math.min(Number(req.query.limit) || 100, 200);
 
     res.setHeader('Content-Type', 'text/event-stream');
@@ -304,6 +377,13 @@ messagesRouter.get('/listing/:listingId/unread-count', requireAuth, async (req, 
     }
 
     const listingId = req.params.listingId;
+
+    // SECURITY: Verify user is a participant
+    const isParticipant = await isUserListingParticipant(req.user.uid, listingId);
+    if (!isParticipant) {
+      res.status(403).json({ message: 'Unauthorized: not a participant in this chat' });
+      return;
+    }
 
     // Count messages where listingId matches and current user is NOT in readBy array
     const snapshot = await admin

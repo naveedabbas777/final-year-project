@@ -14,6 +14,7 @@ import 'package:mockup_app/services/alert_service.dart';
 import 'package:mockup_app/screens/plant_disease_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:mockup_app/services/firebase_service.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
@@ -29,6 +30,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<CurrentWeather?>? _currentWeatherFuture;
   Future<List<DailyForecast>>? _todayForecastFuture;
   bool _backendUnreachable = false;
+  String? _profilePhotoUrl;
+  String? _profileDisplayName;
   final PageController _tipsPageController = PageController(
     viewportFraction: 0.78,
   );
@@ -186,6 +189,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _currentWeatherFuture = Future.value(null);
           _todayForecastFuture = Future.value(<DailyForecast>[]);
           _backendUnreachable = false;
+          _profilePhotoUrl = null;
+          _profileDisplayName = null;
         });
       }
       return;
@@ -231,6 +236,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       final profile = await FirebaseService().getUserByUid(user.uid);
+      _profilePhotoUrl =
+          (profile?['photoUrl'] ?? profile?['photo'] ?? '').toString().trim();
+      if (_profilePhotoUrl != null && _profilePhotoUrl!.isEmpty) {
+        _profilePhotoUrl = null;
+      }
+      _profileDisplayName =
+          (profile?['displayName'] ?? profile?['name'] ?? '').toString().trim();
+      if (_profileDisplayName != null && _profileDisplayName!.isEmpty) {
+        _profileDisplayName = null;
+      }
       final address = profile?['address'] as String?;
       _latitude = (profile?['lat'] as num?)?.toDouble();
       _longitude = (profile?['lon'] as num?)?.toDouble();
@@ -318,6 +333,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final effectivePhotoUrl =
+        _profilePhotoUrl?.trim().isNotEmpty == true
+            ? _profilePhotoUrl!.trim()
+            : FirebaseAuth.instance.currentUser?.photoURL;
+    final effectiveName =
+        _profileDisplayName?.trim().isNotEmpty == true
+            ? _profileDisplayName!.trim()
+            : FirebaseAuth.instance.currentUser?.displayName?.trim();
+    final effectiveEmail = FirebaseAuth.instance.currentUser?.email?.trim();
+    final initial = (effectiveName?.isNotEmpty == true
+            ? effectiveName![0]
+            : (effectiveEmail?.isNotEmpty == true ? effectiveEmail![0] : 'U'))
+        .toUpperCase();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.dashboard),
@@ -340,26 +369,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: CircleAvatar(
                   radius: 16,
                   backgroundColor: Colors.green.shade100,
-                  backgroundImage: FirebaseAuth.instance.currentUser?.photoURL != null &&
-                          FirebaseAuth.instance.currentUser!.photoURL!.isNotEmpty
-                      ? NetworkImage(FirebaseAuth.instance.currentUser!.photoURL!)
-                      : null,
-                  child: FirebaseAuth.instance.currentUser?.photoURL == null ||
-                          FirebaseAuth.instance.currentUser!.photoURL!.isEmpty
-                      ? Text(
-                          (FirebaseAuth.instance.currentUser?.displayName?.trim().isNotEmpty == true
-                                  ? FirebaseAuth.instance.currentUser!.displayName!.trim()[0]
-                                  : (FirebaseAuth.instance.currentUser?.email?.trim().isNotEmpty == true
-                                      ? FirebaseAuth.instance.currentUser!.email!.trim()[0]
-                                      : 'U'))
-                              .toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.green.shade800,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        )
-                      : null,
+                  backgroundImage:
+                      effectivePhotoUrl != null && effectivePhotoUrl.isNotEmpty
+                          ? NetworkImage(effectivePhotoUrl)
+                          : null,
+                  child:
+                      effectivePhotoUrl == null || effectivePhotoUrl.isEmpty
+                          ? Text(
+                            initial,
+                            style: TextStyle(
+                              color: Colors.green.shade800,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          )
+                          : null,
                 ),
               ),
             ),
@@ -456,7 +480,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 future: _currentWeatherFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const AsyncLoadingWidget();
                   } else if (_backendUnreachable) {
                     return Card(
                       shape: RoundedRectangleBorder(
@@ -487,6 +511,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               'Unable to connect to the server. Please check your network and try again.',
                               textAlign: TextAlign.center,
                               style: TextStyle(color: Colors.red.shade600),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'If you are testing on a USB-connected Android device, run: adb reverse tcp:5000 tcp:5000, or start the app with --dart-define=API_BASE_URL=http://<your-pc-ip>:5000.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.red.shade500,
+                                fontSize: 12,
+                              ),
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton.icon(

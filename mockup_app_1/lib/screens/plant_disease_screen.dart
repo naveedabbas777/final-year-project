@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mockup_app/providers/plant_disease_provider.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 import 'package:provider/provider.dart';
 
 class PlantDiseaseScreen extends StatefulWidget {
@@ -29,9 +30,10 @@ class _PlantDiseaseScreenState extends State<PlantDiseaseScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<PlantDiseaseProvider>();
-    final unsupportedText = kIsWeb
-        ? 'Plant disease detection is not supported on web. Please run on Android/iOS.'
-        : null;
+    final unsupportedText =
+        kIsWeb
+            ? 'Plant disease detection is not supported on web. Please run on Android/iOS.'
+            : null;
 
     return Scaffold(
       appBar: AppBar(
@@ -77,12 +79,9 @@ class _PlantDiseaseScreenState extends State<PlantDiseaseScreen> {
             ),
             const SizedBox(height: 16),
             if (provider.isLoading)
-              const Center(child: CircularProgressIndicator())
+              const AsyncLoadingWidget()
             else if (provider.error != null)
-              Text(
-                provider.error!,
-                style: const TextStyle(color: Colors.red),
-              )
+              Text(provider.error!, style: const TextStyle(color: Colors.red))
             else if (provider.predictions.isEmpty)
               const Text('Pick an image to get disease prediction.')
             else
@@ -92,7 +91,9 @@ class _PlantDiseaseScreenState extends State<PlantDiseaseScreen> {
                   separatorBuilder: (_, __) => const Divider(),
                   itemBuilder: (context, index) {
                     final p = provider.predictions[index];
-                    final score = (p.score * 100).clamp(0, 100).toStringAsFixed(1);
+                    final score = (p.score * 100)
+                        .clamp(0, 100)
+                        .toStringAsFixed(1);
                     return ListTile(
                       title: Text(p.label),
                       trailing: Text('$score%'),

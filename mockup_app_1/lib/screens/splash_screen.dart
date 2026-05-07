@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -49,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
               style: TextStyle(fontSize: 16, color: Colors.green.shade700),
             ),
             const SizedBox(height: 30),
-            CircularProgressIndicator(color: Colors.green.shade700),
+            const CompactLoadingIndicator(size: 24),
           ],
         ),
       ),

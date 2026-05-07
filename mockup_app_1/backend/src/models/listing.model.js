@@ -10,6 +10,8 @@ const listingSchema = new mongoose.Schema(
     unit: { type: String, required: true, default: '40kg' },
     askingPrice: { type: Number, required: true },
     district: { type: String, required: true, index: true },
+    latitude: { type: Number, default: null },
+    longitude: { type: Number, default: null },
     description: { type: String, default: '' },
     imageUrls: { type: [String], default: [] },
     status: {

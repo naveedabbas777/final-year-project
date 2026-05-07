@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "adb reverse backend port",
+      "type": "shell",
+      "command": "adb",
+      "args": ["reverse", "tcp:5000", "tcp:5000"],
+      "problemMatcher": []
+    }
+  ]
+}

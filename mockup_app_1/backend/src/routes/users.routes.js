@@ -1,8 +1,11 @@
 import { Router } from 'express';
 
 import { admin } from '../config/firebaseAdmin.js';
-import { requireAuth } from '../middlewares/auth.js';
+import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { attachDbUser } from '../middlewares/attachDbUser.js';
+import { ListingModel } from '../models/listing.model.js';
+import { OfferModel } from '../models/offer.model.js';
+import { OrderModel } from '../models/order.model.js';
 
 export const usersRouter = Router();
 
@@ -47,6 +50,60 @@ async function enrichUserFromFirebaseAuth(user) {
   }
 }
 
+function redactSensitiveProfileFields(normalizedUser) {
+  if (!normalizedUser) return normalizedUser;
+  const copy = { ...normalizedUser };
+  // Treat these as sensitive contact/location fields
+  copy.phone = '';
+  copy.phoneNumber = '';
+  copy.email = '';
+  copy.address = '';
+  copy.lat = null;
+  copy.lon = null;
+  return copy;
+}
+
+async function canViewSensitiveFields({ viewerUid, viewerRole, targetUid }) {
+  if (!viewerUid || !targetUid) return false;
+  if (viewerUid === targetUid) return true;
+  if (viewerRole === 'admin') return true;
+
+  // Buyer-seller counterpart check:
+  // allow if viewer has an order with target (either direction)
+  const orderExists = await OrderModel.exists({
+    $or: [
+      { buyerUid: viewerUid, sellerUid: targetUid },
+      { buyerUid: targetUid, sellerUid: viewerUid },
+    ],
+  });
+  if (orderExists) return true;
+
+  // Offers are only stored with buyerUid + listingId, so we map listingIds by seller.
+  // viewer -> target as seller
+  const targetListings = await ListingModel.find({ sellerUid: targetUid }).select('_id').limit(2000).lean();
+  if (targetListings.length > 0) {
+    const listingIds = targetListings.map((l) => l._id);
+    const offerExists = await OfferModel.exists({
+      buyerUid: viewerUid,
+      listingId: { $in: listingIds },
+    });
+    if (offerExists) return true;
+  }
+
+  // target -> viewer as seller (viewer is seller, target is buyer)
+  const viewerListings = await ListingModel.find({ sellerUid: viewerUid }).select('_id').limit(2000).lean();
+  if (viewerListings.length > 0) {
+    const listingIds = viewerListings.map((l) => l._id);
+    const offerExists = await OfferModel.exists({
+      buyerUid: targetUid,
+      listingId: { $in: listingIds },
+    });
+    if (offerExists) return true;
+  }
+
+  return false;
+}
+
 usersRouter.get('/me', requireAuth, attachDbUser, async (req, res) => {
   res.json(await enrichUserFromFirebaseAuth({ id: req.dbUser?.id, ...req.dbUser?.toObject?.(), ...req.dbUser }));
 });
@@ -79,7 +136,7 @@ usersRouter.get('/by-phone/:phone', requireAuth, attachDbUser, async (req, res) 
 });
 
 // Public profile by uid (firebase uid or document id)
-usersRouter.get('/:uid', async (req, res, next) => {
+usersRouter.get('/:uid', requireAuth, attachDbUser, async (req, res, next) => {
   try {
     const uid = String(req.params.uid || '').trim();
     if (!uid) {
@@ -91,7 +148,13 @@ usersRouter.get('/:uid', async (req, res, next) => {
     const docRef = admin.firestore().collection('users').doc(uid);
     const doc = await docRef.get();
     if (doc.exists) {
-      res.json(await enrichUserFromFirebaseAuth({ id: doc.id, ...doc.data() }));
+      const enriched = await enrichUserFromFirebaseAuth({ id: doc.id, ...doc.data() });
+      const canSeeSensitive = await canViewSensitiveFields({
+        viewerUid: req.user?.uid,
+        viewerRole: req.dbUser?.role || 'farmer',
+        targetUid: enriched.firebaseUid || uid,
+      });
+      res.json(canSeeSensitive ? enriched : redactSensitiveProfileFields(enriched));
       return;
     }
 
@@ -99,7 +162,13 @@ usersRouter.get('/:uid', async (req, res, next) => {
     const snap = await admin.firestore().collection('users').where('firebaseUid', '==', uid).limit(1).get();
     if (!snap.empty) {
       const d = snap.docs[0];
-      res.json(await enrichUserFromFirebaseAuth({ id: d.id, ...d.data() }));
+      const enriched = await enrichUserFromFirebaseAuth({ id: d.id, ...d.data() });
+      const canSeeSensitive = await canViewSensitiveFields({
+        viewerUid: req.user?.uid,
+        viewerRole: req.dbUser?.role || 'farmer',
+        targetUid: enriched.firebaseUid || d.id,
+      });
+      res.json(canSeeSensitive ? enriched : redactSensitiveProfileFields(enriched));
       return;
     }
 
@@ -109,6 +178,7 @@ usersRouter.get('/:uid', async (req, res, next) => {
   }
 });
 
+// SECURITY: Role changes MUST go through admin-only endpoint only
 usersRouter.patch('/me', requireAuth, attachDbUser, async (req, res) => {
   const {
     name,
@@ -122,8 +192,13 @@ usersRouter.patch('/me', requireAuth, attachDbUser, async (req, res) => {
     address,
     lat,
     lon,
-    role,
   } = req.body || {};
+
+  // SECURITY: role is explicitly NOT allowed in self-edit
+  if (req.body?.role !== undefined) {
+    res.status(403).json({ message: 'Role cannot be changed via profile update' });
+    return;
+  }
 
   const resolvedName = typeof name === 'string' ? name.trim() : typeof displayName === 'string' ? displayName.trim() : undefined;
   const resolvedPhone = typeof phone === 'string' ? phone.trim() : typeof phoneNumber === 'string' ? phoneNumber.trim() : undefined;
@@ -150,11 +225,6 @@ usersRouter.patch('/me', requireAuth, attachDbUser, async (req, res) => {
     req.dbUser.locationUpdatedAt = new Date().toISOString();
   }
 
-  // Role update allowed only in local-dev style bootstrap route behavior.
-  if (typeof role === 'string' && ['farmer', 'buyer', 'admin'].includes(role)) {
-    req.dbUser.role = role;
-  }
-
   try {
     await req.dbUser.save();
   } catch (error) {
@@ -162,6 +232,47 @@ usersRouter.patch('/me', requireAuth, attachDbUser, async (req, res) => {
   }
 
   res.json({ message: 'Profile updated', user: normalizeUser(req.dbUser) });
+});
+
+// SECURITY: Admin-only role update endpoint
+usersRouter.patch('/:userId/role', requireAuth, attachDbUser, requireRole('admin'), async (req, res, next) => {
+  const targetUserId = String(req.params.userId || '').trim();
+  const newRole = req.body?.role;
+
+  if (!newRole || !['farmer', 'buyer', 'admin'].includes(newRole)) {
+    res.status(400).json({ message: 'Invalid role. Must be one of: farmer, buyer, admin' });
+    return;
+  }
+
+  try {
+    if (!targetUserId) {
+      res.status(400).json({ message: 'User id is required' });
+      return;
+    }
+
+    // Firebase-only: roles are stored in Firestore users/{uid}
+    const docRef = admin.firestore().collection('users').doc(targetUserId);
+    const snap = await docRef.get();
+    if (!snap.exists) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    await docRef.set(
+      {
+        role: newRole,
+        roleUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+
+    res.json({
+      message: 'User role updated by admin',
+      user: normalizeUser({ id: targetUserId, ...snap.data(), role: newRole }),
+    });
+  } catch (error) {
+    next(error);
+  }
 });
 
 // Register FCM device token for current user

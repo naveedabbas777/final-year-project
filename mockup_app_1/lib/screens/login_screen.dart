@@ -5,6 +5,7 @@ import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:mockup_app/providers/language_provider.dart';
 import 'package:mockup_app/services/auth_service.dart';
 import 'package:mockup_app/utils/error_presenter.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 import 'package:provider/provider.dart';
 
 import 'forgot_password_screen.dart';
@@ -250,14 +251,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _sending ? null : _attemptLogin,
                       child:
                           _sending
-                              ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                              ? const CompactLoadingIndicator(
+                                  size: 16,
                                   color: Colors.white,
-                                ),
-                              )
+                                )
                               : const Text('Login'),
                     ),
                   ),

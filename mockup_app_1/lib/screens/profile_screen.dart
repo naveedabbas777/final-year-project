@@ -15,6 +15,7 @@ import 'package:mockup_app/utils/error_presenter.dart';
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/firebase_service.dart';
 import 'package:mockup_app/main.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -69,7 +70,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _displayName() {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
-    return (_data?['displayName'] ?? _data?['name'] ?? user?.displayName ?? user?.email ?? 'User').toString();
+    return (_data?['displayName'] ??
+            _data?['name'] ??
+            user?.displayName ??
+            user?.email ??
+            'User')
+        .toString();
   }
 
   String _userName() {
@@ -79,7 +85,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (email.isNotEmpty) {
       return email.split('@').first;
     }
-    return (_data?['name'] ?? _data?['displayName'] ?? user?.displayName ?? user?.uid ?? 'User').toString();
+    return (_data?['name'] ??
+            _data?['displayName'] ??
+            user?.displayName ??
+            user?.uid ??
+            'User')
+        .toString();
   }
 
   String _emailAddress() {
@@ -91,7 +102,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _phoneNumber() {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
-    return (_data?['phoneNumber'] ?? _data?['phone'] ?? user?.phoneNumber ?? '').toString();
+    return (_data?['phoneNumber'] ?? _data?['phone'] ?? user?.phoneNumber ?? '')
+        .toString();
   }
 
   String? _formatCreatedAt() {
@@ -257,7 +269,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           await _loadProfile();
           if (mounted)
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Profile photo updated')),
+              SnackBar(
+                content: Text(
+                  url.contains('res.cloudinary.com')
+                      ? 'Profile photo uploaded to Cloudinary'
+                      : 'Profile photo uploaded locally',
+                ),
+              ),
             );
         }
       } else {
@@ -304,8 +322,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final name = _displayName();
     final username = _userName();
-    final email = _emailAddress();
-    final phone = _phoneNumber();
+    final email = _emailAddress().trim();
+    final phone = _phoneNumber().trim();
     final memberSince = _formatCreatedAt();
     final accountType = _accountType();
     final location = _locationSummary();
@@ -321,7 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body:
           _loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const AsyncLoadingWidget()
               : SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -341,7 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child:
                                 photoUrl == null || photoUrl.isEmpty
                                     ? Text(
-                                            _profileInitial(),
+                                      _profileInitial(),
                                       style: const TextStyle(
                                         fontSize: 36,
                                         color: Colors.white,
@@ -399,7 +417,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               children: [
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Account Summary',
@@ -423,11 +442,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 if (email.isNotEmpty)
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(color: Colors.green.shade200),
+                                      border: Border.all(
+                                        color: Colors.green.shade200,
+                                      ),
                                     ),
                                     child: Text(
                                       'Verified account',
@@ -451,16 +475,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               label: 'Username',
                               value: username,
                             ),
-                            _ProfileFieldTile(
-                              icon: Icons.email_outlined,
-                              label: 'Email',
-                              value: email.isEmpty ? 'Not available' : email,
-                            ),
-                            _ProfileFieldTile(
-                              icon: Icons.phone_iphone,
-                              label: 'Contact',
-                              value: phone.isEmpty ? 'Not available' : phone,
-                            ),
+                            if (email.isNotEmpty)
+                              _ProfileFieldTile(
+                                icon: Icons.email_outlined,
+                                label: 'Email',
+                                value: email,
+                              ),
+                            if (phone.isNotEmpty)
+                              _ProfileFieldTile(
+                                icon: Icons.phone_iphone,
+                                label: 'Contact',
+                                value: phone,
+                              ),
                             if (location != null)
                               _ProfileFieldTile(
                                 icon: Icons.location_on_outlined,

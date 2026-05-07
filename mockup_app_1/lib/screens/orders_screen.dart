@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/market_api_service.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -76,7 +77,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       ),
       body:
           _loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const AsyncLoadingWidget()
               : _error != null
               ? Center(
                 child: Text(_error!, style: const TextStyle(color: Colors.red)),

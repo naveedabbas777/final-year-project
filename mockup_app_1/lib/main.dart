@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -143,13 +144,34 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
   }
 
   Future<void> _checkLoginStatus() async {
-    await Future.delayed(
-      const Duration(seconds: 2),
-    ); // Keep splash screen visible for 2 seconds
+    // Keep splash screen visible for a short moment while bootstrapping
+    await Future.delayed(const Duration(milliseconds: 500));
 
     if (!mounted) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Wait for auth provider to finish bootstrap, with a bounded timeout
+    if (!authProvider.isBootstrapComplete) {
+      final completer = Completer<void>();
+      void listener() {
+        if (authProvider.isBootstrapComplete && !completer.isCompleted) {
+          completer.complete();
+        }
+      }
+
+      authProvider.addListener(listener);
+
+      // Wait up to 5 seconds for bootstrap; proceed after timeout to avoid hang
+      await Future.any([
+        completer.future,
+        Future.delayed(const Duration(seconds: 5)),
+      ]);
+
+      authProvider.removeListener(listener);
+    }
+
+    if (!mounted) return;
 
     if (authProvider.isSignedIn) {
       // User is already signed in, navigate to main shell

@@ -4,15 +4,16 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 import '../config/app_config.dart';
 import '../services/market_api_service.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key, required this.listingId, required this.toUid});
+  const ChatScreen({super.key, required this.listingId, this.toUid});
 
   final String listingId;
-  final String toUid;
+  final String? toUid;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -22,6 +23,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _service = MarketApiService();
   final _controller = TextEditingController();
   final _messages = <Map<String, dynamic>>[];
+  bool _loadedInitialMessages = false;
   StreamSubscription<String>? _sseSub;
   HttpClient? _httpClient;
   String? _myUid;
@@ -32,6 +34,19 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isTypingSent = false;
   bool _sellerIsOnline = false;
   DateTime? _sellerLastSeen;
+  Map<String, dynamic>? _peerProfile;
+  bool _loadingPeer = false;
+
+  String get _peerName {
+    final fallback = widget.toUid ?? 'Chat';
+    return (_peerProfile?['displayName'] ?? _peerProfile?['name'] ?? fallback)
+        .toString();
+  }
+
+  String get _peerPhotoUrl {
+    return (_peerProfile?['photoUrl'] ?? _peerProfile?['photoURL'] ?? '')
+        .toString();
+  }
 
   String _formatTs(dynamic raw) {
     if (raw == null) return '';
@@ -49,8 +64,12 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _myUid = FirebaseAuth.instance.currentUser?.uid;
+    _loadInitialMessages();
     _connectRealtime();
-    _fetchPresence();
+    if (widget.toUid != null) {
+      _loadPeerProfile();
+      _fetchPresence();
+    }
     _service.setPresence(isOnline: true);
   }
 
@@ -102,6 +121,9 @@ class _ChatScreenState extends State<ChatScreen> {
       if (res.statusCode < 200 || res.statusCode >= 300) {
         if (!mounted) return;
         setState(() => _connecting = false);
+        if (!_loadedInitialMessages) {
+          await _loadInitialMessages();
+        }
         return;
       }
 
@@ -122,6 +144,31 @@ class _ChatScreenState extends State<ChatScreen> {
           );
     } catch (_) {
       _reconnectLater();
+    }
+  }
+
+  Future<void> _loadInitialMessages() async {
+    try {
+      final rows = await _service.fetchMessagesForListing(widget.listingId, limit: 200);
+      if (!mounted) return;
+      setState(() {
+        _loadedInitialMessages = true;
+        if (rows.isNotEmpty) {
+          _messages
+            ..clear()
+            ..addAll(rows);
+        }
+        _connecting = false;
+      });
+      if (rows.isNotEmpty) {
+        await _markReadIfNeeded(rows);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadedInitialMessages = true;
+        _connecting = false;
+      });
     }
   }
 
@@ -201,8 +248,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _fetchPresence() async {
+    final toUid = widget.toUid;
+    if (toUid == null) return;
     try {
-      final presence = await _service.getPresence(widget.toUid);
+      final presence = await _service.getPresence(toUid);
       if (!mounted) return;
       setState(() {
         _sellerIsOnline = presence['isOnline'] == true;
@@ -220,12 +269,31 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _loadPeerProfile() async {
+    final toUid = widget.toUid;
+    if (toUid == null) return;
+    setState(() => _loadingPeer = true);
+    try {
+      final prof = await _service.fetchUserProfileByUid(toUid);
+      if (!mounted) return;
+      setState(() => _peerProfile = prof);
+    } catch (_) {
+      // ignore - keep fallback
+    } finally {
+      if (mounted) setState(() => _loadingPeer = false);
+    }
+  }
+
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     setState(() => _sending = true);
     try {
-      await _service.sendMessage(message: text, listingId: widget.listingId, toUid: widget.toUid);
+      await _service.sendMessage(
+        message: text,
+        listingId: widget.listingId,
+        toUid: widget.toUid,
+      );
       _controller.clear();
       if (_isTypingSent) {
         _isTypingSent = false;
@@ -263,15 +331,38 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final photoUrl = _peerPhotoUrl.trim();
     return Scaffold(
       backgroundColor: Colors.green.shade50,
       appBar: AppBar(
+        leading: widget.toUid == null
+            ? null
+            : Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.white,
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: Colors.green.shade100,
+                  backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                  child: photoUrl.isEmpty
+                      ? Text(
+                        _peerName.trim().isNotEmpty ? _peerName.trim()[0].toUpperCase() : 'U',
+                        style: TextStyle(color: Colors.green.shade800, fontWeight: FontWeight.w700, fontSize: 12),
+                      )
+                      : null,
+                ),
+              ),
+            ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Chat'),
+            Text(widget.toUid == null ? 'Listing Chat' : _peerName),
             Text(
-              _formatPresence(),
+              widget.toUid == null
+                  ? 'Conversation attached to this listing'
+                  : (_loadingPeer ? 'Loading profile...' : _formatPresence()),
               style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
             ),
           ],
@@ -281,6 +372,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
+          if (widget.toUid != null) _buildConversationHeader(),
           if (_typingUids.isNotEmpty)
             Container(
               width: double.infinity,
@@ -379,7 +471,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       minLines: 1,
                       maxLines: 4,
                       decoration: InputDecoration(
-                        hintText: 'Message seller...',
+                        hintText: widget.toUid == null ? 'Message...' : 'Message $_peerName...',
                         filled: true,
                         fillColor: Colors.white,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
@@ -391,13 +483,61 @@ class _ChatScreenState extends State<ChatScreen> {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, shape: const CircleBorder(), padding: const EdgeInsets.all(12)),
                     onPressed: _sending ? null : _send,
-                    child: _sending ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.send, color: Colors.white),
+                    child: _sending ? const CompactLoadingIndicator(size: 16, color: Colors.white) : const Icon(Icons.send, color: Colors.white),
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildConversationHeader() {
+    final photoUrl = _peerPhotoUrl.trim();
+    return Material(
+      color: Colors.white,
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _peerName,
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.green.shade900),
+                ),
+                const SizedBox(height: 6),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: Colors.green.shade100,
+                  backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                  child: photoUrl.isEmpty ? Icon(Icons.person, color: Colors.green.shade700) : null,
+                ),
+              ],
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Chat',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.green.shade900),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Messages stay attached to this listing.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

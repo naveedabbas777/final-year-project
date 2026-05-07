@@ -9,6 +9,7 @@ import 'package:mockup_app/screens/detailed_forecast_screen.dart'; // Import Det
 import 'package:mockup_app/l10n/app_localizations.dart'; // Corrected import
 import 'package:mockup_app/utils/error_presenter.dart';
 import 'package:mockup_app/services/firebase_service.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart'; // Import AsyncStateWidgets
 
 class ForecastScreen extends StatefulWidget {
   const ForecastScreen({Key? key}) : super(key: key);
@@ -212,7 +213,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
           future: _dailyForecastFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const AsyncLoadingWidget();
             } else if (_backendUnreachable) {
               return Center(
                 child: Column(
@@ -233,6 +234,15 @@ class _ForecastScreenState extends State<ForecastScreen> {
                       'Unable to connect to the server. Please check your network and try again.',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.red.shade600),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'USB-connected Android devices need adb reverse tcp:5000 tcp:5000, or launch with --dart-define=API_BASE_URL=http://<your-pc-ip>:5000.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.red.shade500,
+                        fontSize: 12,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Row(

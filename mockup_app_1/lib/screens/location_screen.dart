@@ -8,6 +8,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 import '../services/firebase_service.dart';
 import '../services/weather_service.dart';
 import '../utils/error_presenter.dart';
@@ -530,14 +531,10 @@ class _LocationScreenState extends State<LocationScreen>
                       onPressed: _isBusy ? null : _getCurrentPosition,
                       icon:
                           _isFetchingGps || _isSavingLocation
-                              ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                              ? const CompactLoadingIndicator(
+                                  size: 18,
                                   color: Colors.white,
-                                ),
-                              )
+                                )
                               : const Icon(Icons.gps_fixed),
                       label: Text(
                         _isFetchingGps
@@ -576,13 +573,7 @@ class _LocationScreenState extends State<LocationScreen>
                       suffixIcon: IconButton(
                         icon:
                             _isSearching
-                                ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
+                                ? const CompactLoadingIndicator(size: 18)
                                 : const Icon(Icons.search),
                         onPressed:
                             _isBusy

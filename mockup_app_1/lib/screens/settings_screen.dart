@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:mockup_app/providers/language_provider.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'location_screen.dart';
-import 'package:permission_handler/permission_handler.dart'; // Uncomment this import
+import 'package:permission_handler/permission_handler.dart';
 import '../services/firebase_service.dart';
 import 'package:mockup_app/providers/auth_provider.dart';
-import 'package:mockup_app/services/notification_service.dart'; // Import the new service
+import 'package:mockup_app/services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -201,13 +200,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context);
-    final currentLocale = languageProvider.locale;
-    final currentLanguageString =
-        currentLocale.languageCode == 'en' ? 'English' : 'Urdu';
-    final auth = Provider.of<AuthProvider>(context);
-    final user = auth.user;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context)!.settings),
@@ -220,48 +212,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            if (user != null)
-              Card(
-                color: Colors.white,
-                child: ListTile(
-                  leading: Icon(Icons.person, color: Colors.green.shade700),
-                  title: Text(
-                    user.phoneNumber ?? 'User: ${user.uid.substring(0, 6)}',
-                  ),
-                  subtitle: Text(
-                    user.isAnonymous ? 'Signed in as Guest' : 'Signed in',
-                  ),
-                  trailing: TextButton(
-                    onPressed: () async {
-                      await auth.signOut();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Signed out')),
-                      );
-                    },
-                    child: const Text('Sign out'),
-                  ),
-                ),
-              ),
-            ListTile(
-              leading: Icon(Icons.language, color: Colors.green.shade700),
-              title: Text(AppLocalizations.of(context)!.language),
-              trailing: DropdownButton<String>(
-                value: currentLanguageString,
-                items: const [
-                  DropdownMenuItem(value: 'English', child: Text('English')),
-                  DropdownMenuItem(value: 'Urdu', child: Text('Urdu')),
-                ],
-                onChanged: (String? newValue) {
-                  if (newValue != null) {
-                    final newLocale =
-                        newValue == 'English'
-                            ? const Locale('en', '')
-                            : const Locale('ur', '');
-                    languageProvider.setLocale(newLocale);
-                  }
-                },
-              ),
-            ),
             SwitchListTile(
               secondary: Icon(
                 Icons.notifications,

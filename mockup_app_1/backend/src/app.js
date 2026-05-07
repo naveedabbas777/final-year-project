@@ -18,6 +18,7 @@ import { messagesRouter } from './routes/messages.routes.js';
 import { ratingsRouter } from './routes/ratings.routes.js';
 import { alertsRouter } from './routes/alerts.routes.js';
 import { configRouter } from './routes/config.routes.js';
+import { adminRouter } from './routes/admin.routes.js';
 
 export function createApp() {
   const app = express();
@@ -62,6 +63,7 @@ export function createApp() {
   app.use('/api/ratings', ratingsRouter);
   app.use('/api/alerts', alertsRouter);
   app.use('/api/config', configRouter);
+  app.use('/api/admin', adminRouter);
 
   // Root route
   app.get('/', (_req, res) => {
@@ -76,6 +78,7 @@ export function createApp() {
         messages: '/api/messages',
         alerts: '/api/alerts',
         config: '/api/config',
+        admin: '/api/admin',
         rates: '/api/rates',
         listings: '/api/listings',
       },

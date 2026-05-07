@@ -5,13 +5,19 @@ import 'package:flutter/material.dart';
 import '../services/firebase_service.dart';
 import '../services/notification_service.dart';
 
-/// Simple ChangeNotifier that exposes the current [User?] and ensures a
+// PHASE 1: Explicit auth bootstrap state to avoid startup race conditions
+enum AuthBootstrapState { unknown, authenticated, unauthenticated }
+
+/// Enhanced ChangeNotifier that exposes the current [User?] and ensures a
 /// per-user Firestore document exists when a user signs in.
+///
+/// PHASE 1 FIX: Added explicit bootstrap state to prevent race conditions
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseService _firestoreService = FirebaseService();
 
   User? _user;
+  AuthBootstrapState _bootstrapState = AuthBootstrapState.unknown;
   StreamSubscription<User?>? _sub;
 
   AuthProvider() {
@@ -22,8 +28,21 @@ class AuthProvider extends ChangeNotifier {
 
   bool get isSignedIn => _user != null;
 
+  AuthBootstrapState get bootstrapState => _bootstrapState;
+
+  /// Returns true only after bootstrap is complete
+  bool get isBootstrapComplete => _bootstrapState != AuthBootstrapState.unknown;
+
   Future<void> _onAuthStateChanged(User? u) async {
     _user = u;
+
+    // Update bootstrap state based on auth result
+    if (u != null) {
+      _bootstrapState = AuthBootstrapState.authenticated;
+    } else {
+      _bootstrapState = AuthBootstrapState.unauthenticated;
+    }
+
     notifyListeners();
 
     if (u != null) {
@@ -53,7 +72,14 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> signOut() => _auth.signOut();
+  /// Centralized sign-out with full bootstrap reset
+  /// PHASE 1 FIX: Unified sign-out behavior
+  Future<void> signOut() async {
+    _bootstrapState = AuthBootstrapState.unknown;
+    _user = null;
+    notifyListeners();
+    await _auth.signOut();
+  }
 
   @override
   void dispose() {

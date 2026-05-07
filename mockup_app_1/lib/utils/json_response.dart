@@ -58,6 +58,16 @@ DateTime toDateTimeOrNow(dynamic value) {
   return DateTime.now();
 }
 
+/// Returns null for null or invalid numeric values, otherwise returns double
+double? toDoubleOrNull(dynamic value) {
+  if (value is num) return value.toDouble();
+  if (value is String) {
+    final parsed = double.tryParse(value);
+    if (parsed != null) return parsed;
+  }
+  return null;
+}
+
 /// Returns List<String> with empty values filtered out
 List<String> toStringListOrEmpty(dynamic value) {
   if (value is! List) return const [];

@@ -134,6 +134,7 @@ npm run dev
 Run Flutter against backend
 - Physical Android device: use your PC LAN IP.
 - Android emulator: use `10.0.2.2`.
+- USB debugging on a physical Android device: run `adb reverse tcp:5000 tcp:5000` before launching, or pass your PC LAN IP with `--dart-define=API_BASE_URL=http://<your-pc-ip>:5000`.
 
 ```powershell
 flutter run --dart-define=API_BASE_URL=http://192.168.X.X:5000

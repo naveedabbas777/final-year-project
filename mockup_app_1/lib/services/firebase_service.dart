@@ -151,15 +151,24 @@ class FirebaseService {
     String? address,
     DateTime? lastNotifiedAt,
   }) async {
+    if (fcmToken != null && fcmToken.trim().isNotEmpty) {
+      await _client.post(
+        '/api/users/me/fcm-token',
+        auth: true,
+        body: {'token': fcmToken.trim()},
+      );
+    }
+
     final updates = <String, dynamic>{};
-    if (fcmToken != null) updates['fcmToken'] = fcmToken;
-    if (notificationsEnabled != null)
+    if (notificationsEnabled != null) {
       updates['notificationsEnabled'] = notificationsEnabled;
+    }
     if (lat != null) updates['lat'] = lat;
     if (lon != null) updates['lon'] = lon;
     if (address != null) updates['address'] = address;
-    if (lastNotifiedAt != null)
+    if (lastNotifiedAt != null) {
       updates['lastNotifiedAt'] = lastNotifiedAt.toIso8601String();
+    }
 
     if (updates.isNotEmpty) {
       await _client.patch('/api/users/me', auth: true, body: updates);

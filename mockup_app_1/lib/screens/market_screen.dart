@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 import '../services/market_api_service.dart';
 import '../utils/error_presenter.dart';
@@ -7,6 +8,8 @@ import '../utils/form_validators.dart';
 import 'listing_detail_screen.dart';
 import 'offers_screen.dart';
 import 'orders_screen.dart';
+import 'admin_dashboard_screen.dart';
+import 'my_listings_screen.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -22,7 +25,7 @@ class _MarketScreenState extends State<MarketScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -31,31 +34,124 @@ class _MarketScreenState extends State<MarketScreen>
     super.dispose();
   }
 
+  void _openSellerPhotoViewer(String photoUrl, String sellerName) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(12),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: InteractiveViewer(
+                  minScale: 1,
+                  maxScale: 5,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      color: Colors.black,
+                      alignment: Alignment.center,
+                      child: Image.network(
+                        photoUrl,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder:
+                            (_, __, ___) => const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 80,
+                            ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: SafeArea(
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 16,
+                child: SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.zoom_in,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            sellerName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const Text(
+                          'Pinch to zoom',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.green.shade50,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Market'),
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
+        elevation: 0,
         toolbarHeight: 48,
         actions: [
           IconButton(
             tooltip: 'Offers',
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const OffersScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const OffersScreen()));
             },
             icon: const Icon(Icons.local_offer_outlined),
           ),
           IconButton(
             tooltip: 'Order history',
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const OrdersScreen()),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const OrdersScreen()));
             },
             icon: const Icon(Icons.receipt_long_outlined),
           ),
@@ -65,17 +161,23 @@ class _MarketScreenState extends State<MarketScreen>
           indicatorColor: Colors.white,
           indicatorWeight: 2,
           labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
           labelStyle: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
           unselectedLabelStyle: const TextStyle(fontSize: 12),
-          tabs: const [Tab(text: 'Rates'), Tab(text: 'Buy/Sell')],
+          tabs: const [
+            Tab(text: 'Rates'),
+            Tab(text: 'Buy/Sell'),
+            Tab(text: 'Mine'),
+          ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [_RatesTab(), _MarketplaceTab()],
+        children: const [_RatesTab(), _MarketplaceTab(), MyListingsScreen()],
       ),
     );
   }
@@ -158,9 +260,9 @@ class _RatesTabState extends State<_RatesTab> {
       await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
       if (!mounted) return;
       setState(() => _ingesting = false);
@@ -168,11 +270,12 @@ class _RatesTabState extends State<_RatesTab> {
   }
 
   List<String> _buildOptions(Iterable<String> values) {
-    final options = values
-        .map((value) => value.trim())
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList();
+    final options =
+        values
+            .map((value) => value.trim())
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList();
     options.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return options;
   }
@@ -193,8 +296,8 @@ class _RatesTabState extends State<_RatesTab> {
         _error != null
             ? ErrorPresenter.present(_error!)
             : isRatesTab
-                ? 'No rates available yet. Ingest official rates from backend.'
-                : 'No active listings found.';
+            ? 'No rates available yet. Ingest official rates from backend.'
+            : 'No active listings found.';
 
     final actionLabel = _error != null ? 'Retry' : 'Refresh';
 
@@ -257,6 +360,22 @@ class _RatesTabState extends State<_RatesTab> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  if (isAdmin)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const AdminDashboardScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.admin_panel_settings),
+                        label: const Text('Open Admin Console'),
+                      ),
+                    ),
+                  if (isAdmin) const SizedBox(height: 8),
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -375,18 +494,16 @@ class _RatesTabState extends State<_RatesTab> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green.shade600,
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12,
+                                ),
                               ),
                               onPressed: _ingesting ? null : _triggerIngestion,
                               child:
                                   _ingesting
-                                      ? const SizedBox(
-                                        height: 16,
-                                        width: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
+                                      ? const CompactLoadingIndicator(
+                                        size: 16,
+                                        color: Colors.white,
                                       )
                                       : const Text('Ingest'),
                             ),
@@ -401,7 +518,7 @@ class _RatesTabState extends State<_RatesTab> {
           ),
           const SizedBox(height: 16),
           if (_loading)
-            const Expanded(child: Center(child: CircularProgressIndicator()))
+            const Expanded(child: AsyncLoadingWidget())
           else if (_error != null || _filteredRates.isEmpty)
             Expanded(child: _buildEmptyOrError(isRatesTab: true))
           else
@@ -611,6 +728,98 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     super.dispose();
   }
 
+  void _openSellerPhotoViewer(String photoUrl, String sellerName) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(12),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: InteractiveViewer(
+                  minScale: 1,
+                  maxScale: 5,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      color: Colors.black,
+                      alignment: Alignment.center,
+                      child: Image.network(
+                        photoUrl,
+                        fit: BoxFit.contain,
+                        width: double.infinity,
+                        height: double.infinity,
+                        errorBuilder:
+                            (_, __, ___) => const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 80,
+                            ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: SafeArea(
+                  child: IconButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    icon: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 16,
+                child: SafeArea(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.45),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.zoom_in,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            sellerName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const Text(
+                          'Pinch to zoom',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -626,17 +835,11 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
         _rows = data;
         _cropOptions = _buildOptions(data.map((row) => row.cropName));
         _districtOptions = _buildOptions(data.map((row) => row.district));
+        _unreadCounts.clear();
       });
 
-      _unreadCounts.clear();
-      for (final listing in data) {
-        try {
-          final count = await _service.getUnreadCount(listing.id);
-          if (mounted) {
-            setState(() => _unreadCounts[listing.id] = count);
-          }
-        } catch (_) {}
-      }
+      // Fetch unread counts in background (non-blocking) to avoid slow rendering
+      _fetchUnreadCountsInBackground(data);
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = e.toString());
@@ -646,12 +849,31 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     }
   }
 
+  /// Fetch unread counts in background without blocking market screen rendering
+  void _fetchUnreadCountsInBackground(List<ListingDto> listings) {
+    // Fire and forget: runs in parallel with 3-second timeout per listing
+    Future.wait(
+      listings.map((listing) async {
+        try {
+          final count = await _service.getUnreadCount(listing.id);
+          if (mounted) {
+            setState(() => _unreadCounts[listing.id] = count);
+          }
+        } catch (_) {
+          // Silently ignore; unread count is non-critical to market display
+        }
+      }),
+      eagerError: false,
+    ).ignore();
+  }
+
   List<String> _buildOptions(Iterable<String> values) {
-    final options = values
-        .map((value) => value.trim())
-        .where((value) => value.isNotEmpty)
-        .toSet()
-        .toList();
+    final options =
+        values
+            .map((value) => value.trim())
+            .where((value) => value.isNotEmpty)
+            .toSet()
+            .toList();
     options.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
     return options;
   }
@@ -876,24 +1098,21 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      onPressed: _creating
-                          ? null
-                          : () async {
-                              final navigator = Navigator.of(sheetContext);
-                              await _createListing();
-                              if (mounted && navigator.canPop()) {
-                                navigator.pop();
-                              }
-                            },
+                      onPressed:
+                          _creating
+                              ? null
+                              : () async {
+                                final navigator = Navigator.of(sheetContext);
+                                await _createListing();
+                                if (mounted && navigator.canPop()) {
+                                  navigator.pop();
+                                }
+                              },
                       icon:
                           _creating
-                              ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
+                              ? const CompactLoadingIndicator(
+                                size: 16,
+                                color: Colors.white,
                               )
                               : const Icon(Icons.add),
                       label: const Text('Create Listing'),
@@ -965,7 +1184,13 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
       _selectedGradeController.text = 'A';
       setState(() => _selectedImages.clear());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Listing created successfully')),
+        SnackBar(
+          content: Text(
+            imageUrls.any((url) => url.contains('res.cloudinary.com'))
+                ? 'Listing created and images uploaded to Cloudinary'
+                : 'Listing created successfully',
+          ),
+        ),
       );
       await _load();
     } catch (e) {
@@ -978,7 +1203,9 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<int> _getTotalImageSize() async {
@@ -1072,14 +1299,14 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
         quantity: qty,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Offer sent successfully')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Offer sent successfully')));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
@@ -1120,17 +1347,34 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                         return Column(
                           children: [
                             ListTile(
-                              leading:
-                                  prof['photoUrl'] != null &&
-                                          prof['photoUrl'].toString().isNotEmpty
-                                      ? CircleAvatar(
-                                        backgroundImage: NetworkImage(
-                                          prof['photoUrl'],
+                              leading: GestureDetector(
+                                onTap:
+                                    prof['photoUrl'] != null &&
+                                            prof['photoUrl']
+                                                .toString()
+                                                .isNotEmpty
+                                        ? () => _openSellerPhotoViewer(
+                                          prof['photoUrl'].toString(),
+                                          (prof['displayName'] ??
+                                                  prof['name'] ??
+                                                  'Seller')
+                                              .toString(),
+                                        )
+                                        : null,
+                                child:
+                                    prof['photoUrl'] != null &&
+                                            prof['photoUrl']
+                                                .toString()
+                                                .isNotEmpty
+                                        ? CircleAvatar(
+                                          backgroundImage: NetworkImage(
+                                            prof['photoUrl'],
+                                          ),
+                                        )
+                                        : const CircleAvatar(
+                                          child: Icon(Icons.person),
                                         ),
-                                      )
-                                      : const CircleAvatar(
-                                        child: Icon(Icons.person),
-                                      ),
+                              ),
                               title: Text(prof['displayName'] ?? 'Seller'),
                               subtitle: Text(prof['phoneNumber'] ?? ''),
                             ),
@@ -1187,9 +1431,9 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
         toUid: row.sellerUid,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Message sent')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Message sent')));
     } catch (e) {
       if (!mounted) return;
       _showError(ErrorPresenter.present(e));
@@ -1200,13 +1444,14 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final unreadCount = _unreadCounts[row.id] ?? 0;
 
     return InkWell(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => ListingDetailScreen(listing: row)),
-      ),
+      onTap:
+          () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ListingDetailScreen(listing: row),
+            ),
+          ),
       child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         elevation: 3,
         child: Padding(
           padding: const EdgeInsets.all(10),
@@ -1230,7 +1475,11 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                       color: Colors.green.shade100,
                       borderRadius: BorderRadius.circular(7),
                     ),
-                    child: Icon(Icons.agriculture, color: Colors.green.shade700, size: 22),
+                    child: Icon(
+                      Icons.agriculture,
+                      color: Colors.green.shade700,
+                      size: 22,
+                    ),
                   ),
               const SizedBox(width: 10),
               Expanded(
@@ -1245,12 +1494,26 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      row.district,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade700,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Colors.green.shade700,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            row.district,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 1),
                     Text(
@@ -1419,7 +1682,9 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                   ),
                                 ],
                                 onChanged: (value) {
-                                  setState(() => _selectedDistrictFilter = value);
+                                  setState(
+                                    () => _selectedDistrictFilter = value,
+                                  );
                                 },
                               ),
                             ),
@@ -1430,7 +1695,9 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green.shade700,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
                                 ),
                                 onPressed: _loading ? null : _load,
                                 child: const Text('Apply'),
@@ -1445,7 +1712,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
               ),
               const SizedBox(height: 16),
               if (_loading)
-                const Expanded(child: Center(child: CircularProgressIndicator()))
+                const Expanded(child: AsyncLoadingWidget())
               else if (_error != null || _filteredRows.isEmpty)
                 Expanded(child: _buildEmptyOrError())
               else

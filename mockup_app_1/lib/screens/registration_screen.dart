@@ -6,6 +6,7 @@ import 'package:mockup_app/services/auth_service.dart';
 import 'package:mockup_app/services/firebase_service.dart';
 import 'package:mockup_app/utils/form_validators.dart';
 import 'package:mockup_app/utils/error_presenter.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 import 'email_verification_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -326,14 +327,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     child: ElevatedButton.icon(
                       icon:
                           _sending
-                              ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                              ? const CompactLoadingIndicator(
+                                  size: 16,
                                   color: Colors.white,
-                                ),
-                              )
+                                )
                               : const Icon(Icons.person_add),
                       label: const Text('Register'),
                       onPressed: _sending ? null : _startRegistration,

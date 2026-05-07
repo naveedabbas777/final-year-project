@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/auth_service.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class EmailVerificationScreen extends StatefulWidget {
   const EmailVerificationScreen({Key? key, required this.email})
@@ -200,14 +201,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       ),
                       icon:
                           _resending
-                              ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                              ? const CompactLoadingIndicator(
+                                  size: 16,
                                   color: Colors.white,
-                                ),
-                              )
+                                )
                               : const Icon(Icons.email_outlined),
                       label: const Text('Resend verification email'),
                     ),
@@ -219,13 +216,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       ),
                       icon:
                           _checking
-                              ? const SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
+                              ? const CompactLoadingIndicator(size: 16)
                               : const Icon(Icons.refresh),
                       label: const Text('I have verified, check now'),
                     ),

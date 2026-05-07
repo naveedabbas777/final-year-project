@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/auth_service.dart';
+import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -149,14 +150,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     icon:
                         _sending
-                            ? const SizedBox(
-                              height: 16,
-                              width: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                            ? const CompactLoadingIndicator(
+                                size: 16,
                                 color: Colors.white,
-                              ),
-                            )
+                              )
                             : const Icon(Icons.send),
                     label: const Text('Send reset link'),
                   ),

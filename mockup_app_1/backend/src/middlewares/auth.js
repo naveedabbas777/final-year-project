@@ -1,9 +1,23 @@
 import { admin } from '../config/firebaseAdmin.js';
 
+const isProduction = (process.env.NODE_ENV || '').toLowerCase() === 'production';
 const allowDevAuthFallback =
   (process.env.ALLOW_DEV_AUTH_FALLBACK || '').toLowerCase() === 'true';
 
+// SECURITY: Fail startup if dev auth fallback is enabled in production
+if (isProduction && allowDevAuthFallback) {
+  throw new Error(
+    'SECURITY ERROR: ALLOW_DEV_AUTH_FALLBACK cannot be true in production. ' +
+      'Remove or set to "false" to continue.'
+  );
+}
+
 function buildDevUser(token) {
+  // SECURITY: Only allow in non-production environments
+  if (isProduction) {
+    return null;
+  }
+
   const parts = token.split('.');
   if (parts.length === 3) {
     try {
@@ -52,8 +66,15 @@ export async function requireAuth(req, res, next) {
         return;
       }
 
-      console.warn('[Auth] Using dev auth fallback because ALLOW_DEV_AUTH_FALLBACK=true');
+      console.warn(
+        '[Auth] Using dev auth fallback because ALLOW_DEV_AUTH_FALLBACK=true. ' +
+          'This should NEVER be used in production.'
+      );
       req.user = buildDevUser(token);
+      if (!req.user) {
+        res.status(401).json({ message: 'Dev auth fallback failed' });
+        return;
+      }
     }
 
     next();

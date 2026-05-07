@@ -38,7 +38,7 @@ class ApiClient {
       if (user == null) {
         throw Exception('You must sign in first to perform this action.');
       }
-      final token = await user.getIdToken(true);
+      final token = await user.getIdToken();
       headers['Authorization'] = 'Bearer $token';
     }
 
@@ -133,6 +133,30 @@ class ApiClient {
     );
   }
 
+  Future<dynamic> delete(
+    String path, {
+    bool auth = false,
+  }) async {
+    return await RetryHelper.retry(
+      () => _performDelete(path, auth),
+      maxAttempts: 2,
+      initialDelayMs: 300,
+    );
+  }
+
+  Future<dynamic> _performDelete(
+    String path,
+    bool auth,
+  ) async {
+    final res = await _http
+        .delete(
+          _uri(path),
+          headers: await _headers(auth: auth),
+        )
+        .timeout(_requestTimeout);
+    return _decode(res);
+  }
+
   Future<dynamic> _performPatch(
     String path,
     Map<String, dynamic>? body,
@@ -193,7 +217,21 @@ class ApiClient {
   }) async {
     final req = http.MultipartRequest('POST', _uri(path));
     req.headers.addAll(await _headers(auth: auth, includeContentType: false));
-    req.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+    
+    // Determine MIME type based on file extension
+    String mimeType = 'image/jpeg'; // default
+    final ext = filePath.toLowerCase();
+    if (ext.endsWith('.png')) mimeType = 'image/png';
+    else if (ext.endsWith('.gif')) mimeType = 'image/gif';
+    else if (ext.endsWith('.webp')) mimeType = 'image/webp';
+    else if (ext.endsWith('.bmp')) mimeType = 'image/bmp';
+    else if (ext.endsWith('.jpg') || ext.endsWith('.jpeg')) mimeType = 'image/jpeg';
+    
+    req.files.add(await http.MultipartFile.fromPath(
+      fieldName,
+      filePath,
+      contentType: http.MediaType.parse(mimeType),
+    ));
 
     final streamed = await req.send().timeout(_requestTimeout);
     final body = await streamed.stream.bytesToString();
