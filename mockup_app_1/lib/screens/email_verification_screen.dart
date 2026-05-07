@@ -202,9 +202,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       icon:
                           _resending
                               ? const CompactLoadingIndicator(
-                                  size: 16,
-                                  color: Colors.white,
-                                )
+                                size: 16,
+                                color: Colors.white,
+                              )
                               : const Icon(Icons.email_outlined),
                       label: const Text('Resend verification email'),
                     ),

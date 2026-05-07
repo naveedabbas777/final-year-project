@@ -348,11 +348,7 @@ class MarketApiService {
     if (latitude != null) body['latitude'] = latitude;
     if (longitude != null) body['longitude'] = longitude;
 
-    await _client.patch(
-      '/api/listings/$listingId',
-      auth: true,
-      body: body,
-    );
+    await _client.patch('/api/listings/$listingId', auth: true, body: body);
   }
 
   Future<void> makeOffer({
@@ -462,15 +458,20 @@ class MarketApiService {
     String? listingId,
     String? toUid,
   }) async {
-    await _client.post(
-      '/api/messages',
-      auth: true,
-      body: {
-        'message': message,
-        if (listingId != null) 'listingId': listingId,
-        if (toUid != null) 'toUid': toUid,
-      },
-    );
+    try {
+      await _client.post(
+        '/api/messages',
+        auth: true,
+        body: {
+          'message': message,
+          if (listingId != null) 'listingId': listingId,
+          if (toUid != null) 'toUid': toUid,
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[MarketApi] sendMessage failed: $e');
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> fetchMessagesForListing(
@@ -487,18 +488,28 @@ class MarketApiService {
   }
 
   Future<void> markListingMessagesRead(String listingId) async {
-    await _client.post('/api/messages/listing/$listingId/read', auth: true);
+    try {
+      await _client.post('/api/messages/listing/$listingId/read', auth: true);
+    } catch (e) {
+      if (kDebugMode) debugPrint('[MarketApi] markListingMessagesRead failed: $e');
+      // Non-critical - ignore errors
+    }
   }
 
   Future<void> setTyping({
     required String listingId,
     required bool isTyping,
   }) async {
-    await _client.post(
-      '/api/messages/typing',
-      auth: true,
-      body: {'listingId': listingId, 'isTyping': isTyping},
-    );
+    try {
+      await _client.post(
+        '/api/messages/typing',
+        auth: true,
+        body: {'listingId': listingId, 'isTyping': isTyping},
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[MarketApi] setTyping failed: $e');
+      // Non-critical - ignore
+    }
   }
 
   // User profiles and ratings
@@ -584,11 +595,16 @@ class MarketApiService {
 
   // Presence: update user online/offline status
   Future<void> setPresence({required bool isOnline}) async {
-    await _client.post(
-      '/api/users/me/presence',
-      auth: true,
-      body: {'isOnline': isOnline},
-    );
+    try {
+      await _client.post(
+        '/api/users/me/presence',
+        auth: true,
+        body: {'isOnline': isOnline},
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[MarketApi] setPresence failed: $e');
+      // Non-critical - ignore failures
+    }
   }
 
   // Presence: get user presence status
@@ -604,13 +620,13 @@ class MarketApiService {
   // Non-critical: returns 0 silently on error/timeout (including 403 if not participant)
   Future<int> getUnreadCount(String listingId) async {
     try {
-      final data = await _client.get(
-        '/api/messages/listing/$listingId/unread-count',
-        auth: true,
-      ).timeout(
-        const Duration(seconds: 3),
-        onTimeout: () => throw TimeoutException('Unread count request timed out'),
-      );
+      final data = await _client
+          .get('/api/messages/listing/$listingId/unread-count', auth: true)
+          .timeout(
+            const Duration(seconds: 3),
+            onTimeout:
+                () => throw TimeoutException('Unread count request timed out'),
+          );
       if (data is! Map<String, dynamic>) return 0;
       return (data['unreadCount'] as int?) ?? 0;
     } catch (e) {
@@ -620,4 +636,3 @@ class MarketApiService {
     }
   }
 }
-

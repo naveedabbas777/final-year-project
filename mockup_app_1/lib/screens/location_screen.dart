@@ -532,9 +532,9 @@ class _LocationScreenState extends State<LocationScreen>
                       icon:
                           _isFetchingGps || _isSavingLocation
                               ? const CompactLoadingIndicator(
-                                  size: 18,
-                                  color: Colors.white,
-                                )
+                                size: 18,
+                                color: Colors.white,
+                              )
                               : const Icon(Icons.gps_fixed),
                       label: Text(
                         _isFetchingGps

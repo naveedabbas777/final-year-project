@@ -37,7 +37,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
   }
 
   String get _sellerUsername {
-    return (_seller?['name'] ?? _seller?['displayName'] ?? widget.sellerUid).toString();
+    return (_seller?['name'] ?? _seller?['displayName'] ?? widget.sellerUid)
+        .toString();
   }
 
   String get _sellerFullName {
@@ -193,11 +194,12 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                         fit: BoxFit.contain,
                         width: double.infinity,
                         height: double.infinity,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 80,
-                        ),
+                        errorBuilder:
+                            (_, __, ___) => const Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 80,
+                            ),
                       ),
                     ),
                   ),
@@ -219,14 +221,21 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                 bottom: 16,
                 child: SafeArea(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.45),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.zoom_in, color: Colors.white, size: 18),
+                        const Icon(
+                          Icons.zoom_in,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -307,15 +316,23 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                               onTap:
                                   photoUrl.isEmpty
                                       ? null
-                                      : () => _openPhotoViewer(photoUrl, sellerName),
+                                      : () => _openPhotoViewer(
+                                        photoUrl,
+                                        sellerName,
+                                      ),
                               child: CircleAvatar(
                                 radius: 28,
                                 backgroundColor: Colors.green.shade100,
                                 backgroundImage:
-                                    photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                                    photoUrl.isNotEmpty
+                                        ? NetworkImage(photoUrl)
+                                        : null,
                                 child:
                                     photoUrl.isEmpty
-                                        ? Icon(Icons.person, color: Colors.green.shade700)
+                                        ? Icon(
+                                          Icons.person,
+                                          color: Colors.green.shade700,
+                                        )
                                         : null,
                               ),
                             ),
@@ -387,16 +404,32 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                         padding: const EdgeInsets.all(14),
                         child: Column(
                           children: [
-                            _buildProfileInfoTile(Icons.person_outline, 'Username', username),
+                            _buildProfileInfoTile(
+                              Icons.person_outline,
+                              'Username',
+                              username,
+                            ),
                             Divider(height: 16, color: Colors.green.shade100),
-                            _buildProfileInfoTile(Icons.badge_outlined, 'Full name', fullName),
+                            _buildProfileInfoTile(
+                              Icons.badge_outlined,
+                              'Full name',
+                              fullName,
+                            ),
                             if (email.trim().isNotEmpty) ...[
                               Divider(height: 16, color: Colors.green.shade100),
-                              _buildProfileInfoTile(Icons.email_outlined, 'Email', email),
+                              _buildProfileInfoTile(
+                                Icons.email_outlined,
+                                'Email',
+                                email,
+                              ),
                             ],
                             if (phone.trim().isNotEmpty) ...[
                               Divider(height: 16, color: Colors.green.shade100),
-                              _buildProfileInfoTile(Icons.phone_outlined, 'Phone number', phone),
+                              _buildProfileInfoTile(
+                                Icons.phone_outlined,
+                                'Phone number',
+                                phone,
+                              ),
                             ],
                           ],
                         ),
@@ -536,8 +569,12 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                         (row) => Card(
                           child: ListTile(
                             leading: const Icon(Icons.shopping_bag_outlined),
-                            title: Text('${row.cropName} • ${row.qualityGrade}'),
-                            subtitle: Text('${row.quantity.toStringAsFixed(0)} ${row.unit} - ${row.district}'),
+                            title: Text(
+                              '${row.cropName} • ${row.qualityGrade}',
+                            ),
+                            subtitle: Text(
+                              '${row.quantity.toStringAsFixed(0)} ${row.unit} - ${row.district}',
+                            ),
                           ),
                         ),
                       ),

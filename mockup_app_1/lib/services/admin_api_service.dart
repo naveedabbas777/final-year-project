@@ -77,13 +77,18 @@ class AdminUserDto {
   factory AdminUserDto.fromJson(Map<String, dynamic> json) {
     return AdminUserDto(
       firebaseUid: toStringOrEmpty(json['firebaseUid']),
-      name: toStringOrEmpty(json['displayName']).isNotEmpty
-          ? toStringOrEmpty(json['displayName'])
-          : toStringOrEmpty(json['name']),
-      role: toStringOrEmpty(json['role']).isEmpty ? 'farmer' : toStringOrEmpty(json['role']),
-      phone: toStringOrEmpty(json['phoneNumber']).isNotEmpty
-          ? toStringOrEmpty(json['phoneNumber'])
-          : toStringOrEmpty(json['phone']),
+      name:
+          toStringOrEmpty(json['displayName']).isNotEmpty
+              ? toStringOrEmpty(json['displayName'])
+              : toStringOrEmpty(json['name']),
+      role:
+          toStringOrEmpty(json['role']).isEmpty
+              ? 'farmer'
+              : toStringOrEmpty(json['role']),
+      phone:
+          toStringOrEmpty(json['phoneNumber']).isNotEmpty
+              ? toStringOrEmpty(json['phoneNumber'])
+              : toStringOrEmpty(json['phone']),
       district: toStringOrEmpty(json['district']),
       province: toStringOrEmpty(json['province']),
       email: toStringOrEmpty(json['email']),
@@ -164,6 +169,47 @@ class AdminOrderDto {
   }
 }
 
+class AdminNotificationLogDto {
+  AdminNotificationLogDto({
+    required this.id,
+    required this.senderUid,
+    required this.senderName,
+    required this.mode,
+    required this.title,
+    required this.body,
+    required this.recipients,
+    required this.alertCreated,
+    required this.pushSent,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String senderUid;
+  final String senderName;
+  final String mode;
+  final String title;
+  final String body;
+  final int recipients;
+  final int alertCreated;
+  final int pushSent;
+  final String? createdAt;
+
+  factory AdminNotificationLogDto.fromJson(Map<String, dynamic> json) {
+    return AdminNotificationLogDto(
+      id: toStringOrEmpty(json['id']),
+      senderUid: toStringOrEmpty(json['senderUid']),
+      senderName: toStringOrEmpty(json['senderName']),
+      mode: toStringOrEmpty(json['mode']),
+      title: toStringOrEmpty(json['title']),
+      body: toStringOrEmpty(json['body']),
+      recipients: toIntOrZero(json['recipients']),
+      alertCreated: toIntOrZero(json['alertCreated']),
+      pushSent: toIntOrZero(json['pushSent']),
+      createdAt: _toNullableString(json['createdAt']),
+    );
+  }
+}
+
 class AdminApiService {
   AdminApiService({ApiClient? client}) : _client = client ?? ApiClient();
 
@@ -219,9 +265,13 @@ class AdminApiService {
     return asMapList(data).map(AdminAlertDto.fromJson).toList();
   }
 
-  Future<List<AdminOrderDto>> fetchOrders({int limit = 100, String? status}) async {
+  Future<List<AdminOrderDto>> fetchOrders({
+    int limit = 100,
+    String? status,
+  }) async {
     final query = <String, String>{'limit': limit.toString()};
-    if (status != null && status.trim().isNotEmpty) query['status'] = status.trim();
+    if (status != null && status.trim().isNotEmpty)
+      query['status'] = status.trim();
     final data = await _client.get(
       '/api/admin/orders',
       auth: true,
@@ -236,7 +286,9 @@ class AdminApiService {
     if (data is! Map<String, dynamic>) {
       return 'Weather refresh complete';
     }
-    return toStringOrEmpty(data['message']).isNotEmpty ? toStringOrEmpty(data['message']) : 'Weather refresh complete';
+    return toStringOrEmpty(data['message']).isNotEmpty
+        ? toStringOrEmpty(data['message'])
+        : 'Weather refresh complete';
   }
 
   Future<String> ingestOfficialRates() async {
@@ -244,10 +296,15 @@ class AdminApiService {
     if (data is! Map<String, dynamic>) {
       return 'Official rates ingested';
     }
-    return toStringOrEmpty(data['message']).isNotEmpty ? toStringOrEmpty(data['message']) : 'Official rates ingested';
+    return toStringOrEmpty(data['message']).isNotEmpty
+        ? toStringOrEmpty(data['message'])
+        : 'Official rates ingested';
   }
 
-  Future<void> updateUserRole({required String userId, required String role}) async {
+  Future<void> updateUserRole({
+    required String userId,
+    required String role,
+  }) async {
     await _client.patch(
       '/api/users/$userId/role',
       auth: true,
@@ -255,7 +312,10 @@ class AdminApiService {
     );
   }
 
-  Future<void> updateListingStatus({required String listingId, required String status}) async {
+  Future<void> updateListingStatus({
+    required String listingId,
+    required String status,
+  }) async {
     await _client.patch(
       '/api/listings/$listingId/status',
       auth: true,
@@ -263,11 +323,61 @@ class AdminApiService {
     );
   }
 
-  Future<void> updateOrderStatus({required String orderId, required String status}) async {
+  Future<void> updateOrderStatus({
+    required String orderId,
+    required String status,
+  }) async {
     await _client.patch(
       '/api/orders/$orderId/status',
       auth: true,
       body: {'status': status},
     );
+  }
+
+  Future<Map<String, dynamic>> sendNotificationToFarmers({
+    required String mode,
+    required String title,
+    required String body,
+    List<String> targetUserIds = const [],
+  }) async {
+    final data = await _client.post(
+      '/api/admin/notifications/send',
+      auth: true,
+      body: {
+        'mode': mode,
+        'title': title,
+        'body': body,
+        'targetUserIds': targetUserIds,
+      },
+    );
+    if (data is! Map<String, dynamic>) {
+      return <String, dynamic>{'message': 'Notifications processed'};
+    }
+    return data;
+  }
+
+  Future<List<AdminNotificationLogDto>> fetchNotificationHistory({
+    int limit = 50,
+    String? mode,
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final query = <String, String>{'limit': limit.toString()};
+    if (mode != null && mode.trim().isNotEmpty) {
+      query['mode'] = mode.trim();
+    }
+    if (from != null) {
+      query['from'] = from.toUtc().toIso8601String();
+    }
+    if (to != null) {
+      query['to'] = to.toUtc().toIso8601String();
+    }
+    final data = await _client.get(
+      '/api/admin/notifications/history',
+      auth: true,
+      query: query,
+    );
+    if (data is! List<dynamic>) return const [];
+    return asMapList(data).map(AdminNotificationLogDto.fromJson).toList();
   }
 }

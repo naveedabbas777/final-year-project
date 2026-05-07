@@ -30,8 +30,9 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
 
   Future<void> _onMapCreated(MapboxMap mapboxMap) async {
     _mapboxMap = mapboxMap;
-    _pointAnnotationManager = await mapboxMap.annotations.createPointAnnotationManager();
-    
+    _pointAnnotationManager =
+        await mapboxMap.annotations.createPointAnnotationManager();
+
     if (_selectedLatitude != null && _selectedLongitude != null) {
       await _addMarker(_selectedLatitude!, _selectedLongitude!);
     }
@@ -39,14 +40,14 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
 
   Future<void> _addMarker(double latitude, double longitude) async {
     if (_pointAnnotationManager == null) return;
-    
+
     await _pointAnnotationManager!.deleteAll();
-    
+
     final pointAnnotationOptions = PointAnnotationOptions(
       geometry: Point(coordinates: Position(longitude, latitude)),
       iconSize: 1.5,
     );
-    
+
     try {
       await _pointAnnotationManager!.create(pointAnnotationOptions);
     } catch (e) {
@@ -80,7 +81,10 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
               onMapCreated: _onMapCreated,
               cameraOptions: CameraOptions(
                 center: Point(
-                  coordinates: Position(_selectedLongitude!, _selectedLatitude!),
+                  coordinates: Position(
+                    _selectedLongitude!,
+                    _selectedLatitude!,
+                  ),
                 ),
                 zoom: 12.0,
               ),
@@ -113,14 +117,12 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     onPressed: () {
-                      if (_selectedLatitude != null && _selectedLongitude != null) {
-                        Navigator.pop(
-                          context,
-                          {
-                            'latitude': _selectedLatitude,
-                            'longitude': _selectedLongitude,
-                          },
-                        );
+                      if (_selectedLatitude != null &&
+                          _selectedLongitude != null) {
+                        Navigator.pop(context, {
+                          'latitude': _selectedLatitude,
+                          'longitude': _selectedLongitude,
+                        });
                       }
                     },
                     icon: const Icon(Icons.check),
@@ -146,15 +148,22 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                       'Tap on the map to pin your product location',
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
-                    if (_selectedLatitude != null && _selectedLongitude != null) ...[
+                    if (_selectedLatitude != null &&
+                        _selectedLongitude != null) ...[
                       const SizedBox(height: 8),
                       Text(
                         'Latitude: ${_selectedLatitude!.toStringAsFixed(4)}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
                       Text(
                         'Longitude: ${_selectedLongitude!.toStringAsFixed(4)}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                        ),
                       ),
                     ],
                   ],

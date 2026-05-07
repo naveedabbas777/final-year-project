@@ -89,8 +89,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Card(
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: user.isAdmin ? Colors.red.shade100 : Colors.green.shade100,
-          child: Icon(user.isAdmin ? Icons.shield : Icons.person, color: user.isAdmin ? Colors.red.shade700 : Colors.green.shade700),
+          backgroundColor:
+              user.isAdmin ? Colors.red.shade100 : Colors.green.shade100,
+          child: Icon(
+            user.isAdmin ? Icons.shield : Icons.person,
+            color: user.isAdmin ? Colors.red.shade700 : Colors.green.shade700,
+          ),
         ),
         title: Text(user.name.isNotEmpty ? user.name : user.firebaseUid),
         subtitle: Text(
@@ -115,7 +119,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget _buildOrderTile(AdminOrderDto order) {
     return Card(
       child: ListTile(
-        title: Text('Order ${order.id.substring(0, order.id.length > 10 ? 10 : order.id.length)}'),
+        title: Text(
+          'Order ${order.id.substring(0, order.id.length > 10 ? 10 : order.id.length)}',
+        ),
         subtitle: Text(
           'Buyer: ${order.buyerUid}\nSeller: ${order.sellerUid}\n${order.quantity.toStringAsFixed(0)} ${order.unit} • PKR ${order.finalPrice.toStringAsFixed(0)}',
         ),
@@ -197,7 +203,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               future: _overviewFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AsyncLoadingWidget(message: 'Loading admin overview...');
+                  return const AsyncLoadingWidget(
+                    message: 'Loading admin overview...',
+                  );
                 }
                 if (snapshot.hasError) {
                   return AsyncErrorWidget(
@@ -207,7 +215,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 }
                 final overview = snapshot.data;
                 if (overview == null) {
-                  return const AsyncEmptyWidget(message: 'No admin metrics available');
+                  return const AsyncEmptyWidget(
+                    message: 'No admin metrics available',
+                  );
                 }
 
                 return ListView(
@@ -215,30 +225,70 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   children: [
                     Row(
                       children: [
-                        _metricCard('Users', overview.users.toString(), Icons.people, Colors.green.shade700),
+                        _metricCard(
+                          'Users',
+                          overview.users.toString(),
+                          Icons.people,
+                          Colors.green.shade700,
+                        ),
                         const SizedBox(width: 10),
-                        _metricCard('Admins', overview.admins.toString(), Icons.admin_panel_settings, Colors.red.shade700),
+                        _metricCard(
+                          'Admins',
+                          overview.admins.toString(),
+                          Icons.admin_panel_settings,
+                          Colors.red.shade700,
+                        ),
                       ],
                     ),
                     Row(
                       children: [
-                        _metricCard('Listings', overview.listings.toString(), Icons.storefront, Colors.blue.shade700),
+                        _metricCard(
+                          'Listings',
+                          overview.listings.toString(),
+                          Icons.storefront,
+                          Colors.blue.shade700,
+                        ),
                         const SizedBox(width: 10),
-                        _metricCard('Open', overview.openListings.toString(), Icons.inventory_2, Colors.teal.shade700),
+                        _metricCard(
+                          'Open',
+                          overview.openListings.toString(),
+                          Icons.inventory_2,
+                          Colors.teal.shade700,
+                        ),
                       ],
                     ),
                     Row(
                       children: [
-                        _metricCard('Orders', overview.orders.toString(), Icons.receipt_long, Colors.orange.shade700),
+                        _metricCard(
+                          'Orders',
+                          overview.orders.toString(),
+                          Icons.receipt_long,
+                          Colors.orange.shade700,
+                        ),
                         const SizedBox(width: 10),
-                        _metricCard('Offers', overview.offers.toString(), Icons.local_offer, Colors.purple.shade700),
+                        _metricCard(
+                          'Offers',
+                          overview.offers.toString(),
+                          Icons.local_offer,
+                          Colors.purple.shade700,
+                        ),
                       ],
                     ),
                     Row(
                       children: [
-                        _metricCard('Rates', overview.rates.toString(), Icons.trending_up, Colors.brown.shade700),
+                        _metricCard(
+                          'Rates',
+                          overview.rates.toString(),
+                          Icons.trending_up,
+                          Colors.brown.shade700,
+                        ),
                         const SizedBox(width: 10),
-                        _metricCard('Online', overview.onlineUsers.toString(), Icons.circle, Colors.cyan.shade700),
+                        _metricCard(
+                          'Online',
+                          overview.onlineUsers.toString(),
+                          Icons.circle,
+                          Colors.cyan.shade700,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -246,7 +296,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.cloud_sync),
                         title: const Text('Weather refresh'),
-                        subtitle: Text('${overview.recentAlerts} recent weather alerts tracked'),
+                        subtitle: Text(
+                          '${overview.recentAlerts} recent weather alerts tracked',
+                        ),
                         trailing: ElevatedButton(
                           onPressed: _refreshWeather,
                           child: const Text('Refresh now'),
@@ -257,7 +309,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.agriculture),
                         title: const Text('Official crop rates'),
-                        subtitle: const Text('Ingest the latest market rates from the configured source'),
+                        subtitle: const Text(
+                          'Ingest the latest market rates from the configured source',
+                        ),
                         trailing: ElevatedButton(
                           onPressed: _ingestRates,
                           child: const Text('Ingest'),
@@ -299,7 +353,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               future: _sellersFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AsyncLoadingWidget(message: 'Loading sellers...');
+                  return const AsyncLoadingWidget(
+                    message: 'Loading sellers...',
+                  );
                 }
                 if (snapshot.hasError) {
                   return AsyncErrorWidget(
@@ -308,7 +364,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   );
                 }
                 final users = snapshot.data ?? const [];
-                if (users.isEmpty) return const AsyncEmptyWidget(message: 'No sellers found');
+                if (users.isEmpty)
+                  return const AsyncEmptyWidget(message: 'No sellers found');
                 return RefreshIndicator(
                   onRefresh: () async => _reloadAll(),
                   child: ListView.separated(
@@ -333,7 +390,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   );
                 }
                 final users = snapshot.data ?? const [];
-                if (users.isEmpty) return const AsyncEmptyWidget(message: 'No buyers found');
+                if (users.isEmpty)
+                  return const AsyncEmptyWidget(message: 'No buyers found');
                 return RefreshIndicator(
                   onRefresh: () async => _reloadAll(),
                   child: ListView.separated(

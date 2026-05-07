@@ -1,11 +1,9 @@
-import { connectDb } from '../config/db.js';
-import { env } from '../config/env.js';
-import { CropRateModel } from '../models/cropRate.model.js';
-import { ListingModel } from '../models/listing.model.js';
+import { initFirebaseAdmin } from '../config/firebaseAdmin.js';
+import { admin } from '../config/firebaseAdmin.js';
 
 async function seed() {
-  await connectDb(env.mongoUri);
-
+  initFirebaseAdmin();
+  const firestore = admin.firestore();
   const now = new Date();
 
   const rates = [
@@ -20,6 +18,8 @@ async function seed() {
       sourceUrl: 'https://agripunjab.gov.pk/',
       isOfficialSource: true,
       rateDate: now,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
     {
       cropName: 'Rice',
@@ -32,6 +32,8 @@ async function seed() {
       sourceUrl: 'https://agripunjab.gov.pk/',
       isOfficialSource: true,
       rateDate: now,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
     {
       cropName: 'Maize',
@@ -44,6 +46,8 @@ async function seed() {
       sourceUrl: 'https://www.parc.gov.pk/',
       isOfficialSource: true,
       rateDate: now,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
   ];
 
@@ -59,6 +63,8 @@ async function seed() {
       description: 'Dry grain, ready for pickup.',
       imageUrls: [],
       status: 'open',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
     {
       sellerUid: 'demo-seller-002',
@@ -71,18 +77,35 @@ async function seed() {
       description: 'Premium batch, recently harvested.',
       imageUrls: [],
       status: 'open',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     },
   ];
 
-  await CropRateModel.deleteMany({ sourceName: { $regex: /\(demo\)$/i } });
-  await ListingModel.deleteMany({ sellerUid: { $regex: /^demo-seller-/ } });
+  // Delete old demo data
+  const oldRatesSnap = await firestore.collection('crop_rates').where('sourceName', '>=', 'P').where('sourceName', '<=', 'P\uf8ff').get();
+  const oldListingsSnap = await firestore.collection('listings').where('sellerUid', '>=', 'demo-seller-').where('sellerUid', '<=', 'demo-seller-\uf8ff').get();
 
-  const insertedRates = await CropRateModel.insertMany(rates);
-  const insertedListings = await ListingModel.insertMany(listings);
+  const batch = firestore.batch();
+  oldRatesSnap.docs.forEach((doc) => {
+    if (doc.data().sourceName?.includes('(demo)')) batch.delete(doc.ref);
+  });
+  oldListingsSnap.docs.forEach((doc) => batch.delete(doc.ref));
+  await batch.commit();
+
+  // Insert new demo data
+  const insertBatch = firestore.batch();
+  for (const rate of rates) {
+    insertBatch.set(firestore.collection('crop_rates').doc(), rate);
+  }
+  for (const listing of listings) {
+    insertBatch.set(firestore.collection('listings').doc(), listing);
+  }
+  await insertBatch.commit();
 
   // eslint-disable-next-line no-console
   console.log(
-    `Seed complete: ${insertedRates.length} rates, ${insertedListings.length} listings.`,
+    `Seed complete: ${rates.length} rates, ${listings.length} listings.`,
   );
 
   process.exit(0);

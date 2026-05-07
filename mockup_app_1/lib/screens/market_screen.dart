@@ -8,7 +8,7 @@ import '../utils/form_validators.dart';
 import 'listing_detail_screen.dart';
 import 'offers_screen.dart';
 import 'orders_screen.dart';
-import 'admin_dashboard_screen.dart';
+import 'admin/admin_console_shell.dart';
 import 'my_listings_screen.dart';
 
 class MarketScreen extends StatefulWidget {
@@ -129,49 +129,115 @@ class _MarketScreenState extends State<MarketScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F7F5),
       appBar: AppBar(
-        title: const Text('Market'),
-        backgroundColor: Colors.green.shade700,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.storefront_rounded, size: 20),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'Marketplace',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20, letterSpacing: -0.3),
+            ),
+          ],
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.green.shade800, Colors.green.shade600],
+            ),
+          ),
+        ),
         foregroundColor: Colors.white,
         elevation: 0,
-        toolbarHeight: 48,
+        toolbarHeight: 52,
         actions: [
-          IconButton(
-            tooltip: 'Offers',
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const OffersScreen()));
-            },
-            icon: const Icon(Icons.local_offer_outlined),
+          Container(
+            margin: const EdgeInsets.only(right: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IconButton(
+              tooltip: 'Offers',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const OffersScreen()),
+                );
+              },
+              icon: const Icon(Icons.local_offer_outlined, size: 20),
+            ),
           ),
-          IconButton(
-            tooltip: 'Order history',
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const OrdersScreen()));
-            },
-            icon: const Icon(Icons.receipt_long_outlined),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IconButton(
+              tooltip: 'Order history',
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const OrdersScreen()),
+                );
+              },
+              icon: const Icon(Icons.receipt_long_outlined, size: 20),
+            ),
           ),
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
-          indicatorWeight: 2,
-          labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          labelStyle: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicator: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(10),
           ),
-          unselectedLabelStyle: const TextStyle(fontSize: 12),
+          dividerColor: Colors.transparent,
+          labelPadding: const EdgeInsets.symmetric(horizontal: 12),
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
+          labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+          unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           tabs: const [
-            Tab(text: 'Rates'),
-            Tab(text: 'Buy/Sell'),
-            Tab(text: 'Mine'),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.trending_up_rounded, size: 16),
+                  SizedBox(width: 6),
+                  Text('Rates'),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.shopping_bag_outlined, size: 16),
+                  SizedBox(width: 6),
+                  Text('Buy/Sell'),
+                ],
+              ),
+            ),
+            Tab(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.inventory_2_outlined, size: 16),
+                  SizedBox(width: 6),
+                  Text('My Items'),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -292,43 +358,76 @@ class _RatesTabState extends State<_RatesTab> {
   }
 
   Widget _buildEmptyOrError({required bool isRatesTab}) {
-    final message =
-        _error != null
-            ? ErrorPresenter.present(_error!)
-            : isRatesTab
-            ? 'No rates available yet. Ingest official rates from backend.'
+    final message = _error != null
+        ? ErrorPresenter.present(_error!)
+        : isRatesTab
+            ? 'No rates available yet.\nIngest official rates from the backend.'
             : 'No active listings found.';
-
     final actionLabel = _error != null ? 'Retry' : 'Refresh';
+    final iconData = _error != null
+        ? Icons.error_outline
+        : isRatesTab
+            ? Icons.trending_up
+            : Icons.inbox_outlined;
 
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_error != null)
-            Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
-          if (_error != null) const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                onPressed: _loading ? null : _load,
-                icon: const Icon(Icons.refresh),
-                label: Text(actionLabel),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: _error != null ? Colors.red.shade50 : Colors.green.shade50,
+                shape: BoxShape.circle,
               ),
-              if (_error != null) ...[
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Go Back'),
+              child: Icon(
+                iconData,
+                size: 64,
+                color: _error != null ? Colors.red.shade400 : Colors.green.shade400,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _loading ? null : _load,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(actionLabel),
                 ),
+                if (_error != null) ...[
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Go Back'),
+                  ),
+                ],
               ],
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -367,7 +466,7 @@ class _RatesTabState extends State<_RatesTab> {
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => const AdminDashboardScreen(),
+                              builder: (_) => const AdminConsoleShell(),
                             ),
                           );
                         },
@@ -596,7 +695,7 @@ class _RatesTabState extends State<_RatesTab> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      row.minPrice.toStringAsFixed(0),
+                                      'PKR ${row.minPrice.toStringAsFixed(0)}',
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
@@ -617,7 +716,7 @@ class _RatesTabState extends State<_RatesTab> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      row.maxPrice.toStringAsFixed(0),
+                                      'PKR ${row.maxPrice.toStringAsFixed(0)}',
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
@@ -879,40 +978,69 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   }
 
   Widget _buildEmptyOrError() {
-    final message =
-        _error != null
-            ? ErrorPresenter.present(_error!)
-            : 'No active listings found.';
+    final message = _error != null
+        ? ErrorPresenter.present(_error!)
+        : 'No active listings found.';
     final actionLabel = _error != null ? 'Retry' : 'Refresh';
 
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_error != null)
-            Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
-          if (_error != null) const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ElevatedButton.icon(
-                onPressed: _loading ? null : _load,
-                icon: const Icon(Icons.refresh),
-                label: Text(actionLabel),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: _error != null ? Colors.red.shade50 : Colors.green.shade50,
+                shape: BoxShape.circle,
               ),
-              if (_error != null) ...[
-                const SizedBox(width: 12),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.arrow_back),
-                  label: const Text('Go Back'),
+              child: Icon(
+                _error != null ? Icons.error_outline : Icons.shopping_basket_outlined,
+                size: 64,
+                color: _error != null ? Colors.red.shade400 : Colors.green.shade400,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: _loading ? null : _load,
+                  icon: const Icon(Icons.refresh),
+                  label: Text(actionLabel),
                 ),
+                if (_error != null) ...[
+                  const SizedBox(width: 12),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('Go Back'),
+                  ),
+                ],
               ],
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1444,149 +1572,132 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final unreadCount = _unreadCounts[row.id] ?? 0;
 
     return InkWell(
-      onTap:
-          () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ListingDetailScreen(listing: row),
-            ),
-          ),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ListingDetailScreen(listing: row)),
+      ),
+      borderRadius: BorderRadius.circular(16),
       child: Card(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 2,
+        shadowColor: Colors.black12,
         child: Padding(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              row.imageUrls.isNotEmpty
-                  ? ClipRRect(
-                    borderRadius: BorderRadius.circular(7),
-                    child: Image.network(
-                      row.imageUrls.first,
-                      width: 52,
-                      height: 52,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                  : Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                    child: Icon(
-                      Icons.agriculture,
-                      color: Colors.green.shade700,
-                      size: 22,
-                    ),
-                  ),
-              const SizedBox(width: 10),
+              Hero(
+                tag: 'listing_image_${row.id}',
+                child: row.imageUrls.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Image.network(
+                          row.imageUrls.first,
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(Icons.agriculture, color: Colors.green.shade400, size: 28),
+                      ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${row.cropName} • ${row.qualityGrade}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      '${row.cropName} • Grade ${row.qualityGrade}',
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 14,
-                          color: Colors.green.shade700,
-                        ),
+                        Icon(Icons.location_on, size: 14, color: Colors.green.shade700),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             row.district,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.green.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: TextStyle(fontSize: 12, color: Colors.green.shade800, fontWeight: FontWeight.w500),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 1),
-                    Text(
-                      'Qty: ${row.quantity.toStringAsFixed(0)} ${row.unit}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        if (unreadCount > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade100,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '$unreadCount unread',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.red.shade900,
-                              ),
-                            ),
-                          ),
+                        Text(
+                          'Qty: ${row.quantity.toStringAsFixed(0)} ${row.unit}',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
                         const Spacer(),
                         Text(
                           'PKR ${row.askingPrice.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            color: Colors.green.shade700,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green.shade800),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      alignment: WrapAlignment.end,
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                        if (unreadCount > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.shade100),
                             ),
-                            minimumSize: const Size(0, 0),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          onPressed: () => _offerDialog(row),
-                          child: const Text('Offer'),
-                        ),
-                        OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.mark_chat_unread, size: 12, color: Colors.blue.shade700),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '$unreadCount new',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
+                                ),
+                              ],
                             ),
-                            minimumSize: const Size(0, 0),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          onPressed: () => _messageSellerDialog(row),
-                          child: const Text('Message'),
+                          )
+                        else
+                          const SizedBox.shrink(),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            TextButton(
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () => _offerDialog(row),
+                              child: const Text('Make Offer', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green.shade50,
+                                foregroundColor: Colors.green.shade800,
+                                elevation: 0,
+                                visualDensity: VisualDensity.compact,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () => _messageSellerDialog(row),
+                              child: const Text('Message', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            ),
+                          ],
                         ),
                       ],
                     ),

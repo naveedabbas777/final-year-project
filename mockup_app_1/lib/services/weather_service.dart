@@ -33,7 +33,7 @@ class WeatherService {
             'You must sign in first to load weather for your saved location.',
           );
         }
-        headers['Authorization'] = 'Bearer ${await user.getIdToken(true)}';
+        headers['Authorization'] = 'Bearer ${await user.getIdToken()}';
       }
 
       final resp = await _client

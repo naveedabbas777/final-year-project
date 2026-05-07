@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/firebase_service.dart';
 import '../services/notification_service.dart';
+import '../services/push_service.dart';
 
 // PHASE 1: Explicit auth bootstrap state to avoid startup race conditions
 enum AuthBootstrapState { unknown, authenticated, unauthenticated }
@@ -75,6 +76,12 @@ class AuthProvider extends ChangeNotifier {
   /// Centralized sign-out with full bootstrap reset
   /// PHASE 1 FIX: Unified sign-out behavior
   Future<void> signOut() async {
+    // Unregister FCM token so logged-out user stops receiving notifications
+    try {
+      await PushService.instance.dispose();
+    } catch (_) {
+      // Don't block sign-out if token cleanup fails
+    }
     _bootstrapState = AuthBootstrapState.unknown;
     _user = null;
     notifyListeners();

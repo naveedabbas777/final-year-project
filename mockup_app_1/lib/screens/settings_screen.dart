@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/firebase_service.dart';
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/notification_service.dart';
+import 'package:mockup_app/main.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -198,16 +199,88 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// PHASE 1 FIX: Unified sign-out with full state reset and navigation clear
+  Future<void> _signOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'Sign Out',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            content: const Text('Are you sure you want to sign out?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: const Text('Sign Out'),
+              ),
+            ],
+          ),
+    );
+    if (confirmed != true) return;
+
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    await auth.signOut();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreenWrapper()),
+      (route) => false, // Clear entire navigation stack
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.settings),
-        backgroundColor: Colors.green.shade700,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.settings_rounded, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              AppLocalizations.of(context)!.settings,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                letterSpacing: -0.3,
+              ),
+            ),
+          ],
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.green.shade800, Colors.green.shade600],
+            ),
+          ),
+        ),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      backgroundColor: Colors.green.shade50,
+      backgroundColor: const Color(0xFFF5F7F5),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
@@ -297,6 +370,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                 }
               },
+            ),
+            const SizedBox(height: 8),
+            const Divider(),
+            const SizedBox(height: 8),
+            ListTile(
+              leading: Icon(Icons.logout_rounded, color: Colors.red.shade600),
+              title: Text(
+                'Sign Out',
+                style: TextStyle(
+                  color: Colors.red.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: const Text('Sign out of your account'),
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.red.shade300,
+              ),
+              onTap: _signOut,
             ),
           ],
         ),

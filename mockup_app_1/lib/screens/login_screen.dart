@@ -252,9 +252,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       child:
                           _sending
                               ? const CompactLoadingIndicator(
-                                  size: 16,
-                                  color: Colors.white,
-                                )
+                                size: 16,
+                                color: Colors.white,
+                              )
                               : const Text('Login'),
                     ),
                   ),

@@ -1,11 +1,9 @@
 import { createApp } from './app.js';
 import { env } from './config/env.js';
-import { connectDb } from './config/db.js';
 import { initFirebaseAdmin } from './config/firebaseAdmin.js';
 import { startWeatherRefreshJob } from './services/weatherAlerts.service.js';
 
 async function start() {
-  await connectDb(env.mongoUri);
   initFirebaseAdmin();
   // Log whether OpenWeather key is configured (do not print full key)
   if (env.openWeatherKey && env.openWeatherKey.length > 0) {

@@ -328,9 +328,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       icon:
                           _sending
                               ? const CompactLoadingIndicator(
-                                  size: 16,
-                                  color: Colors.white,
-                                )
+                                size: 16,
+                                color: Colors.white,
+                              )
                               : const Icon(Icons.person_add),
                       label: const Text('Register'),
                       onPressed: _sending ? null : _startRegistration,

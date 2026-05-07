@@ -1,42 +1,102 @@
 import { Router } from 'express';
 
-import { OfferModel } from '../models/offer.model.js';
-import { ListingModel } from '../models/listing.model.js';
-import { OrderModel } from '../models/order.model.js';
 import { requireAuth } from '../middlewares/auth.js';
 import { attachDbUser } from '../middlewares/attachDbUser.js';
 import { admin } from '../config/firebaseAdmin.js';
+import { col, docToJson, queryToJson, serverTimestamp } from '../utils/firestoreHelpers.js';
+import { sendPushToUser } from '../utils/fcmHelper.js';
+import { asyncHandler } from '../utils/errors.js';
+import { validateOfferInput } from '../utils/validators.js';
 
 export const offersRouter = Router();
 
-offersRouter.get('/me', requireAuth, attachDbUser, async (req, res) => {
-  const rows = await OfferModel.find({ buyerUid: req.user.uid })
-    .populate('listingId')
-    .sort({ createdAt: -1 });
+offersRouter.get('/me', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
+  const snapshot = await col('offers')
+    .where('buyerUid', '==', req.user.uid)
+    .orderBy('createdAt', 'desc')
+    .get();
 
-  res.json(rows);
-});
+  const offers = queryToJson(snapshot);
 
-offersRouter.get('/incoming', requireAuth, attachDbUser, async (req, res) => {
-  const myListings = await ListingModel.find({ sellerUid: req.user.uid }).select('_id');
-  const listingIds = myListings.map((row) => row._id);
+  // Batch-fetch listing data (fixes N+1 query)
+  const listingIds = [...new Set(offers.map((o) => o.listingId).filter(Boolean))];
+  const listingMap = new Map();
+  if (listingIds.length > 0) {
+    const refs = listingIds.map(id => col('listings').doc(id));
+    const snaps = await admin.firestore().getAll(...refs);
+    snaps.forEach(snap => {
+      if (snap.exists) listingMap.set(snap.id, docToJson(snap));
+    });
+  }
 
-  const rows = await OfferModel.find({ listingId: { $in: listingIds } })
-    .populate('listingId')
-    .sort({ createdAt: -1 });
+  const enriched = offers.map((o) => ({
+    ...o,
+    listing: listingMap.get(o.listingId) || null,
+  }));
 
-  res.json(rows);
-});
+  res.json(enriched);
+}));
 
-offersRouter.post('/', requireAuth, attachDbUser, async (req, res) => {
+offersRouter.get('/incoming', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
+  // Find all listings owned by the current user
+  const myListingsSnap = await col('listings')
+    .where('sellerUid', '==', req.user.uid)
+    .get();
+
+  const myListingIds = myListingsSnap.docs.map((d) => d.id);
+
+  if (myListingIds.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  // Firestore 'in' queries support max 30 values; batch if needed
+  const allOffers = [];
+  const listingMap = new Map();
+  myListingsSnap.docs.forEach((d) => listingMap.set(d.id, docToJson(d)));
+
+  for (let i = 0; i < myListingIds.length; i += 30) {
+    const batch = myListingIds.slice(i, i + 30);
+    const offersSnap = await col('offers')
+      .where('listingId', 'in', batch)
+      .orderBy('createdAt', 'desc')
+      .get();
+    allOffers.push(...queryToJson(offersSnap));
+  }
+
+  // Sort all combined results by createdAt desc
+  allOffers.sort((a, b) => {
+    const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return db - da;
+  });
+
+  const enriched = allOffers.map((o) => ({
+    ...o,
+    listing: listingMap.get(o.listingId) || null,
+  }));
+
+  res.json(enriched);
+}));
+
+offersRouter.post('/', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
   const payload = req.body || {};
 
-  const listing = await ListingModel.findById(payload.listingId);
-  if (!listing) {
+  // Validate input before processing
+  const errors = validateOfferInput(payload);
+  if (errors) {
+    res.status(400).json({ message: 'Validation failed', fields: errors });
+    return;
+  }
+
+  const listingRef = col('listings').doc(payload.listingId);
+  const listingSnap = await listingRef.get();
+  if (!listingSnap.exists) {
     res.status(404).json({ message: 'Listing not found' });
     return;
   }
 
+  const listing = listingSnap.data();
   if (listing.status !== 'open') {
     res.status(400).json({ message: 'Listing is not open for offers' });
     return;
@@ -47,65 +107,51 @@ offersRouter.post('/', requireAuth, attachDbUser, async (req, res) => {
     return;
   }
 
-  const offer = await OfferModel.create({
-    listingId: listing._id,
+  const offerData = {
+    listingId: listingSnap.id,
     buyerUid: req.user.uid,
-    buyerRef: req.dbUser._id,
     offerPrice: Number(payload.offerPrice),
     quantity: Number(payload.quantity),
     status: 'pending',
-  });
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
 
-  // Notify the seller via FCM (if they have tokens)
+  const offerRef = await col('offers').add(offerData);
+  const offerSnap = await offerRef.get();
+  const offer = docToJson(offerSnap);
+
+  // Notify the seller via FCM
   try {
-    const listingDoc = await admin.firestore().collection('users').doc(listing.sellerUid).get();
-    const seller = listingDoc.exists ? listingDoc.data() : null;
-    const tokens = Array.isArray(seller?.fcmTokens) ? seller.fcmTokens.filter(Boolean) : [];
-    if (tokens.length > 0) {
-      const payload = {
-        notification: {
-          title: 'New Offer Received',
-          body: `You have a new offer for ${listing.cropName}: PKR ${offer.offerPrice}`,
-        },
-        data: {
-          type: 'offer',
-          listingId: listing._id.toString(),
-          offerId: offer._id.toString(),
-        },
-      };
-
-      const resp = await admin.messaging().sendMulticast({ tokens, ...payload });
-      if (resp.failureCount > 0) {
-        const invalidTokens = [];
-        resp.responses.forEach((r, i) => {
-          if (!r.success) invalidTokens.push(tokens[i]);
-        });
-        if (invalidTokens.length > 0) {
-          await admin.firestore().collection('users').doc(listing.sellerUid).set({ fcmTokens: admin.firestore.FieldValue.arrayRemove(...invalidTokens) }, { merge: true });
-        }
-      }
-    }
+    await sendPushToUser(
+      listing.sellerUid,
+      'New Offer Received',
+      `You have a new offer for ${listing.cropName}: PKR ${offer.offerPrice}`,
+      { type: 'offer', listingId: listingSnap.id, offerId: offer._id || offerSnap.id },
+    );
   } catch (err) {
-    // do not block primary flow on notification errors
-    // eslint-disable-next-line no-console
-    console.error('FCM notify error', err);
+    console.error('FCM notify error (new offer):', err.message);
   }
 
   res.status(201).json(offer);
-});
+}));
 
-offersRouter.post('/:id/accept', requireAuth, attachDbUser, async (req, res) => {
-  const offer = await OfferModel.findById(req.params.id);
-  if (!offer) {
+offersRouter.post('/:id/accept', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
+  const offerRef = col('offers').doc(req.params.id);
+  const offerSnap = await offerRef.get();
+  if (!offerSnap.exists) {
     res.status(404).json({ message: 'Offer not found' });
     return;
   }
+  const offer = offerSnap.data();
 
-  const listing = await ListingModel.findById(offer.listingId);
-  if (!listing) {
+  const listingRef = col('listings').doc(offer.listingId);
+  const listingSnap = await listingRef.get();
+  if (!listingSnap.exists) {
     res.status(404).json({ message: 'Listing not found' });
     return;
   }
+  const listing = listingSnap.data();
 
   if (listing.sellerUid !== req.user.uid && req.dbUser.role !== 'admin') {
     res.status(403).json({ message: 'Only seller can accept this offer' });
@@ -117,43 +163,75 @@ offersRouter.post('/:id/accept', requireAuth, attachDbUser, async (req, res) => 
     return;
   }
 
-  offer.status = 'accepted';
-  await offer.save();
+  // Accept this offer
+  await offerRef.update({ status: 'accepted', updatedAt: serverTimestamp() });
 
-  await OfferModel.updateMany(
-    { listingId: listing._id, _id: { $ne: offer._id }, status: 'pending' },
-    { $set: { status: 'rejected' } },
-  );
+  // Reject all other pending offers on this listing
+  const otherOffers = await col('offers')
+    .where('listingId', '==', offer.listingId)
+    .where('status', '==', 'pending')
+    .get();
 
-  listing.status = 'reserved';
-  await listing.save();
+  const batch = admin.firestore().batch();
+  otherOffers.docs.forEach((doc) => {
+    if (doc.id !== req.params.id) {
+      batch.update(doc.ref, { status: 'rejected', updatedAt: serverTimestamp() });
+    }
+  });
+  await batch.commit();
 
-  const order = await OrderModel.create({
-    listingId: listing._id,
-    offerId: offer._id,
+  // Mark listing as reserved
+  await listingRef.update({ status: 'reserved', updatedAt: serverTimestamp() });
+
+  // Create order
+  const orderData = {
+    listingId: listingSnap.id,
+    offerId: offerSnap.id,
     buyerUid: offer.buyerUid,
     sellerUid: listing.sellerUid,
     finalPrice: offer.offerPrice,
     quantity: offer.quantity,
     unit: listing.unit,
     status: 'created',
-  });
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  const orderRef = await col('orders').add(orderData);
+  const orderSnap = await orderRef.get();
+  const order = docToJson(orderSnap);
+
+  // Notify buyer that their offer was accepted
+  try {
+    await sendPushToUser(
+      offer.buyerUid,
+      'Offer Accepted! 🎉',
+      `Your offer for ${listing.cropName} (PKR ${offer.offerPrice}) has been accepted. An order has been created.`,
+      { type: 'offer_accepted', listingId: listingSnap.id, offerId: offerSnap.id, orderId: orderSnap.id },
+    );
+  } catch (err) {
+    console.error('FCM notify error (offer accepted):', err.message);
+  }
 
   res.json({ message: 'Offer accepted', order });
-});
+}));
 
-offersRouter.post('/:id/reject', requireAuth, attachDbUser, async (req, res) => {
-  const offer = await OfferModel.findById(req.params.id);
-  if (!offer) {
+offersRouter.post('/:id/reject', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
+  const offerRef = col('offers').doc(req.params.id);
+  const offerSnap = await offerRef.get();
+  if (!offerSnap.exists) {
     res.status(404).json({ message: 'Offer not found' });
     return;
   }
+  const offer = offerSnap.data();
 
-  const listing = await ListingModel.findById(offer.listingId);
-  if (!listing) {
+  const listingRef = col('listings').doc(offer.listingId);
+  const listingSnap = await listingRef.get();
+  if (!listingSnap.exists) {
     res.status(404).json({ message: 'Listing not found' });
     return;
   }
+  const listing = listingSnap.data();
 
   if (listing.sellerUid !== req.user.uid && req.dbUser.role !== 'admin') {
     res.status(403).json({ message: 'Only seller can reject this offer' });
@@ -165,18 +243,32 @@ offersRouter.post('/:id/reject', requireAuth, attachDbUser, async (req, res) => 
     return;
   }
 
-  offer.status = 'rejected';
-  await offer.save();
+  await offerRef.update({ status: 'rejected', updatedAt: serverTimestamp() });
+  const updated = await offerRef.get();
 
-  res.json({ message: 'Offer rejected', offer });
-});
+  // Notify buyer that their offer was declined
+  try {
+    await sendPushToUser(
+      offer.buyerUid,
+      'Offer Declined',
+      `Your offer for ${listing.cropName} (PKR ${offer.offerPrice}) was not accepted.`,
+      { type: 'offer_rejected', listingId: offer.listingId, offerId: req.params.id },
+    );
+  } catch (err) {
+    console.error('FCM notify error (offer rejected):', err.message);
+  }
 
-offersRouter.post('/:id/cancel', requireAuth, attachDbUser, async (req, res) => {
-  const offer = await OfferModel.findById(req.params.id);
-  if (!offer) {
+  res.json({ message: 'Offer rejected', offer: docToJson(updated) });
+}));
+
+offersRouter.post('/:id/cancel', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
+  const offerRef = col('offers').doc(req.params.id);
+  const offerSnap = await offerRef.get();
+  if (!offerSnap.exists) {
     res.status(404).json({ message: 'Offer not found' });
     return;
   }
+  const offer = offerSnap.data();
 
   if (offer.buyerUid !== req.user.uid && req.dbUser.role !== 'admin') {
     res.status(403).json({ message: 'Only buyer can cancel this offer' });
@@ -188,8 +280,7 @@ offersRouter.post('/:id/cancel', requireAuth, attachDbUser, async (req, res) => 
     return;
   }
 
-  offer.status = 'cancelled';
-  await offer.save();
-
-  res.json({ message: 'Offer cancelled', offer });
-});
+  await offerRef.update({ status: 'cancelled', updatedAt: serverTimestamp() });
+  const updated = await offerRef.get();
+  res.json({ message: 'Offer cancelled', offer: docToJson(updated) });
+}));

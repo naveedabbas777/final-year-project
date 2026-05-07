@@ -151,9 +151,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     icon:
                         _sending
                             ? const CompactLoadingIndicator(
-                                size: 16,
-                                color: Colors.white,
-                              )
+                              size: 16,
+                              color: Colors.white,
+                            )
                             : const Icon(Icons.send),
                     label: const Text('Send reset link'),
                   ),

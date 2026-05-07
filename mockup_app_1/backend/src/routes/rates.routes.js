@@ -1,32 +1,34 @@
 import { Router } from 'express';
 
-import { CropRateModel } from '../models/cropRate.model.js';
-import { requireAuth } from '../middlewares/auth.js';
+import { requireAuth, requireRole } from '../middlewares/auth.js';
 import { attachDbUser } from '../middlewares/attachDbUser.js';
-import { requireRole } from '../middlewares/auth.js';
+import { col, docToJson, queryToJson, serverTimestamp } from '../utils/firestoreHelpers.js';
 import { fetchOfficialRates } from '../services/ratesIngestion.service.js';
+import { admin } from '../config/firebaseAdmin.js';
+import { asyncHandler } from '../utils/errors.js';
 
 export const ratesRouter = Router();
 
-ratesRouter.get('/latest', async (req, res) => {
+ratesRouter.get('/latest', asyncHandler(async (req, res) => {
   const { crop, district, limit = 100 } = req.query;
-  const query = {};
 
-  if (typeof crop === 'string' && crop.trim()) query.cropName = crop.trim();
+  let query = col('crop_rates');
+
+  if (typeof crop === 'string' && crop.trim()) {
+    query = query.where('cropName', '==', crop.trim());
+  }
   if (typeof district === 'string' && district.trim()) {
-    query.district = district.trim();
+    query = query.where('district', '==', district.trim());
   }
 
-  const rows = await CropRateModel.find(query)
-    .sort({ rateDate: -1, createdAt: -1 })
-    .limit(Math.min(Number(limit) || 100, 300));
+  query = query.orderBy('rateDate', 'desc').limit(Math.min(Number(limit) || 100, 300));
+  const snapshot = await query.get();
+  res.json(queryToJson(snapshot));
+}));
 
-  res.json(rows);
-});
-
-ratesRouter.post('/', requireAuth, attachDbUser, requireRole('admin'), async (req, res) => {
+ratesRouter.post('/', requireAuth, attachDbUser, requireRole('admin'), asyncHandler(async (req, res) => {
   const payload = req.body || {};
-  const doc = await CropRateModel.create({
+  const data = {
     cropName: payload.cropName,
     marketName: payload.marketName,
     district: payload.district,
@@ -37,17 +39,31 @@ ratesRouter.post('/', requireAuth, attachDbUser, requireRole('admin'), async (re
     sourceUrl: payload.sourceUrl,
     isOfficialSource: payload.isOfficialSource !== false,
     rateDate: payload.rateDate ? new Date(payload.rateDate) : new Date(),
-  });
-  res.status(201).json(doc);
-});
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
 
-ratesRouter.post('/ingest/official', requireAuth, attachDbUser, requireRole('admin'), async (_req, res) => {
+  const ref = await col('crop_rates').add(data);
+  const snap = await ref.get();
+  res.status(201).json(docToJson(snap));
+}));
+
+ratesRouter.post('/ingest/official', requireAuth, attachDbUser, requireRole('admin'), asyncHandler(async (_req, res) => {
   const rows = await fetchOfficialRates();
   if (!rows.length) {
     res.json({ message: 'No rows ingested. Add official source adapters in ratesIngestion.service.js' });
     return;
   }
 
-  const inserted = await CropRateModel.insertMany(rows, { ordered: false });
-  res.json({ message: 'Ingestion complete', inserted: inserted.length });
-});
+  const batch = admin.firestore().batch();
+  for (const row of rows) {
+    const ref = col('crop_rates').doc();
+    batch.set(ref, {
+      ...row,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+  await batch.commit();
+  res.json({ message: 'Ingestion complete', inserted: rows.length });
+}));

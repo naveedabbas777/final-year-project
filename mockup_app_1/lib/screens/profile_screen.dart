@@ -333,9 +333,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: Colors.green.shade700,
-        // Removed actions property to remove the edit icon
+        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.w700)),
+        centerTitle: true,
+        foregroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2E7D32), Color(0xFF66BB6A)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.eco_rounded),
+          onPressed: null,
+        ),
+        elevation: 2,
       ),
       body:
           _loading

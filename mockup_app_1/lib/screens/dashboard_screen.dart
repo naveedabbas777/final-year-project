@@ -342,10 +342,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ? _profileDisplayName!.trim()
             : FirebaseAuth.instance.currentUser?.displayName?.trim();
     final effectiveEmail = FirebaseAuth.instance.currentUser?.email?.trim();
-    final initial = (effectiveName?.isNotEmpty == true
-            ? effectiveName![0]
-            : (effectiveEmail?.isNotEmpty == true ? effectiveEmail![0] : 'U'))
-        .toUpperCase();
+    final initial =
+        (effectiveName?.isNotEmpty == true
+                ? effectiveName![0]
+                : (effectiveEmail?.isNotEmpty == true
+                    ? effectiveEmail![0]
+                    : 'U'))
+            .toUpperCase();
 
     return Scaffold(
       appBar: AppBar(

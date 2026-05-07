@@ -133,10 +133,7 @@ class ApiClient {
     );
   }
 
-  Future<dynamic> delete(
-    String path, {
-    bool auth = false,
-  }) async {
+  Future<dynamic> delete(String path, {bool auth = false}) async {
     return await RetryHelper.retry(
       () => _performDelete(path, auth),
       maxAttempts: 2,
@@ -144,15 +141,9 @@ class ApiClient {
     );
   }
 
-  Future<dynamic> _performDelete(
-    String path,
-    bool auth,
-  ) async {
+  Future<dynamic> _performDelete(String path, bool auth) async {
     final res = await _http
-        .delete(
-          _uri(path),
-          headers: await _headers(auth: auth),
-        )
+        .delete(_uri(path), headers: await _headers(auth: auth))
         .timeout(_requestTimeout);
     return _decode(res);
   }
@@ -217,21 +208,28 @@ class ApiClient {
   }) async {
     final req = http.MultipartRequest('POST', _uri(path));
     req.headers.addAll(await _headers(auth: auth, includeContentType: false));
-    
+
     // Determine MIME type based on file extension
     String mimeType = 'image/jpeg'; // default
     final ext = filePath.toLowerCase();
-    if (ext.endsWith('.png')) mimeType = 'image/png';
-    else if (ext.endsWith('.gif')) mimeType = 'image/gif';
-    else if (ext.endsWith('.webp')) mimeType = 'image/webp';
-    else if (ext.endsWith('.bmp')) mimeType = 'image/bmp';
-    else if (ext.endsWith('.jpg') || ext.endsWith('.jpeg')) mimeType = 'image/jpeg';
-    
-    req.files.add(await http.MultipartFile.fromPath(
-      fieldName,
-      filePath,
-      contentType: http.MediaType.parse(mimeType),
-    ));
+    if (ext.endsWith('.png'))
+      mimeType = 'image/png';
+    else if (ext.endsWith('.gif'))
+      mimeType = 'image/gif';
+    else if (ext.endsWith('.webp'))
+      mimeType = 'image/webp';
+    else if (ext.endsWith('.bmp'))
+      mimeType = 'image/bmp';
+    else if (ext.endsWith('.jpg') || ext.endsWith('.jpeg'))
+      mimeType = 'image/jpeg';
+
+    req.files.add(
+      await http.MultipartFile.fromPath(
+        fieldName,
+        filePath,
+        contentType: http.MediaType.parse(mimeType),
+      ),
+    );
 
     final streamed = await req.send().timeout(_requestTimeout);
     final body = await streamed.stream.bytesToString();

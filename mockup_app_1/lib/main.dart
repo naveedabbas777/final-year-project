@@ -11,14 +11,22 @@ import 'screens/forecast_screen.dart';
 import 'screens/alerts_screen.dart';
 import 'screens/market_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/offers_screen.dart';
+import 'screens/orders_screen.dart';
+import 'screens/my_listings_screen.dart';
+import 'screens/chat_screen.dart';
+import 'screens/admin/admin_console_shell.dart';
 import 'package:provider/provider.dart';
 import 'package:mockup_app/providers/language_provider.dart';
-import 'package:mockup_app/providers/auth_provider.dart';
-import 'package:mockup_app/services/notification_service.dart'; // Import the new service
+import 'package:mockup_app/providers/auth_provider.dart' as app_auth;
+import 'package:mockup_app/services/notification_service.dart';
+import 'package:mockup_app/services/push_service.dart';
 import 'package:mockup_app/services/alert_service.dart';
 import 'package:mockup_app/services/api_client.dart';
+import 'package:mockup_app/services/firebase_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart'; // Import for MapboxOptions
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:mockup_app/providers/plant_disease_provider.dart';
 
 // Top-level background handler required by `firebase_messaging`.
@@ -59,29 +67,18 @@ Future<void> main() async {
   // Request notification permissions (iOS / Android 13+)
   await notificationService.requestNotificationPermissions();
 
-  // Print / log FCM token for debugging (register on server if needed)
+  // Initialize PushService (handles token registration, channels, tap nav)
+  await PushService.instance.init();
+
+  // Print / log FCM token for debugging
   final fcmToken = await notificationService.getFcmToken();
   debugPrint('FCM Token: $fcmToken');
-
-  // Handle messages that opened the app from a terminated state
-  FirebaseMessaging.instance.getInitialMessage().then((message) {
-    if (message != null) {
-      debugPrint(
-        'App opened from terminated state by message: ${message.messageId}',
-      );
-    }
-  });
-
-  // Handle when a user taps a notification and the app is in background
-  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-    debugPrint('Message caused app to open: ${message.messageId}');
-  });
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => app_auth.AuthProvider()),
         ChangeNotifierProvider(create: (_) => PlantDiseaseProvider()),
         Provider<NotificationService>.value(value: notificationService),
         ChangeNotifierProvider(create: (_) => AlertService()),
@@ -99,6 +96,7 @@ class DigitalKissanApp extends StatelessWidget {
     final localeProvider = Provider.of<LanguageProvider>(context);
     return MaterialApp(
       title: 'Digital Kissan App',
+      navigatorKey: navigatorKey,
       locale: localeProvider.locale,
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -106,15 +104,11 @@ class DigitalKissanApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en', ''), // English
-        Locale('ur', ''), // Urdu
-      ],
+      supportedLocales: const [Locale('en', ''), Locale('ur', '')],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
         textTheme: GoogleFonts.notoSansTextTheme().copyWith(
-          // Use Noto Sans for better Urdu support
           bodyLarge: GoogleFonts.notoSans(),
           bodyMedium: GoogleFonts.notoSans(),
           bodySmall: GoogleFonts.notoSans(),
@@ -125,6 +119,27 @@ class DigitalKissanApp extends StatelessWidget {
       ),
       home: const SplashScreenWrapper(),
       debugShowCheckedModeBanner: false,
+      // Named routes for notification deep-link navigation
+      routes: {
+        '/offers': (_) => const OffersScreen(),
+        '/orders': (_) => const OrdersScreen(),
+        '/my-listings': (_) => const MyListingsScreen(),
+        '/market': (_) => MarketScreen(),
+        '/alerts': (_) => AlertsScreen(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/chat') {
+          final args = settings.arguments as Map<String, dynamic>? ?? {};
+          return MaterialPageRoute(
+            builder:
+                (_) => ChatScreen(
+                  listingId: args['listingId'] ?? '',
+                  toUid: args['toUid'] ?? '',
+                ),
+          );
+        }
+        return null;
+      },
     );
   }
 }
@@ -149,7 +164,10 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
 
     if (!mounted) return;
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final authProvider = Provider.of<app_auth.AuthProvider>(
+      context,
+      listen: false,
+    );
 
     // Wait for auth provider to finish bootstrap, with a bounded timeout
     if (!authProvider.isBootstrapComplete) {
@@ -174,10 +192,10 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
     if (!mounted) return;
 
     if (authProvider.isSignedIn) {
-      // User is already signed in, navigate to main shell
+      // User is already signed in, route based on role.
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainNavigationShell()),
+        MaterialPageRoute(builder: (context) => const RoleBasedHomeScreen()),
       );
     } else {
       // User is not signed in, navigate to login screen
@@ -203,8 +221,52 @@ class LoginScreenWrapper extends StatelessWidget {
       onLogin: () {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainNavigationShell()),
+          MaterialPageRoute(builder: (context) => const RoleBasedHomeScreen()),
         );
+      },
+    );
+  }
+}
+
+class RoleBasedHomeScreen extends StatefulWidget {
+  const RoleBasedHomeScreen({super.key});
+
+  @override
+  State<RoleBasedHomeScreen> createState() => _RoleBasedHomeScreenState();
+}
+
+class _RoleBasedHomeScreenState extends State<RoleBasedHomeScreen> {
+  late final Future<String> _roleFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _roleFuture = _fetchRole();
+  }
+
+  Future<String> _fetchRole() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return 'farmer';
+    final profile = await FirebaseService().getUserByUid(user.uid);
+    final role = (profile?['role'] ?? '').toString().trim().toLowerCase();
+    return role.isEmpty ? 'farmer' : role;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<String>(
+      future: _roleFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final role = snapshot.data ?? 'farmer';
+        if (role == 'admin') {
+          return const AdminConsoleShell();
+        }
+        return const MainNavigationShell();
       },
     );
   }
@@ -230,7 +292,10 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {
