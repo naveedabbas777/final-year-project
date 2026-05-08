@@ -10,10 +10,12 @@ import '../config/app_config.dart';
 import '../utils/retry_helper.dart';
 
 class ApiClient {
-  ApiClient({http.Client? httpClient}) : _http = httpClient ?? http.Client();
+  ApiClient({http.Client? httpClient, Duration? requestTimeout})
+    : _http = httpClient ?? http.Client(),
+      _requestTimeout = requestTimeout ?? const Duration(seconds: 20);
 
   final http.Client _http;
-  static const Duration _requestTimeout = Duration(seconds: 20);
+  final Duration _requestTimeout;
 
   Uri _uri(String path, [Map<String, String>? query]) {
     final base =

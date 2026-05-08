@@ -34,12 +34,15 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   bool _loading = true;
   bool _creating = false;
   bool _loadingOffers = false;
+  bool _loadingMoreListings = false;
   String? _error;
   UserProfileDto? _me;
   String _selectedStatusFilter = 'all';
   String? _editingListingId;
   double? _selectedLatitude;
   double? _selectedLongitude;
+  int _listingLimit = 20;
+  bool _hasMoreListings = true;
 
   List<ListingDto> _rows = const [];
   final Map<String, List<OfferDto>> _offersByListingId =
@@ -101,6 +104,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _hasMoreListings = true;
+      _rows = const [];
+      _unreadCounts.clear();
     });
 
     try {
@@ -112,12 +118,15 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       }
 
       final sellerUid = FirebaseAuth.instance.currentUser?.uid;
-      final rows = await _service.fetchListings(sellerUid: sellerUid);
+      final rows = await _service.fetchListingsWithCache(
+        sellerUid: sellerUid,
+        limit: _listingLimit,
+      );
       if (!mounted) return;
       setState(() {
         _me = me;
         _rows = rows;
-        _unreadCounts.clear();
+        _hasMoreListings = rows.length >= _listingLimit;
       });
       await _loadOffers();
       _fetchUnreadCountsInBackground(rows);
@@ -127,6 +136,36 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     } finally {
       if (!mounted) return;
       setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadMoreListings() async {
+    if (_loadingMoreListings || !_hasMoreListings || _rows.isEmpty) return;
+    final sellerUid = FirebaseAuth.instance.currentUser?.uid;
+    final cursor = _rows.last.createdAt;
+    setState(() => _loadingMoreListings = true);
+    try {
+      final more = await _service.fetchListings(
+        sellerUid: sellerUid,
+        limit: _listingLimit,
+        before: cursor,
+      );
+      if (!mounted) return;
+      setState(() {
+        final ids = _rows.map((row) => row.id).toSet();
+        _rows = [
+          ..._rows,
+          ...more.where((row) => !ids.contains(row.id)),
+        ];
+        _hasMoreListings = more.length >= _listingLimit;
+      });
+      await _service.cacheListings(
+        sellerUid: sellerUid,
+        listings: _rows,
+      );
+      _fetchUnreadCountsInBackground(more);
+    } finally {
+      if (mounted) setState(() => _loadingMoreListings = false);
     }
   }
 
@@ -836,19 +875,16 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     final grouped = <String, _ConversationPreview>{};
 
     for (final message in messages) {
-      final fromUid = (message['fromUid'] ?? '').toString();
-      final toUid = (message['toUid'] ?? '').toString();
+      final fromUid = message.fromUid;
+      final toUid = message.toUid ?? '';
       if (fromUid.isEmpty && toUid.isEmpty) continue;
 
       final peerUid = fromUid == meUid ? toUid : fromUid;
       if (peerUid.isEmpty || peerUid == meUid) continue;
 
-      final createdAt = _toDateTime(message['createdAt']);
-      final text = (message['message'] ?? '').toString().trim();
-      final readBy =
-          (message['readBy'] is List)
-              ? (message['readBy'] as List).map((e) => e.toString()).toSet()
-              : <String>{};
+      final createdAt = message.timestamp;
+      final text = message.message.trim();
+      final readBy = message.readBy.toSet();
       final isUnreadForMe = toUid == meUid && !readBy.contains(meUid);
 
       final existing = grouped[peerUid];
@@ -868,8 +904,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     for (final uid in uids) {
       try {
         final profile = await _service.fetchUserProfileByUid(uid);
-        final name =
-            (profile['displayName'] ?? profile['name'] ?? uid).toString();
+        final name = profile.primaryName.isNotEmpty ? profile.primaryName : uid;
         final current = grouped[uid];
         if (current != null) {
           grouped[uid] = current.copyWith(buyerName: name);
@@ -883,20 +918,6 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         grouped.values.toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return sorted;
-  }
-
-  DateTime _toDateTime(dynamic raw) {
-    if (raw is DateTime) return raw;
-    if (raw is String) {
-      return DateTime.tryParse(raw)?.toLocal() ??
-          DateTime.fromMillisecondsSinceEpoch(0);
-    }
-    if (raw is Map && raw['seconds'] is num) {
-      return DateTime.fromMillisecondsSinceEpoch(
-        (raw['seconds'] as num).toInt() * 1000,
-      ).toLocal();
-    }
-    return DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   String _formatPreviewTime(DateTime dateTime) {
@@ -973,15 +994,12 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
   Widget _buildOfferTile(OfferDto offer) {
     return Card(
-      child: FutureBuilder<Map<String, dynamic>>(
+      child: FutureBuilder<UserProfileDto>(
         future: _service.fetchUserProfileByUid(offer.buyerUid),
         builder: (context, snapshot) {
           final buyerName =
-              snapshot.hasData
-                  ? (snapshot.data!['displayName'] ??
-                          snapshot.data!['name'] ??
-                          offer.buyerUid)
-                      .toString()
+              snapshot.hasData && snapshot.data!.primaryName.isNotEmpty
+                  ? snapshot.data!.primaryName
                   : offer.buyerUid;
 
           return Padding(
@@ -1045,20 +1063,57 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           foregroundColor: Colors.white,
                         ),
                         onPressed: () async {
-                          await _service.acceptOffer(offer.id);
-                          if (!mounted) return;
-                          Navigator.pop(context);
-                          await _load();
+                          try {
+                            await _service.acceptOffer(offer.id);
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                  'Offer accepted — order created!',
+                                ),
+                                backgroundColor: Colors.green.shade700,
+                              ),
+                            );
+                            Navigator.pop(context);
+                            await _load();
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Failed to accept: ${e.toString().replaceAll('Exception: ', '')}',
+                                ),
+                                backgroundColor: Colors.red.shade700,
+                              ),
+                            );
+                          }
                         },
                         icon: const Icon(Icons.check),
                         label: const Text('Accept'),
                       ),
                       OutlinedButton.icon(
                         onPressed: () async {
-                          await _service.rejectOffer(offer.id);
-                          if (!mounted) return;
-                          Navigator.pop(context);
-                          await _load();
+                          try {
+                            await _service.rejectOffer(offer.id);
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Offer rejected'),
+                              ),
+                            );
+                            Navigator.pop(context);
+                            await _load();
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Failed to reject: ${e.toString().replaceAll('Exception: ', '')}',
+                                ),
+                                backgroundColor: Colors.red.shade700,
+                              ),
+                            );
+                          }
                         },
                         icon: const Icon(Icons.close),
                         label: const Text('Reject'),
@@ -1558,6 +1613,25 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
               )
             else
               ..._filteredRows.map(_buildCard),
+            if (_hasMoreListings)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                child: Center(
+                  child: OutlinedButton.icon(
+                    onPressed:
+                        _loadingMoreListings ? null : _loadMoreListings,
+                    icon:
+                        _loadingMoreListings
+                            ? const CompactLoadingIndicator(size: 16)
+                            : const Icon(Icons.expand_more),
+                    label: Text(
+                      _loadingMoreListings
+                          ? 'Loading more...'
+                          : 'Load more listings',
+                    ),
+                  ),
+                ),
+              ),
             const SizedBox(height: 80),
           ],
         ),

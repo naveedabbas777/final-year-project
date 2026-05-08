@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -117,7 +116,7 @@ class DigitalKissanApp extends StatelessWidget {
           titleSmall: GoogleFonts.notoSans(),
         ),
       ),
-      home: const SplashScreenWrapper(),
+      home: const AppRouter(),
       debugShowCheckedModeBanner: false,
       // Named routes for notification deep-link navigation
       routes: {
@@ -144,87 +143,44 @@ class DigitalKissanApp extends StatelessWidget {
   }
 }
 
-class SplashScreenWrapper extends StatefulWidget {
-  const SplashScreenWrapper({Key? key}) : super(key: key);
-
-  @override
-  State<SplashScreenWrapper> createState() => _SplashScreenWrapperState();
-}
-
-class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
-  @override
-  void initState() {
-    super.initState();
-    _checkLoginStatus();
-  }
-
-  Future<void> _checkLoginStatus() async {
-    // Keep splash screen visible for a short moment while bootstrapping
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (!mounted) return;
-
-    final authProvider = Provider.of<app_auth.AuthProvider>(
-      context,
-      listen: false,
-    );
-
-    // Wait for auth provider to finish bootstrap, with a bounded timeout
-    if (!authProvider.isBootstrapComplete) {
-      final completer = Completer<void>();
-      void listener() {
-        if (authProvider.isBootstrapComplete && !completer.isCompleted) {
-          completer.complete();
-        }
-      }
-
-      authProvider.addListener(listener);
-
-      // Wait up to 5 seconds for bootstrap; proceed after timeout to avoid hang
-      await Future.any([
-        completer.future,
-        Future.delayed(const Duration(seconds: 5)),
-      ]);
-
-      authProvider.removeListener(listener);
-    }
-
-    if (!mounted) return;
-
-    if (authProvider.isSignedIn) {
-      // User is already signed in, route based on role.
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const RoleBasedHomeScreen()),
-      );
-    } else {
-      // User is not signed in, navigate to login screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreenWrapper()),
-      );
-    }
-  }
+/// Reactive root router — rebuilds whenever [AuthProvider] notifies.
+/// • Bootstrap pending  → SplashScreen
+/// • Signed in          → RoleBasedHomeScreen  (role resolved inside)
+/// • Signed out         → LoginScreenWrapper
+///
+/// This single widget handles ALL navigation transitions including sign-out;
+/// no imperative Navigator calls are required anywhere in the auth flow.
+class AppRouter extends StatelessWidget {
+  const AppRouter({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const SplashScreen();
+    return Consumer<app_auth.AuthProvider>(
+      builder: (_, auth, __) {
+        // Auth state not yet resolved — keep showing splash
+        if (!auth.isBootstrapComplete) {
+          return const SplashScreen();
+        }
+        // Signed in → go to home (admin or farmer dashboard)
+        if (auth.isSignedIn) {
+          return const RoleBasedHomeScreen();
+        }
+        // Not signed in → go to login
+        return const LoginScreenWrapper();
+      },
+    );
   }
 }
 
 class LoginScreenWrapper extends StatelessWidget {
-  const LoginScreenWrapper({Key? key}) : super(key: key);
+  const LoginScreenWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return LoginScreen(
-      onLogin: () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const RoleBasedHomeScreen()),
-        );
-      },
-    );
+    // onLogin is intentionally a no-op: once FirebaseAuth.signIn() completes,
+    // AuthProvider.notifyListeners() fires and AppRouter rebuilds automatically,
+    // showing RoleBasedHomeScreen without any imperative navigation needed.
+    return LoginScreen(onLogin: () {});
   }
 }
 
@@ -305,20 +261,48 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         },
         destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home),
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
             label: AppLocalizations.of(context)!.home,
           ),
           NavigationDestination(
-            icon: Icon(Icons.calendar_today),
+            icon: const Icon(Icons.calendar_today_outlined),
+            selectedIcon: const Icon(Icons.calendar_today),
             label: AppLocalizations.of(context)!.forecast,
           ),
-          NavigationDestination(
-            icon: Icon(Icons.notifications),
-            label: AppLocalizations.of(context)!.alerts,
+          // Alerts tab with live unread badge
+          Consumer<AlertService>(
+            builder: (_, service, __) {
+              final count = service.unreadCount;
+              return NavigationDestination(
+                icon: Badge(
+                  isLabelVisible: count > 0,
+                  label: Text(
+                    count > 9 ? '9+' : '$count',
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                  child: const Icon(Icons.notifications_outlined),
+                ),
+                selectedIcon: Badge(
+                  isLabelVisible: count > 0,
+                  label: Text(
+                    count > 9 ? '9+' : '$count',
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                  child: const Icon(Icons.notifications),
+                ),
+                label: AppLocalizations.of(context)!.alerts,
+              );
+            },
           ),
-          NavigationDestination(icon: Icon(Icons.storefront), label: 'Market'),
           NavigationDestination(
-            icon: Icon(Icons.settings),
+            icon: const Icon(Icons.storefront_outlined),
+            selectedIcon: const Icon(Icons.storefront),
+            label: 'Market',
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
             label: AppLocalizations.of(context)!.settings,
           ),
         ],

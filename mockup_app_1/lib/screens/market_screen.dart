@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 import '../services/market_api_service.dart';
 import '../utils/error_presenter.dart';
-import '../utils/form_validators.dart';
 import 'listing_detail_screen.dart';
 import 'offers_screen.dart';
 import 'orders_screen.dart';
@@ -144,7 +142,11 @@ class _MarketScreenState extends State<MarketScreen>
             const SizedBox(width: 10),
             const Text(
               'Marketplace',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20, letterSpacing: -0.3),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                letterSpacing: -0.3,
+              ),
             ),
           ],
         ),
@@ -170,9 +172,9 @@ class _MarketScreenState extends State<MarketScreen>
             child: IconButton(
               tooltip: 'Offers',
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const OffersScreen()),
-                );
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const OffersScreen()));
               },
               icon: const Icon(Icons.local_offer_outlined, size: 20),
             ),
@@ -186,9 +188,9 @@ class _MarketScreenState extends State<MarketScreen>
             child: IconButton(
               tooltip: 'Order history',
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const OrdersScreen()),
-                );
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const OrdersScreen()));
               },
               icon: const Icon(Icons.receipt_long_outlined, size: 20),
             ),
@@ -205,8 +207,14 @@ class _MarketScreenState extends State<MarketScreen>
           labelPadding: const EdgeInsets.symmetric(horizontal: 12),
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white60,
-          labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-          unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+          labelStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+          ),
+          unselectedLabelStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
           tabs: const [
             Tab(
               child: Row(
@@ -358,15 +366,17 @@ class _RatesTabState extends State<_RatesTab> {
   }
 
   Widget _buildEmptyOrError({required bool isRatesTab}) {
-    final message = _error != null
-        ? ErrorPresenter.present(_error!)
-        : isRatesTab
+    final message =
+        _error != null
+            ? ErrorPresenter.present(_error!)
+            : isRatesTab
             ? 'No rates available yet.\nIngest official rates from the backend.'
             : 'No active listings found.';
     final actionLabel = _error != null ? 'Retry' : 'Refresh';
-    final iconData = _error != null
-        ? Icons.error_outline
-        : isRatesTab
+    final iconData =
+        _error != null
+            ? Icons.error_outline
+            : isRatesTab
             ? Icons.trending_up
             : Icons.inbox_outlined;
 
@@ -379,13 +389,17 @@ class _RatesTabState extends State<_RatesTab> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: _error != null ? Colors.red.shade50 : Colors.green.shade50,
+                color:
+                    _error != null ? Colors.red.shade50 : Colors.green.shade50,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 iconData,
                 size: 64,
-                color: _error != null ? Colors.red.shade400 : Colors.green.shade400,
+                color:
+                    _error != null
+                        ? Colors.red.shade400
+                        : Colors.green.shade400,
               ),
             ),
             const SizedBox(height: 24),
@@ -405,8 +419,13 @@ class _RatesTabState extends State<_RatesTab> {
               children: [
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _loading ? null : _load,
                   icon: const Icon(Icons.refresh),
@@ -416,8 +435,13 @@ class _RatesTabState extends State<_RatesTab> {
                   const SizedBox(width: 12),
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.arrow_back),
@@ -781,8 +805,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   final _searchController = TextEditingController();
 
   bool _loading = false;
-  bool _creating = false;
   String? _error;
+  bool _loadingMoreListings = false;
   List<ListingDto> _rows = const [];
   List<ListingDto> get _filteredRows {
     final query = _searchController.text.trim().toLowerCase();
@@ -795,19 +819,15 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     }).toList();
   }
 
+  final Map<String, int> _unreadCounts = <String, int>{};
+
+  // Filter / pagination state for the browse tab
   List<String> _cropOptions = const [];
   List<String> _districtOptions = const [];
   String? _selectedCropFilter;
   String? _selectedDistrictFilter;
-  final List<XFile> _selectedImages = [];
-  final _cropController = TextEditingController();
-  final _districtController = TextEditingController();
-  final _qtyController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _selectedGradeController = TextEditingController(text: 'A');
-
-  final Map<String, int> _unreadCounts = <String, int>{};
+  int _listingLimit = 20;
+  bool _hasMoreListings = true;
 
   @override
   void initState() {
@@ -818,12 +838,6 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   @override
   void dispose() {
     _searchController.dispose();
-    _cropController.dispose();
-    _districtController.dispose();
-    _qtyController.dispose();
-    _priceController.dispose();
-    _descriptionController.dispose();
-    _selectedGradeController.dispose();
     super.dispose();
   }
 
@@ -923,18 +937,23 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     setState(() {
       _loading = true;
       _error = null;
+      _hasMoreListings = true;
+      _rows = const [];
+      _unreadCounts.clear();
     });
     try {
-      final data = await _service.fetchListings(
+      final data = await _service.fetchListingsWithCache(
         crop: _selectedCropFilter,
         district: _selectedDistrictFilter,
+        status: 'open', // Only show open listings in browse
+        limit: _listingLimit,
       );
       if (!mounted) return;
       setState(() {
         _rows = data;
+        _hasMoreListings = data.length >= _listingLimit;
         _cropOptions = _buildOptions(data.map((row) => row.cropName));
         _districtOptions = _buildOptions(data.map((row) => row.district));
-        _unreadCounts.clear();
       });
 
       // Fetch unread counts in background (non-blocking) to avoid slow rendering
@@ -945,6 +964,38 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     } finally {
       if (!mounted) return;
       setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _loadMoreListings() async {
+    if (_loadingMoreListings || !_hasMoreListings || _rows.isEmpty) return;
+    final cursor = _rows.last.createdAt;
+    setState(() => _loadingMoreListings = true);
+    try {
+      final more = await _service.fetchListings(
+        crop: _selectedCropFilter,
+        district: _selectedDistrictFilter,
+        status: 'open',
+        limit: _listingLimit,
+        before: cursor,
+      );
+      if (!mounted) return;
+      setState(() {
+        final ids = _rows.map((row) => row.id).toSet();
+        _rows = [
+          ..._rows,
+          ...more.where((row) => !ids.contains(row.id)),
+        ];
+        _hasMoreListings = more.length >= _listingLimit;
+      });
+      await _service.cacheListings(
+        crop: _selectedCropFilter,
+        district: _selectedDistrictFilter,
+        listings: _rows,
+      );
+      _fetchUnreadCountsInBackground(more);
+    } finally {
+      if (mounted) setState(() => _loadingMoreListings = false);
     }
   }
 
@@ -978,9 +1029,10 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   }
 
   Widget _buildEmptyOrError() {
-    final message = _error != null
-        ? ErrorPresenter.present(_error!)
-        : 'No active listings found.';
+    final message =
+        _error != null
+            ? ErrorPresenter.present(_error!)
+            : 'No active listings found.';
     final actionLabel = _error != null ? 'Retry' : 'Refresh';
 
     return Center(
@@ -992,13 +1044,19 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: _error != null ? Colors.red.shade50 : Colors.green.shade50,
+                color:
+                    _error != null ? Colors.red.shade50 : Colors.green.shade50,
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _error != null ? Icons.error_outline : Icons.shopping_basket_outlined,
+                _error != null
+                    ? Icons.error_outline
+                    : Icons.shopping_basket_outlined,
                 size: 64,
-                color: _error != null ? Colors.red.shade400 : Colors.green.shade400,
+                color:
+                    _error != null
+                        ? Colors.red.shade400
+                        : Colors.green.shade400,
               ),
             ),
             const SizedBox(height: 24),
@@ -1018,8 +1076,13 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
               children: [
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _loading ? null : _load,
                   icon: const Icon(Icons.refresh),
@@ -1029,8 +1092,13 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                   const SizedBox(width: 12),
                   OutlinedButton.icon(
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.arrow_back),
@@ -1045,303 +1113,10 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     );
   }
 
-  Future<void> _pickImages() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickMultiImage(limit: 5);
-    if (picked.isEmpty) return;
-
-    const maxFileSizeBytes = 5 * 1024 * 1024;
-    final invalidImages = <String>[];
-    for (final xfile in picked) {
-      final fileSize = await xfile.length();
-      if (fileSize > maxFileSizeBytes) {
-        invalidImages.add('${xfile.name} (${_formatFileSize(fileSize)})');
-      }
-    }
-
-    if (invalidImages.isNotEmpty) {
-      if (!mounted) return;
-      _showError(
-        'Some images are too large (max 5MB each):\n${invalidImages.join('\n')}',
-      );
-      return;
-    }
-
-    if (!mounted) return;
-    setState(() {
-      _selectedImages
-        ..clear()
-        ..addAll(picked);
-    });
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
-  Future<void> _openCreateListingSheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder:
-          (sheetContext) => Padding(
-            padding: EdgeInsets.only(
-              left: 16,
-              right: 16,
-              top: 16,
-              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Create Sell Listing',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.green.shade800,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(sheetContext),
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _cropController,
-                    decoration: const InputDecoration(
-                      labelText: 'Crop Name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _districtController,
-                    decoration: const InputDecoration(
-                      labelText: 'District',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _qtyController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Quantity',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _priceController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Asking Price',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedGradeController.text,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Quality Grade',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'A', child: Text('A')),
-                      DropdownMenuItem(value: 'B', child: Text('B')),
-                      DropdownMenuItem(value: 'C', child: Text('C')),
-                    ],
-                    onChanged: (value) {
-                      _selectedGradeController.text = value ?? 'A';
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: _pickImages,
-                        icon: const Icon(Icons.photo_library_outlined),
-                        label: const Text('Attach Images'),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _selectedImages.isEmpty
-                              ? 'No images selected'
-                              : '${_selectedImages.length} selected',
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_selectedImages.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    FutureBuilder<int>(
-                      future: _getTotalImageSize(),
-                      builder: (context, snapshot) {
-                        final sizeText =
-                            snapshot.hasData
-                                ? _formatFileSize(snapshot.data!)
-                                : 'Calculating...';
-                        return Text(
-                          'Total: $sizeText',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      onPressed:
-                          _creating
-                              ? null
-                              : () async {
-                                final navigator = Navigator.of(sheetContext);
-                                await _createListing();
-                                if (mounted && navigator.canPop()) {
-                                  navigator.pop();
-                                }
-                              },
-                      icon:
-                          _creating
-                              ? const CompactLoadingIndicator(
-                                size: 16,
-                                color: Colors.white,
-                              )
-                              : const Icon(Icons.add),
-                      label: const Text('Create Listing'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
-  }
-
-  Future<void> _createListing() async {
-    final crop = _cropController.text.trim();
-    final district = _districtController.text.trim();
-    final qty = double.tryParse(_qtyController.text.trim());
-    final price = double.tryParse(_priceController.text.trim());
-
-    final cropError = FormValidators.validateCropName(crop);
-    if (cropError != null) {
-      _showError(cropError);
-      return;
-    }
-    final districtError = FormValidators.validateDistrict(district);
-    if (districtError != null) {
-      _showError(districtError);
-      return;
-    }
-    if (qty == null) {
-      _showError('Please enter a valid quantity');
-      return;
-    }
-    final qtyError = FormValidators.validateQuantity(qty.toString());
-    if (qtyError != null) {
-      _showError(qtyError);
-      return;
-    }
-    if (price == null) {
-      _showError('Please enter a valid price');
-      return;
-    }
-    final priceError = FormValidators.validatePrice(price.toString());
-    if (priceError != null) {
-      _showError(priceError);
-      return;
-    }
-
-    setState(() => _creating = true);
-    try {
-      final imageUrls = <String>[];
-      for (final image in _selectedImages) {
-        final url = await _service.uploadListingImage(image.path);
-        imageUrls.add(url);
-      }
-
-      await _service.createListing(
-        cropName: crop,
-        district: district,
-        quantity: qty,
-        askingPrice: price,
-        imageUrls: imageUrls,
-      );
-      if (!mounted) return;
-      _cropController.clear();
-      _districtController.clear();
-      _qtyController.clear();
-      _priceController.clear();
-      _descriptionController.clear();
-      _selectedGradeController.text = 'A';
-      setState(() => _selectedImages.clear());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            imageUrls.any((url) => url.contains('res.cloudinary.com'))
-                ? 'Listing created and images uploaded to Cloudinary'
-                : 'Listing created successfully',
-          ),
-        ),
-      );
-      await _load();
-    } catch (e) {
-      if (!mounted) return;
-      _showError(ErrorPresenter.present(e));
-    } finally {
-      if (!mounted) return;
-      setState(() => _creating = false);
-    }
-  }
-
   void _showError(String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  Future<int> _getTotalImageSize() async {
-    int total = 0;
-    for (final image in _selectedImages) {
-      total += await image.length();
-    }
-    return total;
   }
 
   Future<void> _offerDialog(ListingDto row) async {
@@ -1351,8 +1126,10 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final approved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
+      // Use sheetCtx (the sheet's own BuildContext) for Navigator.pop so we
+      // always close the bottom sheet rather than the wrong route.
       builder:
-          (_) => Padding(
+          (sheetCtx) => Padding(
             padding: MediaQuery.of(context).viewInsets,
             child: SingleChildScrollView(
               child: Padding(
@@ -1372,7 +1149,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                       controller: offerPriceController,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'Offer Price',
+                        labelText: 'Offer Price (PKR)',
+                        prefixIcon: Icon(Icons.payments_outlined),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -1380,9 +1158,11 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                     TextField(
                       controller: quantityController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Quantity',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: 'Quantity (${row.unit})',
+                        prefixIcon: const Icon(Icons.scale_outlined),
+                        border: const OutlineInputBorder(),
+                        hintText: 'Max: ${row.quantity.toStringAsFixed(0)}',
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -1390,15 +1170,19 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context, false),
+                            onPressed: () => Navigator.pop(sheetCtx, false),
                             child: const Text('Cancel'),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text('Send'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.shade700,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () => Navigator.pop(sheetCtx, true),
+                            child: const Text('Send Offer'),
                           ),
                         ),
                       ],
@@ -1462,7 +1246,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    FutureBuilder<Map<String, dynamic>>(
+                    FutureBuilder<UserProfileDto>(
                       future: service.fetchUserProfileByUid(row.sellerUid),
                       builder: (context, snap) {
                         if (snap.connectionState == ConnectionState.waiting) {
@@ -1477,34 +1261,37 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                             ListTile(
                               leading: GestureDetector(
                                 onTap:
-                                    prof['photoUrl'] != null &&
-                                            prof['photoUrl']
-                                                .toString()
-                                                .isNotEmpty
+                                    prof.photoUrl.isNotEmpty
                                         ? () => _openSellerPhotoViewer(
-                                          prof['photoUrl'].toString(),
-                                          (prof['displayName'] ??
-                                                  prof['name'] ??
-                                                  'Seller')
-                                              .toString(),
+                                          prof.photoUrl,
+                                          prof.primaryName,
                                         )
                                         : null,
                                 child:
-                                    prof['photoUrl'] != null &&
-                                            prof['photoUrl']
-                                                .toString()
-                                                .isNotEmpty
+                                    prof.photoUrl.isNotEmpty
                                         ? CircleAvatar(
                                           backgroundImage: NetworkImage(
-                                            prof['photoUrl'],
+                                            prof.photoUrl,
                                           ),
                                         )
-                                        : const CircleAvatar(
-                                          child: Icon(Icons.person),
+                                        : CircleAvatar(
+                                          backgroundColor:
+                                              Colors.green.shade100,
+                                          child: Text(
+                                            prof.initials,
+                                            style: TextStyle(
+                                              color: Colors.green.shade800,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
                                         ),
                               ),
-                              title: Text(prof['displayName'] ?? 'Seller'),
-                              subtitle: Text(prof['phoneNumber'] ?? ''),
+                              title: Text(prof.primaryName),
+                              subtitle: Text(
+                                prof.contactPhone.isNotEmpty
+                                    ? prof.contactPhone
+                                    : 'Contact hidden',
+                              ),
                             ),
                             const SizedBox(height: 8),
                           ],
@@ -1572,9 +1359,12 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final unreadCount = _unreadCounts[row.id] ?? 0;
 
     return InkWell(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => ListingDetailScreen(listing: row)),
-      ),
+      onTap:
+          () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ListingDetailScreen(listing: row),
+            ),
+          ),
       borderRadius: BorderRadius.circular(16),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1587,25 +1377,30 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
             children: [
               Hero(
                 tag: 'listing_image_${row.id}',
-                child: row.imageUrls.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          row.imageUrls.first,
+                child:
+                    row.imageUrls.isNotEmpty
+                        ? ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            row.imageUrls.first,
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                        : Container(
                           width: 64,
                           height: 64,
-                          fit: BoxFit.cover,
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            Icons.agriculture,
+                            color: Colors.green.shade400,
+                            size: 28,
+                          ),
                         ),
-                      )
-                    : Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(Icons.agriculture, color: Colors.green.shade400, size: 28),
-                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1614,19 +1409,30 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                   children: [
                     Text(
                       '${row.cropName} • Grade ${row.qualityGrade}',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.location_on, size: 14, color: Colors.green.shade700),
+                        Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Colors.green.shade700,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             row.district,
-                            style: TextStyle(fontSize: 12, color: Colors.green.shade800, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green.shade800,
+                              fontWeight: FontWeight.w500,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -1638,12 +1444,19 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                       children: [
                         Text(
                           'Qty: ${row.quantity.toStringAsFixed(0)} ${row.unit}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
                         ),
                         const Spacer(),
                         Text(
                           'PKR ${row.askingPrice.toStringAsFixed(0)}',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.green.shade800),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.green.shade800,
+                          ),
                         ),
                       ],
                     ),
@@ -1653,7 +1466,10 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                       children: [
                         if (unreadCount > 0)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.blue.shade50,
                               borderRadius: BorderRadius.circular(12),
@@ -1662,11 +1478,19 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.mark_chat_unread, size: 12, color: Colors.blue.shade700),
+                                Icon(
+                                  Icons.mark_chat_unread,
+                                  size: 12,
+                                  color: Colors.blue.shade700,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
                                   '$unreadCount new',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue.shade800,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1679,11 +1503,22 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                             TextButton(
                               style: TextButton.styleFrom(
                                 visualDensity: VisualDensity.compact,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               onPressed: () => _offerDialog(row),
-                              child: const Text('Make Offer', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              child: const Text(
+                                'Make Offer',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                             ElevatedButton(
                               style: ElevatedButton.styleFrom(
@@ -1691,11 +1526,22 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                 foregroundColor: Colors.green.shade800,
                                 elevation: 0,
                                 visualDensity: VisualDensity.compact,
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
                               onPressed: () => _messageSellerDialog(row),
-                              child: const Text('Message', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                              child: const Text(
+                                'Message',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -1831,27 +1677,40 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                   child: RefreshIndicator(
                     onRefresh: _load,
                     child: ListView.separated(
-                      itemCount: _filteredRows.length,
+                      itemCount:
+                          _filteredRows.length + (_hasMoreListings ? 1 : 0),
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
+                        if (_hasMoreListings && index == _filteredRows.length) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 4, bottom: 8),
+                            child: Center(
+                              child: OutlinedButton.icon(
+                                onPressed:
+                                    _loadingMoreListings
+                                        ? null
+                                        : _loadMoreListings,
+                                icon:
+                                    _loadingMoreListings
+                                        ? const CompactLoadingIndicator(
+                                          size: 16,
+                                        )
+                                        : const Icon(Icons.expand_more),
+                                label: Text(
+                                  _loadingMoreListings
+                                      ? 'Loading more...'
+                                      : 'Load more listings',
+                                ),
+                              ),
+                            ),
+                          );
+                        }
                         return _buildListingCard(_filteredRows[index]);
                       },
                     ),
                   ),
                 ),
             ],
-          ),
-        ),
-        Positioned(
-          right: 16,
-          bottom: 16,
-          child: FloatingActionButton.extended(
-            heroTag: 'market_create_listing',
-            backgroundColor: Colors.green.shade700,
-            foregroundColor: Colors.white,
-            onPressed: _openCreateListingSheet,
-            icon: const Icon(Icons.add),
-            label: const Text('Create Listing'),
           ),
         ),
       ],

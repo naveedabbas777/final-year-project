@@ -51,6 +51,12 @@ int toIntOrZero(dynamic value) {
 /// Parses ISO 8601 date strings, returns current time if parsing fails
 DateTime toDateTimeOrNow(dynamic value) {
   if (value is DateTime) return value;
+  if (value is Map && value['seconds'] is num) {
+    return DateTime.fromMillisecondsSinceEpoch(
+      (value['seconds'] as num).toInt() * 1000,
+      isUtc: true,
+    ).toLocal();
+  }
   if (value is String && value.isNotEmpty) {
     final parsed = DateTime.tryParse(value);
     if (parsed != null) return parsed;

@@ -253,40 +253,48 @@ async function fetchOpenWeather(lat, lon) {
 
 function buildAlertDefinitions(current, todayForecast) {
   const alerts = [];
-  const rainLikely = (todayForecast?.pop ?? 0) >= 0.5 || (current.precipitation > 0.1);
-  const hot = current.temperature >= 35;
-  const cold = current.temperature <= 5;
-  const windy = current.windSpeed >= 10;
+
+  // `current` is the output of toOneCallCurrent() which uses `temp` and `wind_speed`.
+  // Precipitation is extracted from the raw rain/snow sub-objects on `current`.
+  const temp = typeof current?.temp === 'number' ? current.temp : null;
+  const windSpeed = typeof current?.wind_speed === 'number' ? current.wind_speed : 0;
+  const precip = extractPrecip(current); // reads rain['1h'] or snow['1h']
+  const rainChance = typeof todayForecast?.pop === 'number' ? todayForecast.pop : 0;
+
+  const rainLikely = rainChance >= 0.5 || precip > 0.1;
+  const hot = temp !== null && temp >= 35;
+  const cold = temp !== null && temp <= 5;
+  const windy = windSpeed >= 10;
 
   if (rainLikely) {
     alerts.push({
       type: 'rain',
-      title: 'Rain expected near your fields',
-      body: `Chance of rain around ${Math.round((todayForecast?.pop ?? 0) * 100)}%. Secure equipment and delay spraying.`,
+      title: '🌧 Rain expected near your fields',
+      body: `Chance of rain around ${Math.round(rainChance * 100)}%. Secure equipment and delay spraying.`,
     });
   }
 
   if (hot) {
     alerts.push({
       type: 'heat',
-      title: 'High heat alert',
-      body: 'Temperatures above 35°C expected. Increase irrigation if needed.',
+      title: '🌡 High heat alert',
+      body: `Temperatures above ${temp.toFixed(1)}°C expected. Increase irrigation if needed.`,
     });
   }
 
   if (cold) {
     alerts.push({
       type: 'cold',
-      title: 'Low temperature alert',
-      body: `Temps near ${Math.round(current.temperature)}°C. Protect sensitive crops.`,
+      title: '❄ Low temperature alert',
+      body: `Temps near ${temp.toFixed(1)}°C. Protect sensitive crops from frost.`,
     });
   }
 
   if (windy) {
     alerts.push({
       type: 'wind',
-      title: 'Windy conditions',
-      body: `Wind above ${current.windSpeed.toFixed(1)} m/s. Avoid spraying.`,
+      title: '💨 Windy conditions',
+      body: `Wind at ${windSpeed.toFixed(1)} m/s. Avoid spraying pesticides or fertilisers.`,
     });
   }
 

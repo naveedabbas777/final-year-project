@@ -82,8 +82,11 @@ class AuthProvider extends ChangeNotifier {
     } catch (_) {
       // Don't block sign-out if token cleanup fails
     }
-    _bootstrapState = AuthBootstrapState.unknown;
+    // Set unauthenticated (not unknown) so AppRouter goes straight to LoginScreen
+    // without flashing the SplashScreen during the brief gap before Firebase
+    // authStateChanges() fires.
     _user = null;
+    _bootstrapState = AuthBootstrapState.unauthenticated;
     notifyListeners();
     await _auth.signOut();
   }

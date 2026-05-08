@@ -2,12 +2,20 @@ import { Router } from 'express';
 
 import { requireAuth } from '../middlewares/auth.js';
 import { attachDbUser } from '../middlewares/attachDbUser.js';
+import { admin } from '../config/firebaseAdmin.js';
 import { col, docToJson, queryToJson, serverTimestamp } from '../utils/firestoreHelpers.js';
 import { sendPushToUsers } from '../utils/fcmHelper.js';
 import { asyncHandler } from '../utils/errors.js';
 import { validateListingInput } from '../utils/validators.js';
 
 export const listingsRouter = Router();
+
+function parseCursorDate(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
 
 listingsRouter.get('/', asyncHandler(async (req, res) => {
   const {
@@ -17,9 +25,10 @@ listingsRouter.get('/', asyncHandler(async (req, res) => {
     status,
     sort = 'new',
     limit = 50,
+    before,
   } = req.query;
 
-  let query = col('listings').limit(Math.min(Number(limit) || 50, 200));
+  let query = col('listings');
 
   if (typeof crop === 'string' && crop.trim()) {
     query = query.where('cropName', '==', crop.trim());
@@ -40,7 +49,13 @@ listingsRouter.get('/', asyncHandler(async (req, res) => {
     query = query.orderBy('askingPrice', 'desc');
   } else {
     query = query.orderBy('createdAt', 'desc');
+    const cursor = parseCursorDate(before);
+    if (cursor) {
+      query = query.startAfter(cursor);
+    }
   }
+
+  query = query.limit(Math.min(Number(limit) || 50, 200));
 
   const snapshot = await query.get();
   res.json(queryToJson(snapshot));
@@ -190,6 +205,24 @@ listingsRouter.delete('/:id', requireAuth, attachDbUser, asyncHandler(async (req
   if (listing.sellerUid !== req.user.uid && req.dbUser.role !== 'admin') {
     res.status(403).json({ message: 'Only seller or admin can delete listing' });
     return;
+  }
+
+  // Cancel all pending offers on this listing before deleting it.
+  // Without this, buyers see stale 'Pending' offers for a deleted listing.
+  try {
+    const pendingOffers = await col('offers')
+      .where('listingId', '==', req.params.id)
+      .where('status', '==', 'pending')
+      .get();
+    if (!pendingOffers.empty) {
+      const batch = admin.firestore().batch();
+      pendingOffers.docs.forEach((d) =>
+        batch.update(d.ref, { status: 'cancelled', updatedAt: serverTimestamp() }),
+      );
+      await batch.commit();
+    }
+  } catch (err) {
+    console.error('Failed to cancel offers on listing delete:', err.message);
   }
 
   await docRef.delete();

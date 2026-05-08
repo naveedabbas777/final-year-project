@@ -19,14 +19,16 @@ class ListingDetailScreen extends StatefulWidget {
 
 class _ListingDetailScreenState extends State<ListingDetailScreen> {
   final _service = MarketApiService();
-  Map<String, dynamic>? _seller;
+  UserProfileDto? _seller;
   Map<String, dynamic>? _sellerRatings;
   bool _savedSeller = false;
   bool _showFullDescription = false;
   bool _canManage = false;
   bool _loadingMessages = false;
-  bool _loadingRatings = false;
-  List<Map<String, dynamic>> _messages = const [];
+  bool _loadingMoreMessages = false;
+  bool _hasMoreMessages = true;
+  int _messageLimit = 20;
+  List<ChatMessageDto> _messages = const [];
   int _currentImagePage = 0;
   late final PageController _imagePageController;
 
@@ -83,22 +85,28 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     if (date == null) return '';
     final now = DateTime.now();
     final diff = now.difference(date);
-
     if (diff.inDays == 0) {
-      if (diff.inHours == 0) {
-        return 'Listed just now';
-      }
-      return 'Listed ${diff.inHours} hour${diff.inHours == 1 ? '' : 's'} ago';
+      if (diff.inHours == 0) return 'Just listed';
+      return '${diff.inHours}h ago';
     } else if (diff.inDays == 1) {
-      return 'Listed yesterday';
+      return 'Yesterday';
     } else if (diff.inDays < 30) {
-      return 'Listed ${diff.inDays} days ago';
+      return '${diff.inDays}d ago';
     } else if (diff.inDays < 365) {
       final months = (diff.inDays / 30).floor();
-      return 'Listed $months month${months == 1 ? '' : 's'} ago';
+      return '${months}mo ago';
     } else {
       final years = (diff.inDays / 365).floor();
-      return 'Listed $years year${years == 1 ? '' : 's'} ago';
+      return '${years}y ago';
+    }
+  }
+
+  Color _gradeColor(String grade) {
+    switch (grade.toUpperCase()) {
+      case 'A': return Colors.green.shade700;
+      case 'B': return Colors.amber.shade700;
+      case 'C': return Colors.orange.shade700;
+      default: return Colors.grey.shade600;
     }
   }
 
@@ -134,9 +142,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
 
   Future<void> _loadSeller() async {
     try {
-      final prof = await _service.fetchUserProfileByUid(
-        widget.listing.sellerUid,
-      );
+      final prof =
+          await _service.fetchUserProfileByUidWithCache(
+            widget.listing.sellerUid,
+          ) ??
+          await _service.fetchUserProfileByUid(
+            widget.listing.sellerUid,
+          );
       if (!mounted) return;
       setState(() => _seller = prof);
     } catch (_) {}
@@ -145,12 +157,15 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   Future<void> _loadMessages() async {
     setState(() => _loadingMessages = true);
     try {
-      final rows = await _service.fetchMessagesForListing(
+      final rows = await _service.fetchMessagesForListingWithCache(
         widget.listing.id,
-        limit: 20,
+        limit: _messageLimit,
       );
       if (!mounted) return;
-      setState(() => _messages = rows);
+      setState(() {
+        _messages = rows;
+        _hasMoreMessages = rows.length >= _messageLimit;
+      });
     } catch (_) {
     } finally {
       if (mounted) {
@@ -159,16 +174,26 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     }
   }
 
+  Future<void> _loadMoreMessages() async {
+    if (_loadingMoreMessages || !_hasMoreMessages) return;
+    setState(() {
+      _loadingMoreMessages = true;
+      _messageLimit += 20;
+    });
+    try {
+      await _loadMessages();
+    } finally {
+      if (mounted) setState(() => _loadingMoreMessages = false);
+    }
+  }
+
   Future<void> _loadSellerRatings() async {
-    setState(() => _loadingRatings = true);
     try {
       final ratings = await _service.fetchUserRatings(widget.listing.sellerUid);
       if (!mounted) return;
       setState(() => _sellerRatings = ratings);
     } catch (_) {
-      // Silently ignore errors - ratings are optional
-    } finally {
-      if (mounted) setState(() => _loadingRatings = false);
+      // Silently ignore — ratings are optional enrichment
     }
   }
 
@@ -696,16 +721,20 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   icon: const Icon(Icons.share_rounded, size: 20),
                   onPressed: () {
                     final text =
-                      '${l.cropName} - Grade ${l.qualityGrade}\n'
-                      'PKR ${l.askingPrice.toStringAsFixed(0)} per ${l.unit}\n'
-                      'District: ${l.district}\n'
-                      'Digital Kissan Marketplace';
+                        '${l.cropName} - Grade ${l.qualityGrade}\n'
+                        'PKR ${l.askingPrice.toStringAsFixed(0)} per ${l.unit}\n'
+                        'District: ${l.district}\n'
+                        'Digital Kissan Marketplace';
                     Clipboard.setData(ClipboardData(text: text));
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text('Listing details copied to clipboard'),
+                        content: const Text(
+                          'Listing details copied to clipboard',
+                        ),
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         backgroundColor: Colors.green.shade700,
                       ),
                     );
@@ -734,6 +763,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: 12),
+                      // Status badge
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -829,45 +859,76 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  // Time + district row
                   Row(
                     children: [
-                      Icon(
-                        Icons.location_on,
-                        size: 18,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 6),
+                      Icon(Icons.location_on, size: 16, color: Colors.green.shade700),
+                      const SizedBox(width: 4),
                       Text(
                         l.district,
                         style: TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
                           color: Colors.grey.shade700,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                      const SizedBox(width: 12),
+                      Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatRelativeTime(widget.listing.createdAt),
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Seller Information',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        _formatRelativeTime(widget.listing.createdAt),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  // ── Description ─────────────────────────────────────────
+                  const Text(
+                    'Description',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                   ),
+                  const SizedBox(height: 8),
+                  Builder(
+                    builder: (context) {
+                      final text =
+                          l.description.trim().isEmpty
+                              ? 'Fresh produce available in good condition.'
+                              : l.description.trim();
+                      const clamp = 180;
+                      final long = text.length > clamp;
+                      final shown =
+                          !_showFullDescription && long
+                              ? '${text.substring(0, clamp)}...'
+                              : text;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            shown,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade800,
+                              height: 1.55,
+                            ),
+                          ),
+                          if (long)
+                            TextButton(
+                              onPressed: () => setState(
+                                () => _showFullDescription = !_showFullDescription,
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                foregroundColor: Colors.green.shade700,
+                              ),
+                              child: Text(
+                                _showFullDescription ? '▲ Show less' : '▼ Show more',
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
                   const SizedBox(height: 12),
                   Card(
                     elevation: 2,
@@ -881,27 +942,18 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         children: [
                           GestureDetector(
                             onTap:
-                                _seller != null &&
-                                        (_seller!['photoUrl'] ?? '')
-                                            .toString()
-                                            .isNotEmpty
+                                _seller?.photoUrl.isNotEmpty == true
                                     ? () => _openSellerPhotoViewer(
-                                      _seller!['photoUrl'].toString(),
-                                      (_seller?['displayName'] ??
-                                              _seller?['name'] ??
-                                              'Seller')
-                                          .toString(),
+                                      _seller!.photoUrl,
+                                      _seller!.primaryName,
                                     )
                                     : null,
                             child:
-                                _seller != null &&
-                                        (_seller!['photoUrl'] ?? '')
-                                            .toString()
-                                            .isNotEmpty
+                                _seller?.photoUrl.isNotEmpty == true
                                     ? CircleAvatar(
                                       radius: 22,
                                       backgroundImage: NetworkImage(
-                                        _seller!['photoUrl'],
+                                        _seller!.photoUrl,
                                       ),
                                     )
                                     : CircleAvatar(
@@ -919,14 +971,14 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _seller?['displayName'] ?? 'Seller',
+                                  _seller?.primaryName ?? 'Seller',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  _seller?['phoneNumber'] ?? '',
+                                  _seller?.contactPhone ?? '',
                                   style: TextStyle(
                                     color: Colors.grey.shade600,
                                     fontSize: 12,
@@ -1102,6 +1154,14 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
+                          Text(
+                            'Showing the latest conversation activity for this listing.',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
                           if (_loadingMessages)
                             const Center(
                               child: CompactLoadingIndicator(size: 18),
@@ -1126,9 +1186,30 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     ),
                                   ),
                                   child: Text(
-                                    (msg['message'] ?? '').toString(),
+                                    msg.previewText,
                                     style: const TextStyle(fontSize: 13),
                                   ),
+                                ),
+                              ),
+                            ),
+                          if (_hasMoreMessages)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                onPressed:
+                                    _loadingMoreMessages
+                                        ? null
+                                        : _loadMoreMessages,
+                                icon:
+                                    _loadingMoreMessages
+                                        ? const CompactLoadingIndicator(
+                                          size: 14,
+                                        )
+                                        : const Icon(Icons.more_horiz),
+                                label: Text(
+                                  _loadingMoreMessages
+                                      ? 'Loading more...'
+                                      : 'Load more messages',
                                 ),
                               ),
                             ),
@@ -1136,58 +1217,18 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Description',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Quantity: ${l.quantity.toStringAsFixed(0)} ${l.unit}'),
-                  const SizedBox(height: 6),
-                  Builder(
-                    builder: (context) {
-                      final text =
-                          l.description.trim().isEmpty
-                              ? 'Fresh produce available in good condition.'
-                              : l.description.trim();
-                      const clamp = 120;
-                      final long = text.length > clamp;
-                      final shown =
-                          !_showFullDescription && long
-                              ? '${text.substring(0, clamp)}...'
-                              : text;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(shown),
-                          if (long)
-                            TextButton(
-                              onPressed:
-                                  () => setState(
-                                    () =>
-                                        _showFullDescription =
-                                            !_showFullDescription,
-                                  ),
-                              child: Text(
-                                _showFullDescription ? 'See less' : 'See more',
-                              ),
-                            ),
-                        ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 16),
                   const Text(
                     'Location',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   Builder(
                     builder: (context) {
                       final productLat = l.latitude;
                       final productLon = l.longitude;
-                      final sellerLat = (_seller?['lat'] as num?)?.toDouble();
-                      final sellerLon = (_seller?['lon'] as num?)?.toDouble();
+                      final sellerLat = _seller?.latitude;
+                      final sellerLon = _seller?.longitude;
 
                       // Show product location map if available
                       if (productLat != null && productLon != null) {

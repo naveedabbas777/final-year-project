@@ -175,6 +175,11 @@ class _OffersScreenState extends State<OffersScreen>
     if (diff.inDays < 7) return '${diff.inDays}d ago';
     final dd = date.day.toString().padLeft(2, '0');
     final mm = date.month.toString().padLeft(2, '0');
+    // Include year for dates old enough to cause year-ambiguity
+    if (diff.inDays >= 30) {
+      final yy = (date.year % 100).toString().padLeft(2, '0');
+      return '$dd/$mm/$yy';
+    }
     return '$dd/$mm';
   }
 

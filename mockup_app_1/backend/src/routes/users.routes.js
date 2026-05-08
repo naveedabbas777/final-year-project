@@ -298,6 +298,32 @@ usersRouter.post('/me/presence', requireAuth, asyncHandler(async (req, res) => {
   res.json({ ok: true, isOnline });
 }));
 
+// Seller stats: completed orders, listing counts, presence
+usersRouter.get('/:uid/stats', asyncHandler(async (req, res) => {
+  const uid = String(req.params.uid || '').trim();
+  if (!uid) {
+    res.status(400).json({ message: 'uid is required' });
+    return;
+  }
+
+  const [listingsSnap, completedOrdersSnap, presenceDoc] = await Promise.all([
+    col('listings').where('sellerUid', '==', uid).get(),
+    col('orders').where('sellerUid', '==', uid).where('status', '==', 'completed').get(),
+    admin.firestore().collection('presence').doc(uid).get(),
+  ]);
+
+  const totalListings = listingsSnap.size;
+  const openListings = listingsSnap.docs.filter((d) => d.data().status === 'open').length;
+  const completedOrders = completedOrdersSnap.size;
+
+  const presenceData = presenceDoc.exists ? presenceDoc.data() : null;
+  const isOnline = presenceData?.isOnline ?? false;
+  const lastSeenRaw = presenceData?.lastSeen;
+  const lastSeen = lastSeenRaw?.toDate?.()?.toISOString?.() ?? lastSeenRaw ?? null;
+
+  res.json({ uid, totalListings, openListings, completedOrders, isOnline, lastSeen });
+}));
+
 // Get presence status for a user
 usersRouter.get('/:uid/presence', asyncHandler(async (req, res) => {
   const uid = String(req.params.uid || '').trim();

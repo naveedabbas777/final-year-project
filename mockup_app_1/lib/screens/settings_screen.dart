@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
@@ -7,7 +8,6 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/firebase_service.dart';
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/notification_service.dart';
-import 'package:mockup_app/main.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -236,11 +236,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
     await auth.signOut();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreenWrapper()),
-      (route) => false, // Clear entire navigation stack
-    );
+    // AuthProvider.signOut() sets bootstrapState=unauthenticated which the
+    // reactive AppRouter/RoleBasedHomeScreen uses to redirect. No imperative
+    // navigation needed — doing both causes double-navigation stack corruption.
   }
 
   @override
@@ -323,25 +321,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: () {},
             ),
             const SizedBox(height: 8),
-            ListTile(
-              leading: Icon(Icons.cloud_upload, color: Colors.green.shade700),
-              title: const Text('Save sample data to Firebase'),
-              onTap: () async {
-                final service = FirebaseService();
-                try {
-                  await service.writeSampleMessage('Hello from device');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Saved sample message to Firebase'),
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to save to Firebase: $e')),
-                  );
-                }
-              },
-            ),
+            if (kDebugMode) ...
+              [
+                ListTile(
+                  leading: Icon(
+                    Icons.cloud_upload,
+                    color: Colors.green.shade700,
+                  ),
+                  title: const Text('Save sample data to Firebase'),
+                  subtitle: const Text('DEV ONLY'),
+                  onTap: () async {
+                    final service = FirebaseService();
+                    try {
+                      await service.writeSampleMessage('Hello from device');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Saved sample message to Firebase'),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to save to Firebase: $e'),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
             ListTile(
               leading: Icon(
                 Icons.notifications_active,

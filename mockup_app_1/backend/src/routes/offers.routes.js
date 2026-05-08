@@ -13,10 +13,13 @@ export const offersRouter = Router();
 offersRouter.get('/me', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
   const snapshot = await col('offers')
     .where('buyerUid', '==', req.user.uid)
-    .orderBy('createdAt', 'desc')
     .get();
 
-  const offers = queryToJson(snapshot);
+  const offers = queryToJson(snapshot).sort((a, b) => {
+    const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return db - da;
+  });
 
   // Batch-fetch listing data (fixes N+1 query)
   const listingIds = [...new Set(offers.map((o) => o.listingId).filter(Boolean))];
@@ -59,7 +62,6 @@ offersRouter.get('/incoming', requireAuth, attachDbUser, asyncHandler(async (req
     const batch = myListingIds.slice(i, i + 30);
     const offersSnap = await col('offers')
       .where('listingId', 'in', batch)
-      .orderBy('createdAt', 'desc')
       .get();
     allOffers.push(...queryToJson(offersSnap));
   }
@@ -104,6 +106,18 @@ offersRouter.post('/', requireAuth, attachDbUser, asyncHandler(async (req, res) 
 
   if (listing.sellerUid === req.user.uid) {
     res.status(400).json({ message: 'Seller cannot place an offer on own listing' });
+    return;
+  }
+
+  // Duplicate-offer guard: prevent same buyer from stacking multiple pending offers
+  const existingOffer = await col('offers')
+    .where('listingId', '==', listingSnap.id)
+    .where('buyerUid', '==', req.user.uid)
+    .where('status', '==', 'pending')
+    .limit(1)
+    .get();
+  if (!existingOffer.empty) {
+    res.status(409).json({ message: 'You already have a pending offer on this listing. Cancel it before making a new one.' });
     return;
   }
 

@@ -361,10 +361,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             padding: const EdgeInsets.only(right: 8),
             child: InkWell(
               borderRadius: BorderRadius.circular(24),
-              onTap: () {
-                Navigator.of(context).push(
+              onTap: () async {
+                await Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const ProfileScreen()),
                 );
+                // Reload so avatar/name update if profile was edited
+                if (mounted) await _loadDashboardData();
               },
               child: CircleAvatar(
                 radius: 18,
@@ -394,12 +396,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       backgroundColor: Colors.green.shade50,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      body: RefreshIndicator(
+        color: Colors.green.shade700,
+        onRefresh: _loadDashboardData,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               FutureBuilder<CurrentWeather?>(
                 future: _currentWeatherFuture,
                 builder: (context, snapshot) {
@@ -511,18 +516,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Unable to connect to the server. Please check your network and try again.',
+                             'Unable to connect to the server. Please check your internet connection and try again.',
                               textAlign: TextAlign.center,
                               style: TextStyle(color: Colors.red.shade600),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'If you are testing on a USB-connected Android device, run: adb reverse tcp:5000 tcp:5000, or start the app with --dart-define=API_BASE_URL=http://<your-pc-ip>:5000.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.red.shade500,
-                                fontSize: 12,
-                              ),
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton.icon(
@@ -1005,6 +1001,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
+    ),   // RefreshIndicator close
     );
   }
 }

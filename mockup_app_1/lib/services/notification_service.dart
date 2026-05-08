@@ -29,24 +29,12 @@ class NotificationService {
     await _flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) async {
-        // Handle notification tap
+        // Tap handling is delegated to PushService._onNotificationTap
         debugPrint('Notification tapped: ${response.payload}');
       },
     );
-
-    // Setup FCM foreground message handling to show local notification
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('FCM message received (foreground): ${message.messageId}');
-      final notification = message.notification;
-      if (notification != null) {
-        showNotification(
-          id: notification.hashCode,
-          title: notification.title,
-          body: notification.body,
-          payload: message.data.isNotEmpty ? message.data.toString() : null,
-        );
-      }
-    });
+    // NOTE: FCM foreground message handling is done exclusively in PushService
+    // to avoid duplicate notifications. Do NOT add onMessage.listen here.
   }
 
   Future<bool> requestNotificationPermissions() async {

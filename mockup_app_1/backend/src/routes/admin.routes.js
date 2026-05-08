@@ -183,8 +183,13 @@ adminRouter.get('/orders', requireAuth, attachDbUser, requireRole('admin'), asyn
     query = query.where('status', '==', status);
   }
 
-  const snap = await query.orderBy('createdAt', 'desc').limit(limit).get();
-  res.json(queryToJson(snap));
+  const snap = await query.get();
+  const rows = queryToJson(snap).sort((a, b) => {
+    const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return db - da;
+  });
+  res.json(rows.slice(0, limit));
 }));
 
 adminRouter.get('/alerts', requireAuth, attachDbUser, requireRole('admin'), asyncHandler(async (req, res) => {

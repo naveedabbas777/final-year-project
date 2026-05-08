@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -14,7 +13,6 @@ import 'package:mockup_app/utils/error_presenter.dart';
 
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/firebase_service.dart';
-import 'package:mockup_app/main.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -30,38 +28,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _loading = true;
   bool _uploading = false;
 
+  bool _loadError = false;
+
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    // Use postFrameCallback to safely access Provider in initState
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadProfile());
   }
 
   Future<void> _loadProfile() async {
-    setState(() => _loading = true);
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final user = auth.user;
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _loadError = false;
+    });
 
     try {
-      Map<String, dynamic>? doc;
-      if (user != null) {
-        doc = await _svc.getUserByUid(user.uid);
-      } else {
-        // fallback: try last logged-in phone (for password-only logins)
-        final prefs = await SharedPreferences.getInstance();
-        final lastPhone = prefs.getString('last_logged_in_phone');
-        if (lastPhone != null && lastPhone.isNotEmpty) {
-          doc = await _svc.getUserByPhone(lastPhone);
-        }
-      }
-      if (mounted)
-        setState(() {
-          _data = doc;
-        });
-    } catch (_) {
-      if (mounted)
-        setState(() {
-          _data = null;
-        });
+      // Use /api/users/me — always returns the full unredacted profile.
+      // GET /api/users/:uid goes through canViewSensitiveFields which can
+      // redact phone, email, address, lat/lon even for your own profile.
+      final doc = await _svc.getUserMe();
+      if (!mounted) return;
+      setState(() => _data = doc);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _data = null;
+        _loadError = true;
+      });
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -149,7 +144,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _showEditDialog() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final user = auth.user;
-    // determine uid to update
     final uidToUpdate = user?.uid ?? (_data?['uid'] ?? _data?['id']);
     if (uidToUpdate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -158,75 +152,130 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    final nameController = TextEditingController(
+    final nameCtrl = TextEditingController(
       text: _data?['displayName'] ?? user?.displayName ?? '',
     );
-    final phoneController = TextEditingController(
-      text: _data?['phoneNumber'] ?? user?.phoneNumber ?? '',
+    final phoneCtrl = TextEditingController(
+      text: _data?['phoneNumber'] ?? _data?['phone'] ?? user?.phoneNumber ?? '',
     );
+    final districtCtrl = TextEditingController(
+      text: (_data?['district'] ?? '').toString(),
+    );
+    final provinceCtrl = TextEditingController(
+      text: (_data?['province'] ?? '').toString(),
+    );
+    final addressCtrl = TextEditingController(
+      text: (_data?['address'] ?? '').toString(),
+    );
+
+    InputDecoration _field(String label, IconData icon) => InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, size: 20),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        );
 
     final ok = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Edit profile'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Full name'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: phoneController,
-                  decoration: const InputDecoration(labelText: 'Phone'),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Cancel'),
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Edit Profile',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: _field('Full Name', Icons.person_outline),
               ),
-              ElevatedButton(
-                onPressed: () async {
-                  final newName = nameController.text.trim();
-                  final newPhone = phoneController.text.trim();
-                  try {
-                    await _svc.updateUserProfile(
-                      uidToUpdate,
-                      displayName: newName.isEmpty ? null : newName,
-                      phoneNumber: newPhone.isEmpty ? null : newPhone,
-                    );
-                    Navigator.of(context).pop(true);
-                  } catch (e) {
-                    Navigator.of(context).pop(false);
-                  }
-                },
-                child: const Text('Save'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: _field('Phone Number', Icons.phone_outlined),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: districtCtrl,
+                decoration: _field('District', Icons.map_outlined),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: provinceCtrl,
+                decoration: _field('Province', Icons.location_city_outlined),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: addressCtrl,
+                maxLines: 2,
+                decoration: _field('Address', Icons.home_outlined),
               ),
             ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              try {
+                await _svc.updateUserProfile(
+                  uidToUpdate,
+                  displayName:
+                      nameCtrl.text.trim().isEmpty ? null : nameCtrl.text.trim(),
+                  phoneNumber: phoneCtrl.text.trim().isEmpty
+                      ? null
+                      : phoneCtrl.text.trim(),
+                  district: districtCtrl.text.trim().isEmpty
+                      ? null
+                      : districtCtrl.text.trim(),
+                  province: provinceCtrl.text.trim().isEmpty
+                      ? null
+                      : provinceCtrl.text.trim(),
+                  address: addressCtrl.text.trim().isEmpty
+                      ? null
+                      : addressCtrl.text.trim(),
+                );
+                if (ctx.mounted) Navigator.of(ctx).pop(true);
+              } catch (e) {
+                if (ctx.mounted) Navigator.of(ctx).pop(false);
+              }
+            },
+            child: const Text('Save Changes'),
+          ),
+        ],
+      ),
     );
 
     if (ok == true) {
       await _loadProfile();
       if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Profile updated')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Profile updated successfully'),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+          ),
+        );
     }
   }
 
   Future<void> _signOut() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     await auth.signOut();
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginScreenWrapper()),
-      (r) => false,
-    );
+    // Reactive AuthProvider handles navigation — no imperative push needed.
   }
 
   Future<void> _pickAndUploadProfileImage() async {
@@ -327,13 +376,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final memberSince = _formatCreatedAt();
     final accountType = _accountType();
     final location = _locationSummary();
+    final district = (_data?['district'] ?? '').toString().trim();
+    final province = (_data?['province'] ?? '').toString().trim();
     final photoUrl =
         _data?['photoUrl'] as String? ??
         Provider.of<AuthProvider>(context, listen: false).user?.photoURL;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text('Profile',
+            style: TextStyle(fontWeight: FontWeight.w700)),
         centerTitle: true,
         foregroundColor: Colors.white,
         flexibleSpace: Container(
@@ -344,10 +396,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               end: Alignment.bottomRight,
             ),
           ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.eco_rounded),
-          onPressed: null,
         ),
         elevation: 2,
       ),
@@ -416,6 +464,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    // Show a banner if backend fetch failed but Firebase Auth
+                    // data is still available as a fallback.
+                    if (_loadError)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.amber.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning_amber_rounded,
+                                color: Colors.amber.shade700, size: 18),
+                            const SizedBox(width: 8),
+                            const Expanded(
+                              child: Text(
+                                'Could not load full profile from server. Showing cached data.',
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _loadProfile,
+                              style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: const Size(48, 32)),
+                              child: const Text('Retry',
+                                  style: TextStyle(fontSize: 12)),
+                            ),
+                          ],
+                        ),
+                      ),
                     Card(
                       color: Colors.green.shade50,
                       shape: RoundedRectangleBorder(
@@ -507,9 +591,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 label: 'Location',
                                 value: location,
                               ),
+                            if (district.isNotEmpty)
+                              _ProfileFieldTile(
+                                icon: Icons.map_outlined,
+                                label: 'District',
+                                value: district,
+                              ),
+                            if (province.isNotEmpty)
+                              _ProfileFieldTile(
+                                icon: Icons.location_city_outlined,
+                                label: 'Province',
+                                value: province,
+                              ),
                             _ProfileFieldTile(
                               icon: Icons.date_range,
-                              label: 'Joining date',
+                              label: 'Member since',
                               value: memberSince ?? 'Not available',
                             ),
                           ],

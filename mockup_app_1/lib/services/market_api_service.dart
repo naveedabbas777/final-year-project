@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api_client.dart';
 import '../utils/json_response.dart';
@@ -7,35 +10,116 @@ import '../utils/retry_helper.dart';
 
 class UserProfileDto {
   UserProfileDto({
+    required this.id,
     required this.firebaseUid,
     required this.name,
+    required this.displayName,
     required this.phone,
+    required this.phoneNumber,
+    required this.email,
     required this.role,
     required this.district,
     required this.province,
+    required this.address,
+    required this.latitude,
+    required this.longitude,
+    required this.locationUpdatedAt,
+    required this.createdAt,
+    required this.photoUrl,
   });
 
+  final String id;
   final String firebaseUid;
   final String name;
+  final String displayName;
   final String phone;
+  final String phoneNumber;
+  final String email;
   final String role;
   final String district;
   final String province;
+  final String address;
+  final double? latitude;
+  final double? longitude;
+  final DateTime? locationUpdatedAt;
+  final DateTime? createdAt;
+  final String photoUrl;
 
   bool get isAdmin => role == 'admin';
+  String get primaryName => displayName.trim().isNotEmpty ? displayName : name;
+  String get contactPhone => phone.trim().isNotEmpty ? phone : phoneNumber;
+  bool get hasVisibleContactInfo =>
+      contactPhone.trim().isNotEmpty || email.trim().isNotEmpty;
+  bool get hasLocationInfo =>
+      district.trim().isNotEmpty ||
+      province.trim().isNotEmpty ||
+      address.trim().isNotEmpty;
+  String get locationSummary {
+    final parts = [
+      district,
+      province,
+      address,
+    ].where((e) => e.trim().isNotEmpty);
+    return parts.join(', ');
+  }
+
+  String get initials {
+    final source =
+        primaryName.trim().isNotEmpty ? primaryName.trim() : firebaseUid;
+    return source.isNotEmpty ? source[0].toUpperCase() : 'U';
+  }
 
   factory UserProfileDto.fromJson(Map<String, dynamic> json) {
     return UserProfileDto(
+      id: toStringOrEmpty(json['_id'] ?? json['id']),
       firebaseUid: toStringOrEmpty(json['firebaseUid']),
       name: toStringOrEmpty(json['name']),
+      displayName:
+          toStringOrEmpty(json['displayName']).isEmpty
+              ? toStringOrEmpty(json['name'])
+              : toStringOrEmpty(json['displayName']),
       phone: toStringOrEmpty(json['phone']),
+      phoneNumber: toStringOrEmpty(json['phoneNumber']),
+      email: toStringOrEmpty(json['email']),
       role:
           toStringOrEmpty(json['role']).isEmpty
               ? 'farmer'
               : toStringOrEmpty(json['role']),
       district: toStringOrEmpty(json['district']),
       province: toStringOrEmpty(json['province']),
+      address: toStringOrEmpty(json['address']),
+      latitude: toDoubleOrNull(json['lat']),
+      longitude: toDoubleOrNull(json['lon']),
+      locationUpdatedAt:
+          json['locationUpdatedAt'] == null
+              ? null
+              : toDateTimeOrNow(json['locationUpdatedAt']),
+      createdAt:
+          json['createdAt'] == null ? null : toDateTimeOrNow(json['createdAt']),
+      photoUrl: toStringOrEmpty(json['photoUrl']),
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      '_id': id,
+      'firebaseUid': firebaseUid,
+      'name': name,
+      'displayName': displayName,
+      'phone': phone,
+      'phoneNumber': phoneNumber,
+      'email': email,
+      'role': role,
+      'district': district,
+      'province': province,
+      'address': address,
+      'lat': latitude,
+      'lon': longitude,
+      'locationUpdatedAt': locationUpdatedAt?.toIso8601String(),
+      'createdAt': createdAt?.toIso8601String(),
+      'photoUrl': photoUrl,
+    };
   }
 }
 
@@ -134,6 +218,26 @@ class ListingDto {
       longitude: toDoubleOrNull(json['longitude']),
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      '_id': id,
+      'cropName': cropName,
+      'qualityGrade': qualityGrade,
+      'quantity': quantity,
+      'unit': unit,
+      'askingPrice': askingPrice,
+      'district': district,
+      'sellerUid': sellerUid,
+      'status': status,
+      'description': description,
+      'createdAt': createdAt.toIso8601String(),
+      'imageUrls': imageUrls,
+      'latitude': latitude,
+      'longitude': longitude,
+    };
+  }
 }
 
 class OfferDto {
@@ -158,15 +262,19 @@ class OfferDto {
   final ListingDto? listing;
 
   factory OfferDto.fromJson(Map<String, dynamic> json) {
-    final listingRaw = json['listingId'];
+    // Backend enriches offers with a 'listing' field (separate from 'listingId' string)
+    final listingRaw = json['listing'];
     ListingDto? listing;
     if (listingRaw is Map<String, dynamic>) {
       listing = ListingDto.fromJson(listingRaw);
     }
 
+    // listingId may be a plain string from Firestore
+    final listingId = listing?.id ?? toStringOrEmpty(json['listingId']);
+
     return OfferDto(
       id: toStringOrEmpty(json['_id']),
-      listingId: listing?.id ?? toStringOrEmpty(json['listingId']),
+      listingId: listingId,
       buyerUid: toStringOrEmpty(json['buyerUid']),
       offerPrice: toDoubleOrZero(json['offerPrice']),
       quantity: toDoubleOrZero(json['quantity']),
@@ -189,6 +297,8 @@ class OrderDto {
     required this.unit,
     required this.status,
     required this.createdAt,
+    required this.cropName,
+    required this.listingDistrict,
   });
 
   final String id;
@@ -201,6 +311,8 @@ class OrderDto {
   final String unit;
   final String status;
   final DateTime createdAt;
+  final String cropName;
+  final String listingDistrict;
 
   factory OrderDto.fromJson(Map<String, dynamic> json) {
     return OrderDto(
@@ -214,7 +326,72 @@ class OrderDto {
       unit: toStringOrEmpty(json['unit']),
       status: toStringOrEmpty(json['status']),
       createdAt: toDateTimeOrNow(json['createdAt']),
+      cropName: toStringOrEmpty(json['cropName']),
+      listingDistrict: toStringOrEmpty(json['listingDistrict']),
     );
+  }
+}
+
+class ChatMessageDto {
+  ChatMessageDto({
+    required this.id,
+    required this.message,
+    required this.fromUid,
+    required this.timestamp,
+    required this.readBy,
+    required this.toUid,
+    required this.listingId,
+    required this.readAt,
+  });
+
+  final String id;
+  final String message;
+  final String fromUid;
+  final DateTime timestamp;
+  final List<String> readBy;
+  final String? toUid;
+  final String? listingId;
+  final DateTime? readAt;
+
+  bool get hasMessage => message.trim().isNotEmpty;
+
+  factory ChatMessageDto.fromJson(Map<String, dynamic> json) {
+    return ChatMessageDto(
+      id: toStringOrEmpty(json['id'] ?? json['_id']),
+      message: toStringOrEmpty(json['message']),
+      fromUid: toStringOrEmpty(json['fromUid']),
+      timestamp:
+          json['timestamp'] is String || json['timestamp'] is DateTime
+              ? toDateTimeOrNow(json['timestamp'])
+              : toDateTimeOrNow(json['createdAt']),
+      readBy: toStringListOrEmpty(json['readBy']),
+      toUid:
+          toStringOrEmpty(json['toUid']).trim().isEmpty
+              ? null
+              : toStringOrEmpty(json['toUid']),
+      listingId:
+          toStringOrEmpty(json['listingId']).trim().isEmpty
+              ? null
+              : toStringOrEmpty(json['listingId']),
+      readAt: json['readAt'] == null ? null : toDateTimeOrNow(json['readAt']),
+    );
+  }
+
+  String get previewText =>
+      hasMessage ? message : 'Attachment or unsupported message';
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      '_id': id,
+      'message': message,
+      'fromUid': fromUid,
+      'timestamp': timestamp.toIso8601String(),
+      'readBy': readBy,
+      'toUid': toUid,
+      'listingId': listingId,
+      'readAt': readAt?.toIso8601String(),
+    };
   }
 }
 
@@ -255,14 +432,129 @@ class MarketApiService {
     }
   }
 
+  String _listingCacheKey({
+    String? crop,
+    String? district,
+    String? sellerUid,
+    String sort = 'new',
+  }) {
+    return [
+      'listings',
+      sort,
+      crop?.trim() ?? '',
+      district?.trim() ?? '',
+      sellerUid?.trim() ?? '',
+    ].join('|');
+  }
+
+  String _messagesCacheKey(String listingId) => 'messages|$listingId';
+  String _profileCacheKey(String uid) => 'profile|$uid';
+
+  Future<void> cacheListings({
+    String? crop,
+    String? district,
+    String? sellerUid,
+    String sort = 'new',
+    required List<ListingDto> listings,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _listingCacheKey(
+        crop: crop,
+        district: district,
+        sellerUid: sellerUid,
+        sort: sort,
+      ),
+      jsonEncode(listings.map((listing) => listing.toMap()).toList()),
+    );
+  }
+
+  Future<List<ListingDto>> readCachedListings({
+    String? crop,
+    String? district,
+    String? sellerUid,
+    String sort = 'new',
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(
+      _listingCacheKey(
+        crop: crop,
+        district: district,
+        sellerUid: sellerUid,
+        sort: sort,
+      ),
+    );
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((entry) => ListingDto.fromJson(Map<String, dynamic>.from(entry)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> cacheMessagesForListing(
+    String listingId,
+    List<ChatMessageDto> messages,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _messagesCacheKey(listingId),
+      jsonEncode(messages.map((message) => message.toMap()).toList()),
+    );
+  }
+
+  Future<List<ChatMessageDto>> readCachedMessagesForListing(
+    String listingId,
+  ) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_messagesCacheKey(listingId));
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const [];
+      return decoded
+          .whereType<Map>()
+          .map((entry) => ChatMessageDto.fromJson(Map<String, dynamic>.from(entry)))
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  Future<void> cacheUserProfile(UserProfileDto profile) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_profileCacheKey(profile.firebaseUid), jsonEncode(profile.toMap()));
+  }
+
+  Future<UserProfileDto?> readCachedUserProfile(String uid) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_profileCacheKey(uid));
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return null;
+      return UserProfileDto.fromJson(Map<String, dynamic>.from(decoded));
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<ListingDto>> fetchListings({
     String? crop,
     String? district,
     String? sellerUid,
+    String? status, // null = all, 'open' = only open listings
+    int limit = 50,
+    DateTime? before,
   }) async {
     if (kDebugMode) {
       debugPrint(
-        '[MarketApi] Fetching listings (crop=$crop, district=$district)',
+        '[MarketApi] Fetching listings (crop=$crop, district=$district, status=$status)',
       );
     }
 
@@ -274,11 +566,18 @@ class MarketApiService {
     if (sellerUid != null && sellerUid.trim().isNotEmpty) {
       query['sellerUid'] = sellerUid.trim();
     }
+    if (status != null && status.trim().isNotEmpty) {
+      query['status'] = status.trim();
+    }
+    query['limit'] = limit.toString();
+    if (before != null) {
+      query['before'] = before.toUtc().toIso8601String();
+    }
 
     try {
       final data = await _client.get(
         '/api/listings',
-        query: query.isEmpty ? null : query,
+        query: query,
       );
       if (kDebugMode) {
         debugPrint('[MarketApi] Got listings data: $data');
@@ -289,6 +588,92 @@ class MarketApiService {
       if (kDebugMode) {
         debugPrint('[MarketApi] Error fetching listings: $e');
       }
+      rethrow;
+    }
+  }
+
+  Future<List<ListingDto>> fetchListingsCached({
+    String? crop,
+    String? district,
+    String? sellerUid,
+    String? status,
+    int limit = 50,
+    DateTime? before,
+  }) async {
+    final rows = await fetchListings(
+      crop: crop,
+      district: district,
+      sellerUid: sellerUid,
+      status: status,
+      limit: limit,
+      before: before,
+    );
+    await cacheListings(
+      crop: crop,
+      district: district,
+      sellerUid: sellerUid,
+      listings: rows,
+    );
+    return rows;
+  }
+
+  /// TTL for the listing cache in minutes. After this, network is re-fetched.
+  static const int _cacheTtlMinutes = 10;
+
+  String _listingCacheTimestampKey({
+    String? crop,
+    String? district,
+    String? sellerUid,
+    String sort = 'new',
+  }) =>
+      '${_listingCacheKey(crop: crop, district: district, sellerUid: sellerUid, sort: sort)}__ts';
+
+  Future<List<ListingDto>> fetchListingsWithCache({
+    String? crop,
+    String? district,
+    String? sellerUid,
+    String? status,
+    int limit = 50,
+    DateTime? before,
+  }) async {
+    // Check TTL before serving from cache
+    final prefs = await SharedPreferences.getInstance();
+    final tsKey = _listingCacheTimestampKey(
+      crop: crop,
+      district: district,
+      sellerUid: sellerUid,
+    );
+    final cachedTsStr = prefs.getString(tsKey);
+    final cachedTs =
+        cachedTsStr != null ? DateTime.tryParse(cachedTsStr) : null;
+    final cacheStale =
+        cachedTs == null ||
+        DateTime.now().difference(cachedTs).inMinutes >= _cacheTtlMinutes;
+
+    final cached = await readCachedListings(
+      crop: crop,
+      district: district,
+      sellerUid: sellerUid,
+    );
+
+    if (cached.isNotEmpty && before == null && !cacheStale) {
+      return cached;
+    }
+
+    try {
+      final rows = await fetchListingsCached(
+        crop: crop,
+        district: district,
+        sellerUid: sellerUid,
+        status: status,
+        limit: limit,
+        before: before,
+      );
+      // Update the timestamp on successful fetch
+      await prefs.setString(tsKey, DateTime.now().toIso8601String());
+      return rows;
+    } catch (_) {
+      if (cached.isNotEmpty) return cached;
       rethrow;
     }
   }
@@ -474,24 +859,72 @@ class MarketApiService {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchMessagesForListing(
+  Future<List<ChatMessageDto>> fetchMessagesForListing(
     String listingId, {
     int limit = 100,
+    DateTime? before,
+    bool auth = true,
   }) async {
+    final query = <String, String>{'limit': limit.toString()};
+    if (before != null) {
+      query['before'] = before.toUtc().toIso8601String();
+    }
     final data = await _client.get(
       '/api/messages/listing/$listingId',
-      query: {'limit': limit.toString()},
-      auth: true,
+      query: query,
+      auth: auth,
     );
     if (data is! List<dynamic>) return const [];
-    return asMapList(data);
+    return asMapList(data).map(ChatMessageDto.fromJson).toList();
+  }
+
+  Future<List<ChatMessageDto>> fetchMessagesForListingCached(
+    String listingId, {
+    int limit = 100,
+    DateTime? before,
+    bool auth = true,
+  }) async {
+    final rows = await fetchMessagesForListing(
+      listingId,
+      limit: limit,
+      before: before,
+      auth: auth,
+    );
+    await cacheMessagesForListing(listingId, rows);
+    return rows;
+  }
+
+  Future<List<ChatMessageDto>> fetchMessagesForListingWithCache(
+    String listingId, {
+    int limit = 100,
+    DateTime? before,
+    bool auth = true,
+  }) async {
+    final cached = await readCachedMessagesForListing(listingId);
+    if (cached.isNotEmpty && before == null) {
+      return cached;
+    }
+
+    try {
+      return await fetchMessagesForListingCached(
+        listingId,
+        limit: limit,
+        before: before,
+        auth: auth,
+      );
+    } catch (_) {
+      if (cached.isNotEmpty) return cached;
+      rethrow;
+    }
   }
 
   Future<void> markListingMessagesRead(String listingId) async {
     try {
       await _client.post('/api/messages/listing/$listingId/read', auth: true);
     } catch (e) {
-      if (kDebugMode) debugPrint('[MarketApi] markListingMessagesRead failed: $e');
+      if (kDebugMode) {
+        debugPrint('[MarketApi] markListingMessagesRead failed: $e');
+      }
       // Non-critical - ignore errors
     }
   }
@@ -513,10 +946,22 @@ class MarketApiService {
   }
 
   // User profiles and ratings
-  Future<Map<String, dynamic>> fetchUserProfileByUid(String uid) async {
+  Future<UserProfileDto> fetchUserProfileByUid(String uid) async {
     final data = await _client.get('/api/users/$uid', auth: true);
     if (data is! Map<String, dynamic>) throw Exception('Invalid user profile');
-    return Map<String, dynamic>.from(data);
+    final profile = UserProfileDto.fromJson(Map<String, dynamic>.from(data));
+    unawaited(cacheUserProfile(profile));
+    return profile;
+  }
+
+  Future<UserProfileDto?> fetchUserProfileByUidWithCache(String uid) async {
+    final cached = await readCachedUserProfile(uid);
+    if (cached != null) return cached;
+    try {
+      return await fetchUserProfileByUid(uid);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> rateUser({
@@ -540,6 +985,31 @@ class MarketApiService {
       };
     }
     return Map<String, dynamic>.from(data);
+  }
+
+  /// Returns { totalListings, openListings, completedOrders, isOnline, lastSeen }
+  Future<Map<String, dynamic>> fetchSellerStats(String uid) async {
+    try {
+      final data = await _client.get('/api/users/$uid/stats');
+      if (data is Map<String, dynamic>) return Map<String, dynamic>.from(data);
+    } catch (_) {}
+    return {
+      'totalListings': 0,
+      'openListings': 0,
+      'completedOrders': 0,
+      'isOnline': false,
+      'lastSeen': null,
+    };
+  }
+
+  /// Returns {canRate: bool, reason: String}.
+  /// reason values: 'eligible' | 'no_completed_order' | 'already_rated' | 'cannot_rate_self'
+  Future<Map<String, dynamic>> fetchRatingEligibility(String targetUid) async {
+    try {
+      final data = await _client.get('/api/ratings/eligibility/$targetUid', auth: true);
+      if (data is Map<String, dynamic>) return Map<String, dynamic>.from(data);
+    } catch (_) {}
+    return {'canRate': false, 'reason': 'unknown'};
   }
 
   // Device token registration for push notifications

@@ -16,10 +16,9 @@ class ListingLocationPicker extends StatefulWidget {
 }
 
 class _ListingLocationPickerState extends State<ListingLocationPicker> {
-  MapboxMap? _mapboxMap;
   PointAnnotationManager? _pointAnnotationManager;
-  double? _selectedLatitude;
-  double? _selectedLongitude;
+  double _selectedLatitude = 33.6844; // Default: Islamabad, Pakistan
+  double _selectedLongitude = 73.0479;
 
   @override
   void initState() {
@@ -29,35 +28,48 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
   }
 
   Future<void> _onMapCreated(MapboxMap mapboxMap) async {
-    _mapboxMap = mapboxMap;
     _pointAnnotationManager =
         await mapboxMap.annotations.createPointAnnotationManager();
-
-    if (_selectedLatitude != null && _selectedLongitude != null) {
-      await _addMarker(_selectedLatitude!, _selectedLongitude!);
-    }
+    await _addMarker(_selectedLatitude, _selectedLongitude);
   }
 
   Future<void> _addMarker(double latitude, double longitude) async {
     if (_pointAnnotationManager == null) return;
-
-    await _pointAnnotationManager!.deleteAll();
-
-    final pointAnnotationOptions = PointAnnotationOptions(
-      geometry: Point(coordinates: Position(longitude, latitude)),
-      iconSize: 1.5,
-    );
-
     try {
-      await _pointAnnotationManager!.create(pointAnnotationOptions);
+      await _pointAnnotationManager!.deleteAll();
+      await _pointAnnotationManager!.create(
+        PointAnnotationOptions(
+          geometry: Point(coordinates: Position(longitude, latitude)),
+          iconSize: 1.5,
+        ),
+      );
     } catch (e) {
-      debugPrint('Error adding marker: $e');
+      debugPrint('[LocationPicker] Error adding marker: $e');
+    }
+  }
+
+  /// Called when the user taps anywhere on the map.
+  /// MapContentGestureContext.point already holds the geographic coordinate —
+  /// pixelToCoordinate() was removed in newer Mapbox SDK versions.
+  Future<void> _onMapTap(MapContentGestureContext gestureContext) async {
+    try {
+      final lat = gestureContext.point.coordinates.lat.toDouble();
+      final lng = gestureContext.point.coordinates.lng.toDouble();
+
+      if (!mounted) return;
+      setState(() {
+        _selectedLatitude = lat;
+        _selectedLongitude = lng;
+      });
+      await _addMarker(lat, lng);
+    } catch (e) {
+      debugPrint('[LocationPicker] Error handling map tap: $e');
     }
   }
 
   @override
   void dispose() {
-    _mapboxMap?.dispose();
+    // MapboxMap is lifecycle-managed by the MapWidget; do NOT call dispose() on it.
     super.dispose();
   }
 
@@ -72,28 +84,73 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
       ),
       body: Stack(
         children: [
-          GestureDetector(
-            onTapDown: (details) {
-              // Note: For simplicity, tap at center or implement screen-to-map coordinate conversion
-              // For now, user can confirm the default location or update it
-            },
-            child: MapWidget(
-              onMapCreated: _onMapCreated,
-              cameraOptions: CameraOptions(
-                center: Point(
-                  coordinates: Position(
-                    _selectedLongitude!,
-                    _selectedLatitude!,
-                  ),
+          // ── Mapbox map fills the whole body ──────────────────────────────
+          MapWidget(
+            onMapCreated: _onMapCreated,
+            onTapListener: _onMapTap,
+            cameraOptions: CameraOptions(
+              center: Point(
+                coordinates: Position(
+                  _selectedLongitude,
+                  _selectedLatitude,
                 ),
-                zoom: 12.0,
+              ),
+              zoom: 12.0,
+            ),
+          ),
+
+          // ── Info card at the top ─────────────────────────────────────────
+          Positioned(
+            top: 12,
+            left: 12,
+            right: 12,
+            child: Card(
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.touch_app, size: 16, color: Colors.green),
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Tap on the map to pin your product location',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Lat: ${_selectedLatitude.toStringAsFixed(5)}   '
+                      'Lng: ${_selectedLongitude.toStringAsFixed(5)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                        fontFeatures: const [],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
+
+          // ── Cancel / Confirm buttons at the bottom ───────────────────────
           Positioned(
             bottom: 20,
-            left: 20,
-            right: 20,
+            left: 16,
+            right: 16,
             child: Row(
               children: [
                 Expanded(
@@ -102,6 +159,9 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                       backgroundColor: Colors.grey.shade700,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
@@ -115,60 +175,21 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                       backgroundColor: Colors.green.shade700,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     onPressed: () {
-                      if (_selectedLatitude != null &&
-                          _selectedLongitude != null) {
-                        Navigator.pop(context, {
-                          'latitude': _selectedLatitude,
-                          'longitude': _selectedLongitude,
-                        });
-                      }
+                      Navigator.pop(context, {
+                        'latitude': _selectedLatitude,
+                        'longitude': _selectedLongitude,
+                      });
                     },
                     icon: const Icon(Icons.check),
                     label: const Text('Confirm'),
                   ),
                 ),
               ],
-            ),
-          ),
-          Positioned(
-            top: 16,
-            left: 16,
-            right: 16,
-            child: Card(
-              elevation: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Tap on the map to pin your product location',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    if (_selectedLatitude != null &&
-                        _selectedLongitude != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'Latitude: ${_selectedLatitude!.toStringAsFixed(4)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      Text(
-                        'Longitude: ${_selectedLongitude!.toStringAsFixed(4)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
             ),
           ),
         ],

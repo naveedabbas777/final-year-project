@@ -23,30 +23,34 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _service = MarketApiService();
   final _controller = TextEditingController();
-  final _messages = <Map<String, dynamic>>[];
+  final _messages = <ChatMessageDto>[];
   bool _loadedInitialMessages = false;
   StreamSubscription<String>? _sseSub;
   HttpClient? _httpClient;
   String? _myUid;
   bool _connecting = true;
   bool _sending = false;
+  bool _messagesLoadFailed = false;
+  bool _loadingMoreMessages = false;
+  bool _hasMoreMessages = true;
+  int _messageLimit = 50;
   final Set<String> _typingUids = <String>{};
   Timer? _typingDebounce;
   bool _isTypingSent = false;
   bool _sellerIsOnline = false;
   DateTime? _sellerLastSeen;
-  Map<String, dynamic>? _peerProfile;
+  UserProfileDto? _peerProfile;
   bool _loadingPeer = false;
 
   String get _peerName {
     final fallback = widget.toUid ?? 'Chat';
-    return (_peerProfile?['displayName'] ?? _peerProfile?['name'] ?? fallback)
-        .toString();
+    return _peerProfile?.primaryName.trim().isNotEmpty == true
+        ? _peerProfile!.primaryName
+        : fallback;
   }
 
   String get _peerPhotoUrl {
-    return (_peerProfile?['photoUrl'] ?? _peerProfile?['photoURL'] ?? '')
-        .toString();
+    return _peerProfile?.photoUrl ?? '';
   }
 
   String _formatTs(dynamic raw) {
@@ -84,7 +88,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void dispose() {
     if (_isTypingSent) {
-      _service.setTyping(listingId: widget.listingId, isTyping: false).catchError((_) {});
+      _service
+          .setTyping(listingId: widget.listingId, isTyping: false)
+          .catchError((_) {});
     }
     _service.setPresence(isOnline: false).catchError((_) {});
     _typingDebounce?.cancel();
@@ -123,7 +129,8 @@ class _ChatScreenState extends State<ChatScreen> {
           token = await user.getIdToken();
           break;
         } catch (e) {
-          if (kDebugMode) debugPrint('[Chat] getIdToken attempt ${attempt + 1} failed: $e');
+          if (kDebugMode)
+            debugPrint('[Chat] getIdToken attempt ${attempt + 1} failed: $e');
           await Future.delayed(Duration(milliseconds: 300 * (1 << attempt)));
         }
       }
@@ -136,7 +143,9 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
 
-      final uri = Uri.parse('${_base()}/api/messages/stream/listing/${widget.listingId}?limit=200');
+      final uri = Uri.parse(
+        '${_base()}/api/messages/stream/listing/${widget.listingId}?limit=$_messageLimit',
+      );
 
       _httpClient?.close(force: true);
       _httpClient = HttpClient();
@@ -178,20 +187,23 @@ class _ChatScreenState extends State<ChatScreen> {
             cancelOnError: true,
           );
     } catch (e) {
-      if (kDebugMode) debugPrint('[Chat] _connectRealtime unexpected error: $e');
+      if (kDebugMode)
+        debugPrint('[Chat] _connectRealtime unexpected error: $e');
       _reconnectLater();
     }
   }
 
   Future<void> _loadInitialMessages() async {
     try {
-      final rows = await _service.fetchMessagesForListing(
+      final rows = await _service.fetchMessagesForListingWithCache(
         widget.listingId,
-        limit: 200,
+        limit: _messageLimit,
       );
       if (!mounted) return;
       setState(() {
         _loadedInitialMessages = true;
+        _messagesLoadFailed = false;
+        _hasMoreMessages = rows.length >= _messageLimit;
         if (rows.isNotEmpty) {
           _messages
             ..clear()
@@ -200,6 +212,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _connecting = false;
       });
       if (rows.isNotEmpty) {
+        await _service.cacheMessagesForListing(widget.listingId, rows);
         await _markReadIfNeeded(rows);
       }
     } catch (_) {
@@ -207,7 +220,33 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _loadedInitialMessages = true;
         _connecting = false;
+        _messagesLoadFailed = true;
       });
+    }
+  }
+
+  Future<void> _loadMoreMessages() async {
+    if (_loadingMoreMessages || !_hasMoreMessages || _messages.isEmpty) return;
+    final cursor = _messages.first.timestamp;
+    setState(() => _loadingMoreMessages = true);
+    try {
+      final rows = await _service.fetchMessagesForListing(
+        widget.listingId,
+        limit: _messageLimit,
+        before: cursor,
+      );
+      if (!mounted || rows.isEmpty) {
+        if (mounted) setState(() => _hasMoreMessages = false);
+        return;
+      }
+      setState(() {
+        _messages
+          ..insertAll(0, rows.where((row) => !_messages.any((msg) => msg.id == row.id)));
+        _hasMoreMessages = rows.length >= _messageLimit;
+      });
+      await _service.cacheMessagesForListing(widget.listingId, _messages);
+    } finally {
+      if (mounted) setState(() => _loadingMoreMessages = false);
     }
   }
 
@@ -228,14 +267,21 @@ class _ChatScreenState extends State<ChatScreen> {
       final rows =
           decoded
               .whereType<Map>()
-              .map((e) => Map<String, dynamic>.from(e))
+              .map((e) => ChatMessageDto.fromJson(Map<String, dynamic>.from(e)))
               .toList();
       if (!mounted) return;
       setState(() {
+        final merged = <String, ChatMessageDto>{
+          for (final message in _messages) message.id: message,
+          for (final message in rows) message.id: message,
+        };
+        final sorted = merged.values.toList()
+          ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
         _messages
           ..clear()
-          ..addAll(rows);
+          ..addAll(sorted);
       });
+      _service.cacheMessagesForListing(widget.listingId, _messages);
       _markReadIfNeeded(rows);
       return;
     }
@@ -251,11 +297,9 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Future<void> _markReadIfNeeded(List<Map<String, dynamic>> rows) async {
+  Future<void> _markReadIfNeeded(List<ChatMessageDto> rows) async {
     final hasUnread = rows.any((m) {
-      final toUid = (m['toUid'] ?? '').toString();
-      final readBy = _toStringList(m['readBy']);
-      return toUid == (_myUid ?? '') && !readBy.contains(_myUid ?? '');
+      return m.toUid == (_myUid ?? '') && !m.readBy.contains(_myUid ?? '');
     });
 
     if (!hasUnread) return;
@@ -430,6 +474,7 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           if (widget.toUid != null) _buildConversationHeader(),
+          if (widget.toUid != null) _buildPrivacyNote(),
           if (_typingUids.isNotEmpty)
             Container(
               width: double.infinity,
@@ -455,100 +500,147 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
           Expanded(
-            child: ListView.builder(
-              reverse: false,
-              padding: const EdgeInsets.all(12),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final msg = _messages[index];
-                final fromMe =
-                    (msg['fromUid'] ?? '').toString() == (_myUid ?? '');
-                final readBy = _toStringList(msg['readBy']);
-                final messageToUid = (msg['toUid'] ?? '').toString();
-                final isRead =
-                    messageToUid.isNotEmpty && readBy.contains(messageToUid);
-                final isIncomingUnread =
-                    !fromMe &&
-                    messageToUid == (_myUid ?? '') &&
-                    !readBy.contains(_myUid ?? '');
-                return Align(
-                  alignment:
-                      fromMe ? Alignment.centerRight : Alignment.centerLeft,
-                  child: Container(
-                    constraints: const BoxConstraints(maxWidth: 300),
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 10,
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: fromMe ? Colors.green.shade700 : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          (msg['message'] ?? '').toString(),
-                          style: TextStyle(
-                            color: fromMe ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _formatTs(msg['timestamp']),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color:
-                                    fromMe
-                                        ? Colors.white70
-                                        : Colors.grey.shade600,
+            child:
+                _messagesLoadFailed && _messages.isEmpty
+                    ? AsyncErrorWidget(
+                      error: 'Unable to load chat messages right now.',
+                      onRetry: () {
+                        setState(() {
+                          _messagesLoadFailed = false;
+                          _connecting = true;
+                        });
+                        _loadInitialMessages();
+                        _connectRealtime();
+                      },
+                    )
+                    : _messages.isEmpty && !_connecting
+                    ? const AsyncEmptyWidget(
+                      message: 'No messages yet. Start the conversation below.',
+                    )
+                    : ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: _messages.length + (_hasMoreMessages ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (_hasMoreMessages && index == 0) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Center(
+                              child: TextButton.icon(
+                                onPressed:
+                                    _loadingMoreMessages
+                                        ? null
+                                        : _loadMoreMessages,
+                                icon:
+                                    _loadingMoreMessages
+                                        ? const CompactLoadingIndicator(
+                                          size: 14,
+                                        )
+                                        : const Icon(Icons.unfold_more),
+                                label: Text(
+                                  _loadingMoreMessages
+                                      ? 'Loading earlier messages...'
+                                      : 'Load earlier messages',
+                                ),
                               ),
                             ),
-                            if (fromMe) ...[
-                              const SizedBox(width: 8),
-                              Icon(
-                                isRead ? Icons.done_all : Icons.check,
-                                size: 13,
-                                color:
-                                    isRead
-                                        ? Colors.lightGreenAccent.shade100
-                                        : Colors.white70,
-                              ),
-                            ],
-                            if (isIncomingUnread) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade100,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  'Unread',
+                          );
+                        }
+
+                        final msgIndex = _hasMoreMessages ? index - 1 : index;
+                        final msg = _messages[msgIndex];
+                        final fromMe = msg.fromUid == (_myUid ?? '');
+                        final isRead =
+                            msg.toUid != null && msg.readBy.contains(msg.toUid);
+                        final isIncomingUnread =
+                            !fromMe &&
+                            msg.toUid == (_myUid ?? '') &&
+                            !msg.readBy.contains(_myUid ?? '');
+                        return Align(
+                          alignment:
+                              fromMe
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                          child: Container(
+                            constraints: const BoxConstraints(maxWidth: 300),
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 10,
+                              horizontal: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  fromMe ? Colors.green.shade700 : Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  msg.previewText,
                                   style: TextStyle(
-                                    fontSize: 9,
-                                    color: Colors.green.shade900,
-                                    fontWeight: FontWeight.w600,
+                                    color:
+                                        fromMe ? Colors.white : Colors.black87,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _formatTs(msg.timestamp),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color:
+                                            fromMe
+                                                ? Colors.white70
+                                                : Colors.grey.shade600,
+                                      ),
+                                    ),
+                                    if (fromMe) ...[
+                                      const SizedBox(width: 8),
+                                      Icon(
+                                        isRead ? Icons.done_all : Icons.check,
+                                        size: 13,
+                                        color:
+                                            isRead
+                                                ? Colors
+                                                    .lightGreenAccent
+                                                    .shade100
+                                                : Colors.white70,
+                                      ),
+                                    ],
+                                    if (isIncomingUnread) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Unread',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            color: Colors.green.shade900,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                );
-              },
-            ),
           ),
           SafeArea(
             child: Padding(
@@ -660,6 +752,36 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPrivacyNote() {
+    if (_peerProfile?.hasVisibleContactInfo != false) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        border: Border.all(color: Colors.green.shade100),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.privacy_tip_outlined, color: Colors.green.shade700),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Some seller contact details can stay hidden for privacy. Messages still work normally here.',
+              style: TextStyle(color: Colors.green.shade900, fontSize: 12),
+            ),
+          ),
+        ],
       ),
     );
   }

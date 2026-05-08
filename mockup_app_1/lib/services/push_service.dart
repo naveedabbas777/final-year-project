@@ -46,6 +46,13 @@ class PushService {
     importance: Importance.high,
   );
 
+  static const _weatherChannel = AndroidNotificationChannel(
+    'weather_channel',
+    'Weather Alerts',
+    description: 'Weather conditions affecting your crops',
+    importance: Importance.high,
+  );
+
   Future<void> init() async {
     // Request permission on iOS / Android 13+
     await _messaging.requestPermission(
@@ -63,6 +70,7 @@ class PushService {
       await androidPlugin.createNotificationChannel(_offerChannel);
       await androidPlugin.createNotificationChannel(_messageChannel);
       await androidPlugin.createNotificationChannel(_orderChannel);
+      await androidPlugin.createNotificationChannel(_weatherChannel);
       await androidPlugin.createNotificationChannel(_defaultChannel);
     }
 
@@ -196,6 +204,7 @@ class PushService {
         navigator.pushNamed('/orders');
         break;
       case 'admin_notice':
+      case 'weather_alert':
         navigator.pushNamed('/alerts');
         break;
       default:
@@ -214,6 +223,8 @@ class PushService {
         return _messageChannel;
       case 'order_status':
         return _orderChannel;
+      case 'weather_alert':
+        return _weatherChannel;
       default:
         return _defaultChannel;
     }

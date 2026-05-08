@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import { requireAuth } from '../middlewares/auth.js';
 import { attachDbUser } from '../middlewares/attachDbUser.js';
+import { admin } from '../config/firebaseAdmin.js';
 import { col, docToJson, queryToJson, serverTimestamp } from '../utils/firestoreHelpers.js';
 import { sendPushToUser } from '../utils/fcmHelper.js';
 import { asyncHandler } from '../utils/errors.js';
@@ -58,8 +59,8 @@ function canTransitionOrder(currentStatus, nextStatus, actorRole) {
 ordersRouter.get('/me', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
   // Firestore doesn't support $or, so we query twice and merge
   const [buyerSnap, sellerSnap] = await Promise.all([
-    col('orders').where('buyerUid', '==', req.user.uid).orderBy('createdAt', 'desc').get(),
-    col('orders').where('sellerUid', '==', req.user.uid).orderBy('createdAt', 'desc').get(),
+    col('orders').where('buyerUid', '==', req.user.uid).get(),
+    col('orders').where('sellerUid', '==', req.user.uid).get(),
   ]);
 
   const seen = new Set();
@@ -81,7 +82,24 @@ ordersRouter.get('/me', requireAuth, attachDbUser, asyncHandler(async (req, res)
     return db - da;
   });
 
-  res.json(all);
+  // Batch-fetch listing data so each order card can show the crop name
+  const listingIds = [...new Set(all.map((o) => o.listingId).filter(Boolean))];
+  const listingMap = new Map();
+  if (listingIds.length > 0) {
+    const refs = listingIds.map((id) => col('listings').doc(id));
+    const snaps = await admin.firestore().getAll(...refs);
+    snaps.forEach((snap) => {
+      if (snap.exists) listingMap.set(snap.id, snap.data());
+    });
+  }
+
+  const enriched = all.map((order) => ({
+    ...order,
+    cropName: listingMap.get(order.listingId)?.cropName ?? '',
+    listingDistrict: listingMap.get(order.listingId)?.district ?? '',
+  }));
+
+  res.json(enriched);
 }));
 
 ordersRouter.patch('/:id/status', requireAuth, attachDbUser, asyncHandler(async (req, res) => {

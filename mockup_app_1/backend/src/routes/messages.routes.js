@@ -170,16 +170,23 @@ messagesRouter.get('/listing/:listingId', requireAuth, asyncHandler(async (req, 
   }
 
   const limit = Math.min(Number(req.query.limit) || 50, 200);
+  const before = typeof req.query.before === 'string' && req.query.before.trim()
+    ? new Date(req.query.before)
+    : null;
+  const beforeIsValid = before && !Number.isNaN(before.getTime());
 
-  const snapshot = await admin
+  let query = admin
     .firestore()
     .collection('messages')
     .where('listingId', '==', listingId)
-    .orderBy('timestamp', 'asc')
-    .limit(limit)
-    .get();
+    .orderBy('timestamp', 'desc');
 
-  const rows = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  if (beforeIsValid) {
+    query = query.startAfter(before);
+  }
+
+  const snapshot = await query.limit(limit).get();
+  const rows = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).reverse();
   res.json(rows);
 }));
 

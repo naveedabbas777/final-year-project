@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/market_api_service.dart';
@@ -12,6 +13,7 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   final _service = MarketApiService();
+  String? _currentUserUid;
 
   bool _loading = false;
   String? _error;
@@ -25,19 +27,47 @@ class _OrdersScreenState extends State<OrdersScreen> {
     'completed',
   ];
 
-  // Which transitions the current user can trigger (simplified — backend enforces the real rules)
-  static const Map<String, List<String>> _allowedTransitions = {
-    'created': ['in_transit', 'cancelled'],
-    'in_transit': ['delivered', 'disputed'],
-    'delivered': ['completed', 'disputed'],
-    'completed': [],
-    'cancelled': [],
-    'disputed': [],
+  // Role-based transitions matching the backend state machine exactly.
+  // Which transitions the current user can trigger depends on their role
+  // in this specific order (buyer vs seller).
+  static const Map<String, Map<String, List<String>>> _roleTransitions = {
+    'created': {
+      'seller': ['in_transit', 'cancelled'],
+      'buyer': ['cancelled'],
+    },
+    'in_transit': {
+      'seller': ['delivered'],
+      'buyer': ['disputed'],
+    },
+    'delivered': {
+      'seller': [],
+      'buyer': ['completed', 'disputed'],
+    },
+    'completed': {'seller': [], 'buyer': []},
+    'cancelled': {'seller': [], 'buyer': []},
+    'disputed': {'seller': [], 'buyer': []},
   };
+
+  /// Returns transitions allowed for the current user's role in [order].
+  List<String> _getTransitionsForOrder(OrderDto order) {
+    final uid = _currentUserUid;
+    if (uid == null) return const [];
+    final String? role;
+    if (uid == order.sellerUid) {
+      role = 'seller';
+    } else if (uid == order.buyerUid) {
+      role = 'buyer';
+    } else {
+      role = null;
+    }
+    if (role == null) return const [];
+    return _roleTransitions[order.status]?[role] ?? const [];
+  }
 
   @override
   void initState() {
     super.initState();
+    _currentUserUid = FirebaseAuth.instance.currentUser?.uid;
     _load();
   }
 
@@ -268,7 +298,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
           _loading
               ? const AsyncLoadingWidget()
               : _error != null
-              ? _buildErrorState()
+              ? RefreshIndicator(
+                color: Colors.green.shade700,
+                onRefresh: _load,
+                child: ListView(
+                  children: [
+                    const SizedBox(height: 40),
+                    _buildErrorState(),
+                  ],
+                ),
+              )
               : RefreshIndicator(
                 color: Colors.green.shade700,
                 onRefresh: _load,
@@ -294,7 +333,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
         order.status == 'completed' ||
         order.status == 'cancelled' ||
         order.status == 'disputed';
-    final transitions = _allowedTransitions[order.status] ?? [];
+    final transitions = _getTransitionsForOrder(order);
+    // Determine role label for UI context
+    final uid = _currentUserUid;
+    final String roleLabel;
+    if (uid == order.sellerUid) {
+      roleLabel = 'Selling';
+    } else if (uid == order.buyerUid) {
+      roleLabel = 'Buying';
+    } else {
+      roleLabel = '';
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -324,13 +373,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 Icon(_statusIcon(order.status), color: color, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    'Order #${order.id.substring(0, order.id.length > 8 ? 8 : order.id.length).toUpperCase()}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      color: Colors.grey.shade800,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.cropName.isNotEmpty ? order.cropName : 'Order',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      Text(
+                        '#${order.id.substring(0, order.id.length > 8 ? 8 : order.id.length).toUpperCase()}'
+                        '${roleLabel.isNotEmpty ? ' · $roleLabel' : ''}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Container(

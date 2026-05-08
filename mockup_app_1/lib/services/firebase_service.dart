@@ -79,6 +79,20 @@ class FirebaseService {
     }
   }
 
+  /// Fetch the currently signed-in user's full profile.
+  /// Uses /api/users/me which always returns unredacted data (no
+  /// canViewSensitiveFields check). Prefer this over getUserByUid(myUid)
+  /// when loading the current user's own profile screen.
+  Future<Map<String, dynamic>?> getUserMe() async {
+    try {
+      final data = await _client.get('/api/users/me', auth: true);
+      if (data is Map<String, dynamic>) return data;
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>?> getUserByUid(String uid) async {
     try {
       final data = await _client.get('/api/users/$uid', auth: true);
@@ -94,6 +108,9 @@ class FirebaseService {
     String? displayName,
     String? phoneNumber,
     String? photoUrl,
+    String? district,
+    String? province,
+    String? address,
   }) async {
     final updates = <String, dynamic>{};
     if (displayName != null) {
@@ -107,6 +124,11 @@ class FirebaseService {
     if (photoUrl != null) {
       updates['photoUrl'] = photoUrl;
       updates['photo'] = photoUrl;
+    }
+    if (district != null) updates['district'] = district;
+    if (province != null) updates['province'] = province;
+    if (address != null && address.trim().isNotEmpty) {
+      updates['address'] = address.trim();
     }
     if (updates.isNotEmpty) {
       await _client.patch('/api/users/me', auth: true, body: updates);

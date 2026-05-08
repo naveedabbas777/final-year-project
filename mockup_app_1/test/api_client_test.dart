@@ -9,8 +9,9 @@ import 'package:mockup_app/services/api_client.dart';
 void main() {
   test('ApiClient times out slow requests', () async {
     final client = ApiClient(
+      requestTimeout: const Duration(milliseconds: 20),
       httpClient: MockClient((request) async {
-        await Future<void>.delayed(const Duration(seconds: 25));
+        await Future<void>.delayed(const Duration(milliseconds: 50));
         return http.Response('{"ok":true}', 200);
       }),
     );
