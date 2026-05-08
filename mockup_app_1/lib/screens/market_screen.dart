@@ -611,7 +611,7 @@ class _RatesTabState extends State<_RatesTab> {
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
-                            onPressed: _loading ? null : _load,
+                            onPressed: () => setState(() {}),
                             child: const Text('Apply'),
                           ),
                         ),
@@ -1596,7 +1596,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                             SizedBox(
                               width: 150,
                               child: DropdownButtonFormField<String?>(
-                                initialValue: _selectedCropFilter,
+                                value: _selectedCropFilter,
                                 isExpanded: true,
                                 decoration: const InputDecoration(
                                   isDense: true,
@@ -1624,7 +1624,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                             SizedBox(
                               width: 160,
                               child: DropdownButtonFormField<String?>(
-                                initialValue: _selectedDistrictFilter,
+                                value: _selectedDistrictFilter,
                                 isExpanded: true,
                                 decoration: const InputDecoration(
                                   isDense: true,

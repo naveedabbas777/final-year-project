@@ -493,7 +493,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  initialValue: grade,
+                  value: grade,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Quality Grade',
@@ -508,7 +508,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
-                  initialValue: status,
+                  value: status,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Status',

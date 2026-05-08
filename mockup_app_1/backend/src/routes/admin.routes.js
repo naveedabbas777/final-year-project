@@ -262,7 +262,7 @@ adminRouter.post('/notifications/send', requireAuth, attachDbUser, requireRole('
     const tokens = collectFcmTokens(user);
     if (tokens.length === 0) continue;
 
-    const resp = await admin.messaging().sendMulticast({
+    const resp = await admin.messaging().sendEachForMulticast({
       tokens,
       notification: { title, body },
       data: {

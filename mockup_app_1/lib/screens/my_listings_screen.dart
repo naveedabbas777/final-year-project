@@ -353,7 +353,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    initialValue: _gradeController.text,
+                    value: _gradeController.text,
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Quality Grade',

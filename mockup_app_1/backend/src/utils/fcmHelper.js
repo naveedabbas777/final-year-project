@@ -55,7 +55,7 @@ export async function sendPushToUser(uid, title, body, data = {}) {
       stringData[key] = String(value ?? '');
     }
 
-    const resp = await admin.messaging().sendMulticast({
+    const resp = await admin.messaging().sendEachForMulticast({
       tokens,
       notification: { title, body },
       data: stringData,
