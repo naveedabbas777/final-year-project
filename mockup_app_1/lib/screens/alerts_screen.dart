@@ -6,7 +6,7 @@ import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:mockup_app/services/alert_service.dart';
 
 class AlertsScreen extends StatefulWidget {
-  const AlertsScreen({Key? key}) : super(key: key);
+  const AlertsScreen({super.key});
 
   @override
   State<AlertsScreen> createState() => _AlertsScreenState();

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
+import 'package:mockup_app/widgets/photo_viewer.dart';
+import 'package:mockup_app/config/app_router.dart';
 
 import '../services/market_api_service.dart';
 import '../utils/error_presenter.dart';
@@ -271,7 +273,7 @@ class _RatesTabState extends State<_RatesTab> {
   bool _loading = false;
   bool _ingesting = false;
   String? _error;
-  List<CropRateDto> _rates = const [];
+  List<CropRateDto> _allRates = const []; // Full unfiltered list
   List<String> _cropOptions = const [];
   List<String> _districtOptions = const [];
   String? _selectedCropFilter;
@@ -306,13 +308,12 @@ class _RatesTabState extends State<_RatesTab> {
     });
 
     try {
-      final rows = await _service.fetchLatestRates(
-        crop: _selectedCropFilter,
-        district: _selectedDistrictFilter,
-      );
+      // Fetch all rates (no server-side filter) so dropdown options stay complete
+      final rows = await _service.fetchLatestRates();
       if (!mounted) return;
       setState(() {
-        _rates = rows;
+        _allRates = rows;
+        // Build options from the FULL list so they never shrink
         _cropOptions = _buildOptions(rows.map((row) => row.cropName));
         _districtOptions = _buildOptions(rows.map((row) => row.district));
       });
@@ -354,9 +355,14 @@ class _RatesTabState extends State<_RatesTab> {
     return options;
   }
 
+  /// Apply all filters client-side: text search, crop dropdown, district dropdown
   List<CropRateDto> get _filteredRates {
     final query = _searchController.text.trim().toLowerCase();
-    return _rates.where((row) {
+    return _allRates.where((row) {
+      // Dropdown filters
+      if (_selectedCropFilter != null && row.cropName != _selectedCropFilter) return false;
+      if (_selectedDistrictFilter != null && row.district != _selectedDistrictFilter) return false;
+      // Text search
       if (query.isEmpty) return true;
       return row.cropName.toLowerCase().contains(query) ||
           row.marketName.toLowerCase().contains(query) ||
@@ -536,7 +542,7 @@ class _RatesTabState extends State<_RatesTab> {
                         SizedBox(
                           width: 134,
                           child: DropdownButtonFormField<String?>(
-                            initialValue: _selectedCropFilter,
+                            value: _selectedCropFilter,
                             isExpanded: true,
                             decoration: const InputDecoration(
                               isDense: true,
@@ -568,7 +574,7 @@ class _RatesTabState extends State<_RatesTab> {
                         SizedBox(
                           width: 146,
                           child: DropdownButtonFormField<String?>(
-                            initialValue: _selectedDistrictFilter,
+                            value: _selectedDistrictFilter,
                             isExpanded: true,
                             decoration: const InputDecoration(
                               isDense: true,
@@ -1262,10 +1268,11 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                               leading: GestureDetector(
                                 onTap:
                                     prof.photoUrl.isNotEmpty
-                                        ? () => _openSellerPhotoViewer(
-                                          prof.photoUrl,
-                                          prof.primaryName,
-                                        )
+                                        ? () => PhotoViewer.show(
+                                            context,
+                                            url: prof.photoUrl,
+                                            caption: prof.primaryName,
+                                          )
                                         : null,
                                 child:
                                     prof.photoUrl.isNotEmpty
@@ -1361,9 +1368,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     return InkWell(
       onTap:
           () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => ListingDetailScreen(listing: row),
-            ),
+            AppRoutes.slideRight(ListingDetailScreen(listing: row)),
           ),
       borderRadius: BorderRadius.circular(16),
       child: Card(

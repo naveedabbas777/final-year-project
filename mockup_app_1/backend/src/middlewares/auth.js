@@ -86,7 +86,12 @@ export async function requireAuth(req, res, next) {
 
 export function requireRole(...roles) {
   return (req, res, next) => {
-    const role = req.dbUser?.role || 'farmer';
+    if (!req.dbUser) {
+      console.error('[Auth] requireRole used without attachDbUser — denying access');
+      res.status(500).json({ message: 'Server misconfiguration: user profile not loaded' });
+      return;
+    }
+    const role = req.dbUser.role || 'farmer';
     if (!roles.includes(role)) {
       res.status(403).json({ message: 'Forbidden' });
       return;

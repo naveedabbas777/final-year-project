@@ -22,6 +22,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
   List<ListingDto> _openListings = const [];
   bool _loading = true;
   bool _savedSeller = false;
+  String? _loadError;
   bool _canRate = false;
   String _rateBlockReason = '';
 
@@ -32,7 +33,10 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
   }
 
   Future<void> _loadAll() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
     try {
       final results = await Future.wait([
         _service.fetchUserProfileByUidWithCache(widget.sellerUid)
@@ -59,6 +63,9 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
         _canRate = eligibility['canRate'] == true;
         _rateBlockReason = eligibility['reason']?.toString() ?? '';
       });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loadError = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -84,10 +91,12 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
 
   Future<void> _showRateDialog() async {
     int selectedStars = 0;
+    bool submitting = false;
     final commentCtrl = TextEditingController();
 
     await showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setLocal) {
@@ -100,21 +109,24 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                   const Text('Tap the stars to rate your experience:', style: TextStyle(fontSize: 13)),
                   const SizedBox(height: 12),
                   // Interactive star row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (i) {
-                      return GestureDetector(
-                        onTap: () => setLocal(() => selectedStars = i + 1),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Icon(
-                            selectedStars > i ? Icons.star_rounded : Icons.star_outline_rounded,
-                            color: Colors.amber.shade600,
-                            size: 36,
+                  IgnorePointer(
+                    ignoring: submitting,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(5, (i) {
+                        return GestureDetector(
+                          onTap: () => setLocal(() => selectedStars = i + 1),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Icon(
+                              selectedStars > i ? Icons.star_rounded : Icons.star_outline_rounded,
+                              color: Colors.amber.shade600,
+                              size: 36,
+                            ),
                           ),
-                        ),
-                      );
-                    }),
+                        );
+                      }),
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -129,32 +141,48 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                   TextField(
                     controller: commentCtrl,
                     maxLines: 3,
+                    enabled: !submitting,
                     decoration: InputDecoration(
                       hintText: 'Write a comment (optional)…',
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       contentPadding: const EdgeInsets.all(10),
                     ),
                   ),
+                  if (submitting) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green.shade700)),
+                        const SizedBox(width: 8),
+                        Text('Submitting…', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                      ],
+                    ),
+                  ],
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: submitting ? null : () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade700,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  onPressed: selectedStars == 0
+                  onPressed: selectedStars == 0 || submitting
                       ? null
                       : () async {
-                          Navigator.pop(ctx);
+                          setLocal(() => submitting = true);
                           try {
                             await _service.rateUser(
                               targetUid: widget.sellerUid,
                               score: selectedStars,
                               comment: commentCtrl.text.trim(),
                             );
+                            if (ctx.mounted) Navigator.pop(ctx);
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -166,8 +194,13 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                             );
                             // Refresh only the ratings section
                             final updated = await _service.fetchUserRatings(widget.sellerUid);
-                            if (mounted) setState(() => _ratings = updated);
+                            if (mounted) setState(() {
+                              _ratings = updated;
+                              _canRate = false;
+                              _rateBlockReason = 'already_rated';
+                            });
                           } catch (e) {
+                            setLocal(() => submitting = false);
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Failed to submit rating: $e'), backgroundColor: Colors.red.shade700),
@@ -221,6 +254,42 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
       return Scaffold(
         appBar: AppBar(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, title: const Text('Seller Profile')),
         body: const AsyncLoadingWidget(),
+      );
+    }
+
+    if (_loadError != null) {
+      return Scaffold(
+        appBar: AppBar(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, title: const Text('Seller Profile')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(color: Colors.red.shade50, shape: BoxShape.circle),
+                  child: Icon(Icons.error_outline_rounded, size: 48, color: Colors.red.shade400),
+                ),
+                const SizedBox(height: 16),
+                Text('Failed to load seller profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+                const SizedBox(height: 8),
+                Text(_loadError!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: _loadAll,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 

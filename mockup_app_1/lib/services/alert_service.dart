@@ -112,9 +112,8 @@ class AlertService extends ChangeNotifier {
 
   Future<void> markAllAsRead() async {
     final unread = _alerts.where((a) => !a.isRead).toList();
-    for (final alert in unread) {
-      await markAsRead(alert.id);
-    }
+    if (unread.isEmpty) return;
+    await Future.wait(unread.map((alert) => markAsRead(alert.id)));
   }
 
   Future<void> _ensureLoaded() async {
@@ -122,7 +121,11 @@ class AlertService extends ChangeNotifier {
     await loadAlerts();
   }
 
-  Future<List<AlertItem>> processWeather(_, __) async {
+  /// Ensures weather alerts are loaded from the server.
+  /// Returns the current list of alerts.
+  /// Note: Alert generation happens server-side in the weather refresh job;
+  /// this method only ensures the local cache is populated.
+  Future<List<AlertItem>> processWeather() async {
     await _ensureLoaded();
     return _alerts;
   }

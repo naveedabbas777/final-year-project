@@ -41,7 +41,7 @@ async function sendWeatherAlertPushes(userDoc, alerts) {
       },
     };
 
-    const resp = await admin.messaging().sendMulticast({ tokens, ...payload });
+    const resp = await admin.messaging().sendEachForMulticast({ tokens, ...payload });
     if (resp.failureCount > 0) {
       const invalidTokens = [];
       resp.responses.forEach((r, i) => {
@@ -447,18 +447,29 @@ export async function refreshAllWeatherCaches() {
     .collection('users')
     .get();
 
+  const eligibleUsers = snapshot.docs
+    .map((doc) => ({ id: doc.id, firebaseUid: doc.id, ...doc.data() }))
+    .filter((data) => typeof data.lat === 'number' && typeof data.lon === 'number');
+
   const results = [];
-  for (const doc of snapshot.docs) {
-    const data = doc.data();
-    if (typeof data.lat !== 'number' || typeof data.lon !== 'number') continue;
-    try {
-      const refreshed = await refreshWeatherForUser({ id: doc.id, firebaseUid: doc.id, ...data });
-      if (refreshed) results.push(refreshed);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`[WeatherJob] Failed for ${doc.id}:`, error.message);
+  const BATCH_SIZE = 5;
+
+  for (let i = 0; i < eligibleUsers.length; i += BATCH_SIZE) {
+    const batch = eligibleUsers.slice(i, i + BATCH_SIZE);
+    const settled = await Promise.allSettled(
+      batch.map((user) => refreshWeatherForUser(user))
+    );
+
+    for (const result of settled) {
+      if (result.status === 'fulfilled' && result.value) {
+        results.push(result.value);
+      } else if (result.status === 'rejected') {
+        // eslint-disable-next-line no-console
+        console.error(`[WeatherJob] Batch refresh failed:`, result.reason?.message);
+      }
     }
   }
+
   return results;
 }
 

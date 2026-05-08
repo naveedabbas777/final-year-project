@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/providers/plant_disease_provider.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 import 'package:provider/provider.dart';
@@ -38,9 +39,6 @@ class _PlantDiseaseScreenState extends State<PlantDiseaseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Plant Disease Detector'),
-        backgroundColor: Colors.green.shade700,
-        foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -81,7 +79,7 @@ class _PlantDiseaseScreenState extends State<PlantDiseaseScreen> {
             if (provider.isLoading)
               const AsyncLoadingWidget()
             else if (provider.error != null)
-              Text(provider.error!, style: const TextStyle(color: Colors.red))
+              Text(provider.error!, style: const TextStyle(color: AppColors.red))
             else if (provider.predictions.isEmpty)
               const Text('Pick an image to get disease prediction.')
             else

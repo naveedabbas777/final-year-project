@@ -13,6 +13,7 @@ class ConnectivityService {
   final ApiClient _apiClient = ApiClient();
   bool _isBackendReachable = true;
   final _statusStream = StreamController<bool>.broadcast();
+  Timer? _periodicTimer;
 
   /// Stream that emits backend connectivity status changes
   Stream<bool> get statusStream => _statusStream.stream;
@@ -46,17 +47,21 @@ class ConnectivityService {
     }
   }
 
-  /// Start periodic health checks
+  /// Start periodic health checks.
+  /// Cancels any previously running periodic timer before starting a new one.
   void startPeriodicHealthCheck({
     Duration interval = const Duration(seconds: 30),
   }) {
-    Timer.periodic(interval, (_) async {
+    _periodicTimer?.cancel();
+    _periodicTimer = Timer.periodic(interval, (_) async {
       await checkBackendHealth();
     });
   }
 
   /// Dispose resources
   void dispose() {
+    _periodicTimer?.cancel();
+    _periodicTimer = null;
     _statusStream.close();
   }
 }

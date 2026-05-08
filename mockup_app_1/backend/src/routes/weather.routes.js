@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth.js';
 import { attachDbUser } from '../middlewares/attachDbUser.js';
+import { asyncHandler } from '../utils/errors.js';
 import { env } from '../config/env.js';
 import { refreshWeatherForUser } from '../services/weatherAlerts.service.js';
 
@@ -160,8 +161,7 @@ function toDailyFromForecast(forecast) {
 }
 
 // Proxy endpoint: /api/weather?lat=...&lon=...
-weatherRouter.get('/', async (req, res, next) => {
-  try {
+weatherRouter.get('/', asyncHandler(async (req, res) => {
     const { lat, lon } = req.query;
     if (!lat || !lon) {
       res.status(400).json({ message: 'Missing lat or lon query parameters' });
@@ -211,13 +211,9 @@ weatherRouter.get('/', async (req, res, next) => {
         precipitation: extractPrecip(current),
       },
     });
-  } catch (err) {
-    next(err);
-  }
-});
+}));
 
-weatherRouter.get('/me', requireAuth, attachDbUser, async (req, res, next) => {
-  try {
+weatherRouter.get('/me', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
     if (!req.dbUser || typeof req.dbUser.lat !== 'number' || typeof req.dbUser.lon !== 'number') {
       res.status(400).json({ message: 'Saved location not found for user' });
       return;
@@ -230,7 +226,4 @@ weatherRouter.get('/me', requireAuth, attachDbUser, async (req, res, next) => {
     }
 
     res.json(snapshot);
-  } catch (err) {
-    next(err);
-  }
-});
+}));

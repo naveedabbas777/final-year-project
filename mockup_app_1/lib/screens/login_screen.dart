@@ -68,7 +68,6 @@ class _LoginScreenState extends State<LoginScreen> {
       } catch (e) {
         debugPrint('Sign in error: $e');
         _showError(ErrorPresenter.present(e));
-        if (mounted) setState(() => _sending = false);
         return;
       }
 
@@ -76,7 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         _showError('Login failed. Please try again.');
-        if (mounted) setState(() => _sending = false);
         return;
       }
 
@@ -128,6 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       debugPrint('Unexpected error during login: $e');
       _showError(ErrorPresenter.present(e));
+    } finally {
       if (mounted) setState(() => _sending = false);
     }
   }
@@ -204,6 +203,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _sending ? null : _attemptLogin(),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock),
                       hintText: 'Password',
@@ -237,7 +238,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 );
                               },
-                      child: const Text('Forgot password?'),
+                      child: Text(
+                        'Forgot password?',
+                        style: TextStyle(
+                          color: _sending ? Colors.grey : null,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -259,37 +265,43 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account?",
-                        style: TextStyle(color: Colors.grey[700]),
-                      ),
-                      TextButton(
-                        onPressed: () async {
-                          final result = await Navigator.of(
-                            context,
-                          ).push<String?>(
-                            MaterialPageRoute(
-                              builder: (_) => const RegistrationScreen(),
-                            ),
-                          );
-
-                          if (result != null && result.isNotEmpty && mounted) {
-                            setState(() => _emailController.text = result);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Registration successful. Verify your email then login.',
+                  IgnorePointer(
+                    ignoring: _sending,
+                    child: Opacity(
+                      opacity: _sending ? 0.5 : 1.0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            "Don't have an account?",
+                            style: TextStyle(color: Colors.grey[700]),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              final result = await Navigator.of(
+                                context,
+                              ).push<String?>(
+                                MaterialPageRoute(
+                                  builder: (_) => const RegistrationScreen(),
                                 ),
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text('Register'),
+                              );
+
+                              if (result != null && result.isNotEmpty && mounted) {
+                                setState(() => _emailController.text = result);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Registration successful. Verify your email then login.',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text('Register'),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(

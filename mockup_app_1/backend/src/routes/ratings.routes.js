@@ -110,11 +110,13 @@ ratingsRouter.post('/', requireAuth, attachDbUser, asyncHandler(async (req, res)
     });
   }
 
+  const trimmedComment = typeof comment === 'string' ? comment.trim().slice(0, 500) : '';
+
   const data = {
     targetUid,
     raterUid,
     score: numeric,
-    comment: typeof comment === 'string' ? comment.trim() : '',
+    comment: trimmedComment,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };

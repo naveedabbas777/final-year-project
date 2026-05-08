@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../services/market_api_service.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
@@ -386,7 +387,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       ),
                       Text(
                         '#${order.id.substring(0, order.id.length > 8 ? 8 : order.id.length).toUpperCase()}'
-                        '${roleLabel.isNotEmpty ? ' · $roleLabel' : ''}',
+                        '${roleLabel.isNotEmpty ? ' · $roleLabel' : ''}'
+                        ' · ${DateFormat.yMMMd().format(order.createdAt)}',
                         style: TextStyle(
                           fontSize: 11,
                           color: Colors.grey.shade500,

@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'config/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/dashboard_screen.dart';
@@ -88,7 +89,7 @@ Future<void> main() async {
 }
 
 class DigitalKissanApp extends StatelessWidget {
-  const DigitalKissanApp({Key? key}) : super(key: key);
+  const DigitalKissanApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -104,9 +105,7 @@ class DigitalKissanApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [Locale('en', ''), Locale('ur', '')],
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
-        useMaterial3: true,
+      theme: AppTheme.light.copyWith(
         textTheme: GoogleFonts.notoSansTextTheme().copyWith(
           bodyLarge: GoogleFonts.notoSans(),
           bodyMedium: GoogleFonts.notoSans(),
@@ -264,11 +263,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             icon: const Icon(Icons.home_outlined),
             selectedIcon: const Icon(Icons.home),
             label: AppLocalizations.of(context)!.home,
+            tooltip: 'Home dashboard',
           ),
           NavigationDestination(
             icon: const Icon(Icons.calendar_today_outlined),
             selectedIcon: const Icon(Icons.calendar_today),
             label: AppLocalizations.of(context)!.forecast,
+            tooltip: 'Weather forecast',
           ),
           // Alerts tab with live unread badge
           Consumer<AlertService>(
@@ -292,6 +293,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                   child: const Icon(Icons.notifications),
                 ),
                 label: AppLocalizations.of(context)!.alerts,
+                tooltip: count > 0 ? '$count unread alerts' : 'Weather alerts',
               );
             },
           ),
@@ -299,11 +301,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             icon: const Icon(Icons.storefront_outlined),
             selectedIcon: const Icon(Icons.storefront),
             label: 'Market',
+            tooltip: 'Marketplace',
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),
             selectedIcon: const Icon(Icons.settings),
             label: AppLocalizations.of(context)!.settings,
+            tooltip: 'App settings',
           ),
         ],
       ),

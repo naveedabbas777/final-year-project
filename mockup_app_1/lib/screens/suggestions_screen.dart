@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 
 class SuggestionsScreen extends StatelessWidget {
-  const SuggestionsScreen({Key? key}) : super(key: key);
+  const SuggestionsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

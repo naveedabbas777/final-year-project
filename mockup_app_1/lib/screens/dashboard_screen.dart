@@ -328,7 +328,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
     }
 
-    await alertService.processWeather(current, todayForecast);
+    await alertService.processWeather();
   }
 
   @override

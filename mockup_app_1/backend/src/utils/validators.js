@@ -46,14 +46,16 @@ export class Validator {
     if (!this.required(value)) return false;
     if (!this.minLength(value, 2)) return false;
     if (!this.maxLength(value, 50)) return false;
-    return /^[a-zA-Z0-9\s-]+$/.test(value);
+    // Allow Unicode letters (Urdu, Arabic, etc.), digits, spaces, hyphens
+    return /^[\p{L}\p{N}\s-]+$/u.test(value);
   }
 
   static district(value) {
     if (!this.required(value)) return false;
     if (!this.minLength(value, 2)) return false;
     if (!this.maxLength(value, 50)) return false;
-    return /^[a-zA-Z0-9\s-]+$/.test(value);
+    // Allow Unicode letters (Urdu, Arabic, etc.), digits, spaces, hyphens
+    return /^[\p{L}\p{N}\s-]+$/u.test(value);
   }
 
   static quantity(value) {

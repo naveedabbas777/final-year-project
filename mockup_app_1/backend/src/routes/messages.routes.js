@@ -96,6 +96,11 @@ messagesRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
     return;
   }
 
+  if (message.length > 5000) {
+    res.status(400).json({ message: 'Message is too long (max 5000 characters)' });
+    return;
+  }
+
   const payload = {
     message,
     fromUid: req.user.uid,
@@ -135,7 +140,7 @@ messagesRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
           },
         };
 
-        const resp = await admin.messaging().sendMulticast({ tokens, ...notifPayload });
+        const resp = await admin.messaging().sendEachForMulticast({ tokens, ...notifPayload });
         if (resp.failureCount > 0) {
           const invalidTokens = [];
           resp.responses.forEach((r, i) => {

@@ -2,10 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'location_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../services/firebase_service.dart';
+import '../services/market_api_service.dart';
+import '../widgets/confirm_dialog.dart';
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/notification_service.dart';
 
@@ -20,7 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _savedLocation = 'No location set';
   bool _notificationsEnabled = true;
   static const String _kNotificationsEnabled = 'notifications_enabled';
-  final FirebaseService _firebaseService = FirebaseService();
+  final _marketApi = MarketApiService();
 
   @override
   void initState() {
@@ -29,84 +30,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadNotificationSetting();
   }
 
+  /// Loads the user's saved location from the market API (same source as profile screen).
   Future<void> _loadSaved() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
-
     if (user == null) {
-      if (mounted) {
-        setState(() {
-          _savedLocation = 'No location set';
-        });
-      }
+      if (mounted) setState(() => _savedLocation = 'No location set');
       return;
     }
-
-    if (mounted) {
-      setState(() {
-        _savedLocation = 'Loading location...';
-      });
-    }
-
+    if (mounted) setState(() => _savedLocation = 'Loading location...');
     try {
-      // Try to load from Firebase first
-      final doc = await _firebaseService.getUserByUid(user.uid);
-      final address = doc?['address'] as String?;
-      final lat = (doc?['lat'] as num?)?.toDouble();
-      final lon = (doc?['lon'] as num?)?.toDouble();
-      final locationUpdatedAt = doc?['locationUpdatedAt'] as String?;
-
+      final profile = await _marketApi.fetchMe();
       String display = 'No location set';
-      if (address != null && address.isNotEmpty && lat != null && lon != null) {
-        display =
-            '$address\n(${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)})';
-        if (locationUpdatedAt != null && locationUpdatedAt.isNotEmpty) {
-          display += '\nUpdated: ${_formatTimestamp(locationUpdatedAt)}';
+      if (profile.address.isNotEmpty) {
+        display = profile.address;
+        if (profile.latitude != null && profile.longitude != null) {
+          display += '\n(${profile.latitude!.toStringAsFixed(4)}, ${profile.longitude!.toStringAsFixed(4)})';
         }
-      } else if (address?.isNotEmpty == true) {
-        display = address!;
+        if (profile.locationUpdatedAt != null) {
+          display += '\nUpdated: ${_formatTimestamp(profile.locationUpdatedAt!.toIso8601String())}';
+        }
+      } else if (profile.district.isNotEmpty) {
+        display = profile.locationSummary;
       }
-
-      if (mounted) {
-        setState(() {
-          _savedLocation = display;
-        });
-      }
+      if (mounted) setState(() => _savedLocation = display);
     } catch (e) {
-      debugPrint(
-        'Failed to load from Firebase: $e. Trying SharedPreferences...',
-      );
-
-      // Fallback: Try to load from SharedPreferences
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final lat = prefs.getDouble('last_latitude');
-        final lng = prefs.getDouble('last_longitude');
-        final address = prefs.getString('last_address');
-
-        String display = 'No location set';
-        if (address != null &&
-            address.isNotEmpty &&
-            lat != null &&
-            lng != null) {
-          display =
-              '$address\n(${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)})';
-        }
-
-        if (mounted) {
-          setState(() {
-            _savedLocation = display;
-          });
-        }
-      } catch (_) {
-        if (mounted) {
-          setState(() {
-            _savedLocation = 'No location set';
-          });
-        }
-      }
+      if (kDebugMode) debugPrint('[Settings] Failed to load location: $e');
+      if (mounted) setState(() => _savedLocation = 'No location set');
     }
   }
+
 
   String _formatTimestamp(String isoString) {
     try {
@@ -199,46 +152,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// PHASE 1 FIX: Unified sign-out with full state reset and navigation clear
+  /// Unified sign-out with confirmation dialog
   Future<void> _signOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder:
-          (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: const Text(
-              'Sign Out',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            content: const Text('Are you sure you want to sign out?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade600,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Sign Out'),
-              ),
-            ],
-          ),
+    final confirmed = await ConfirmDialog.show(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      confirmLabel: 'Sign Out',
+      isDangerous: true,
+      icon: Icons.logout_rounded,
     );
     if (confirmed != true) return;
-
     final auth = Provider.of<AuthProvider>(context, listen: false);
     await auth.signOut();
-    // AuthProvider.signOut() sets bootstrapState=unauthenticated which the
-    // reactive AppRouter/RoleBasedHomeScreen uses to redirect. No imperative
-    // navigation needed — doing both causes double-navigation stack corruption.
   }
 
   @override
