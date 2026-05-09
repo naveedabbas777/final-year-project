@@ -22,6 +22,7 @@ import { adminRouter } from './routes/admin.routes.js';
 
 export function createApp() {
   const app = express();
+  const isProduction = (process.env.NODE_ENV || '').toLowerCase() === 'production';
 
   // Security headers
   app.use(helmet());
@@ -38,8 +39,12 @@ export function createApp() {
   app.use(
     cors({
       origin(origin, callback) {
-        if (!origin || env.allowedOrigins.length === 0) {
+        if (!origin) {
           callback(null, true);
+          return;
+        }
+        if (env.allowedOrigins.length === 0) {
+          callback(null, !isProduction);
           return;
         }
         callback(null, env.allowedOrigins.includes(origin));
