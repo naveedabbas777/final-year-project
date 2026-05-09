@@ -110,7 +110,10 @@ ratingsRouter.post('/', requireAuth, attachDbUser, asyncHandler(async (req, res)
     });
   }
 
-  const trimmedComment = typeof comment === 'string' ? comment.trim().slice(0, 500) : '';
+  const trimmedComment = typeof comment === 'string' ? comment.trim() : '';
+  if (trimmedComment.length > 500) {
+    return res.status(400).json({ message: 'comment must be 500 characters or fewer' });
+  }
 
   const data = {
     targetUid,

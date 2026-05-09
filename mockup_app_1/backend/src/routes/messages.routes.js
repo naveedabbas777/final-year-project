@@ -11,6 +11,21 @@ function firestoreReady() {
   return Boolean(admin?.apps && admin.apps.length > 0);
 }
 
+function toMillis(value) {
+  if (!value) return 0;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  if (typeof value.toDate === 'function') return value.toDate().getTime();
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  if (typeof value === 'object' && typeof value.seconds === 'number') {
+    return value.seconds * 1000 + Math.floor((value.nanoseconds || 0) / 1e6);
+  }
+  return 0;
+}
+
 // SECURITY: Helper to verify user is a participant in listing chat
 async function isUserListingParticipant(userId, listingId) {
   if (!firestoreReady()) return false;
@@ -180,18 +195,20 @@ messagesRouter.get('/listing/:listingId', requireAuth, asyncHandler(async (req, 
     : null;
   const beforeIsValid = before && !Number.isNaN(before.getTime());
 
-  let query = admin
+  const snapshot = await admin
     .firestore()
     .collection('messages')
     .where('listingId', '==', listingId)
-    .orderBy('timestamp', 'desc');
+    .get();
 
-  if (beforeIsValid) {
-    query = query.startAfter(before);
-  }
-
-  const snapshot = await query.limit(limit).get();
-  const rows = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })).reverse();
+  const rows = snapshot.docs
+    .map((doc) => ({ id: doc.id, ...doc.data() }))
+    .filter((row) => {
+      if (!beforeIsValid) return true;
+      return toMillis(row.timestamp) < before.getTime();
+    })
+    .sort((a, b) => toMillis(a.timestamp) - toMillis(b.timestamp))
+    .slice(-limit);
   res.json(rows);
 }));
 
@@ -302,12 +319,13 @@ messagesRouter.get('/stream/listing/:listingId', requireAuth, asyncHandler(async
     .firestore()
     .collection('messages')
     .where('listingId', '==', listingId)
-    .orderBy('timestamp', 'asc')
     .limit(limit);
 
   const unsubscribeMessages = query.onSnapshot(
     (snapshot) => {
-      const rows = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const rows = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .sort((a, b) => toMillis(a.timestamp) - toMillis(b.timestamp));
       // log snapshot size for debugging
       console.log(`[Debug] messages snapshot for listing=${listingId} size=${rows.length}`);
       sendEvent('snapshot', rows);
