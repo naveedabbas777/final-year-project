@@ -73,10 +73,16 @@ Future<void> main() async {
   final fcmToken = await notificationService.getFcmToken();
   debugPrint('FCM Token: $fcmToken');
 
+  final prefs = await SharedPreferences.getInstance();
+  final savedLanguageCode = prefs.getString(LanguageProvider.localeStorageKey);
+  final initialLocale = LanguageProvider.resolveLocale(savedLanguageCode);
+
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider(
+          create: (_) => LanguageProvider(initialLocale: initialLocale),
+        ),
         ChangeNotifierProvider(create: (_) => app_auth.AuthProvider()),
         ChangeNotifierProvider(create: (_) => PlantDiseaseProvider()),
         Provider<NotificationService>.value(value: notificationService),
@@ -157,7 +163,18 @@ class AppRouter extends StatefulWidget {
 
 class _AppRouterState extends State<AppRouter> {
   static const String _kNotificationsEnabled = 'notifications_enabled';
+  static const Duration _minimumSplashDuration = Duration(milliseconds: 2000);
   bool _notificationPromptShown = false;
+  bool _minimumSplashElapsed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(_minimumSplashDuration, () {
+      if (!mounted) return;
+      setState(() => _minimumSplashElapsed = true);
+    });
+  }
 
   Future<void> _maybeShowNotificationReminder({
     required bool isBootstrapComplete,
@@ -210,13 +227,17 @@ class _AppRouterState extends State<AppRouter> {
   Widget build(BuildContext context) {
     return Consumer<app_auth.AuthProvider>(
       builder: (_, auth, __) {
+        final readyForMainFlow =
+            auth.isBootstrapComplete && _minimumSplashElapsed;
+
         _maybeShowNotificationReminder(
-          isBootstrapComplete: auth.isBootstrapComplete,
+          isBootstrapComplete: readyForMainFlow,
           isSignedIn: auth.isSignedIn,
         );
 
-        // Auth state not yet resolved — keep showing splash
-        if (!auth.isBootstrapComplete) {
+        // Keep splash visible until auth bootstrap finishes and minimum
+        // display time has elapsed, so transitions feel intentional.
+        if (!readyForMainFlow) {
           return const SplashScreen();
         }
         // Signed in → go to home (admin or farmer dashboard)

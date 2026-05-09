@@ -471,22 +471,42 @@ class _LoginScreenState extends State<LoginScreen> {
                                             AppLocalizations.of(
                                               context,
                                             )!.languageLabel,
+                                            style: const TextStyle(
+                                              color: AppColors.textPrimary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                           const SizedBox(width: 8),
                                           DropdownButton<String>(
                                             value: currentLanguageString,
                                             underline: const SizedBox.shrink(),
+                                            dropdownColor: AppColors.surface,
+                                            iconEnabledColor:
+                                                AppColors.textPrimary,
                                             style: const TextStyle(
                                               color: AppColors.textPrimary,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                             items: const [
                                               DropdownMenuItem(
                                                 value: 'English',
-                                                child: Text('English'),
+                                                child: Text(
+                                                  'English',
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppColors.textPrimary,
+                                                  ),
+                                                ),
                                               ),
                                               DropdownMenuItem(
                                                 value: 'Urdu',
-                                                child: Text('Urdu'),
+                                                child: Text(
+                                                  'Urdu',
+                                                  style: TextStyle(
+                                                    color:
+                                                        AppColors.textPrimary,
+                                                  ),
+                                                ),
                                               ),
                                             ],
                                             onChanged: (String? newValue) {

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:mockup_app/config/app_theme.dart';
+import 'package:mockup_app/providers/language_provider.dart';
 import 'location_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/market_api_service.dart';
@@ -197,6 +198,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final currentLanguageString =
+        languageProvider.locale.languageCode == 'en' ? 'English' : 'Urdu';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -395,6 +400,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     value: _notificationsEnabled,
                     onChanged: _handleNotificationToggle,
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.language, color: Colors.green.shade700),
+                    ),
+                    title: Text(
+                      AppLocalizations.of(context)!.languageLabel,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: const Text('Choose app display language'),
+                    trailing: DropdownButton<String>(
+                      value: currentLanguageString,
+                      underline: const SizedBox.shrink(),
+                      dropdownColor: AppColors.surface,
+                      iconEnabledColor: AppColors.textPrimary,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      items: const [
+                        DropdownMenuItem(
+                          value: 'English',
+                          child: Text(
+                            'English',
+                            style: TextStyle(color: AppColors.textPrimary),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 'Urdu',
+                          child: Text(
+                            'Urdu',
+                            style: TextStyle(color: AppColors.textPrimary),
+                          ),
+                        ),
+                      ],
+                      onChanged: (String? newValue) {
+                        if (newValue == null) return;
+                        languageProvider.setLocale(
+                          newValue == 'English'
+                              ? const Locale('en', '')
+                              : const Locale('ur', ''),
+                        );
+                      },
+                    ),
                   ),
                   const Divider(height: 1),
                   ListTile(
