@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 
 import 'package:mockup_app/config/app_config.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/utils/retry_helper.dart';
 import 'package:mockup_app/utils/error_presenter.dart';
 
@@ -169,92 +170,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     InputDecoration _field(String label, IconData icon) => InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, size: 20),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        );
+      labelText: label,
+      prefixIcon: Icon(icon, size: 20),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    );
 
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Edit Profile',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: _field('Full Name', Icons.person_outline),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'Edit Profile',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primaryMid,
+                    decoration: _field('Full Name', Icons.person_outline),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: phoneCtrl,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primaryMid,
+                    keyboardType: TextInputType.phone,
+                    decoration: _field('Phone Number', Icons.phone_outlined),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: districtCtrl,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primaryMid,
+                    decoration: _field('District', Icons.map_outlined),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: provinceCtrl,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primaryMid,
+                    decoration: _field(
+                      'Province',
+                      Icons.location_city_outlined,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: addressCtrl,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primaryMid,
+                    maxLines: 2,
+                    decoration: _field('Address', Icons.home_outlined),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: _field('Phone Number', Icons.phone_outlined),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: districtCtrl,
-                decoration: _field('District', Icons.map_outlined),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: provinceCtrl,
-                decoration: _field('Province', Icons.location_city_outlined),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: addressCtrl,
-                maxLines: 2,
-                decoration: _field('Address', Icons.home_outlined),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () async {
+                  try {
+                    await _svc.updateUserProfile(
+                      uidToUpdate,
+                      displayName:
+                          nameCtrl.text.trim().isEmpty
+                              ? null
+                              : nameCtrl.text.trim(),
+                      phoneNumber:
+                          phoneCtrl.text.trim().isEmpty
+                              ? null
+                              : phoneCtrl.text.trim(),
+                      district:
+                          districtCtrl.text.trim().isEmpty
+                              ? null
+                              : districtCtrl.text.trim(),
+                      province:
+                          provinceCtrl.text.trim().isEmpty
+                              ? null
+                              : provinceCtrl.text.trim(),
+                      address:
+                          addressCtrl.text.trim().isEmpty
+                              ? null
+                              : addressCtrl.text.trim(),
+                    );
+                    if (ctx.mounted) Navigator.of(ctx).pop(true);
+                  } catch (e) {
+                    if (ctx.mounted) Navigator.of(ctx).pop(false);
+                  }
+                },
+                child: const Text('Save Changes'),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade700,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () async {
-              try {
-                await _svc.updateUserProfile(
-                  uidToUpdate,
-                  displayName:
-                      nameCtrl.text.trim().isEmpty ? null : nameCtrl.text.trim(),
-                  phoneNumber: phoneCtrl.text.trim().isEmpty
-                      ? null
-                      : phoneCtrl.text.trim(),
-                  district: districtCtrl.text.trim().isEmpty
-                      ? null
-                      : districtCtrl.text.trim(),
-                  province: provinceCtrl.text.trim().isEmpty
-                      ? null
-                      : provinceCtrl.text.trim(),
-                  address: addressCtrl.text.trim().isEmpty
-                      ? null
-                      : addressCtrl.text.trim(),
-                );
-                if (ctx.mounted) Navigator.of(ctx).pop(true);
-              } catch (e) {
-                if (ctx.mounted) Navigator.of(ctx).pop(false);
-              }
-            },
-            child: const Text('Save Changes'),
-          ),
-        ],
-      ),
     );
 
     if (ok == true) {
@@ -266,7 +291,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             backgroundColor: Colors.green.shade700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
     }
@@ -275,26 +301,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _signOut() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text('Are you sure you want to sign out of your account?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      builder:
+          (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Sign Out'),
+            title: const Text(
+              'Sign Out',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            content: const Text(
+              'Are you sure you want to sign out of your account?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Sign Out'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
     if (confirmed != true) return;
     final auth = Provider.of<AuthProvider>(context, listen: false);
@@ -408,8 +444,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile',
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text(
+          'Profile',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         centerTitle: true,
         foregroundColor: Colors.white,
         flexibleSpace: Container(
@@ -504,22 +542,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.warning_amber_rounded,
-                                color: Colors.amber.shade700, size: 18),
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.amber.shade700,
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             const Expanded(
                               child: Text(
                                 'Could not load full profile from server. Showing cached data.',
-                                style: TextStyle(fontSize: 12),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             ),
                             TextButton(
                               onPressed: _loadProfile,
                               style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: const Size(48, 32)),
-                              child: const Text('Retry',
-                                  style: TextStyle(fontSize: 12)),
+                                padding: EdgeInsets.zero,
+                                minimumSize: const Size(48, 32),
+                              ),
+                              child: const Text(
+                                'Retry',
+                                style: TextStyle(fontSize: 12),
+                              ),
                             ),
                           ],
                         ),
@@ -547,7 +594,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
-                                          color: Colors.green.shade800,
+                                          color: AppColors.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -555,7 +602,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         accountType,
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.green.shade700,
+                                          color: AppColors.textSecondary,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -579,7 +626,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       'Verified account',
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.green.shade800,
+                                        color: AppColors.textPrimary,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -697,7 +744,7 @@ class _ProfileFieldTile extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade700,
+                    color: AppColors.textSecondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -707,6 +754,7 @@ class _ProfileFieldTile extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
