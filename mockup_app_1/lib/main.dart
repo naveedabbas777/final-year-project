@@ -132,7 +132,7 @@ class DigitalKissanApp extends StatelessWidget {
             builder:
                 (_) => ChatScreen(
                   listingId: args['listingId'] ?? '',
-                  toUid: args['toUid'] ?? '',
+                  toUid: args['toUid'] as String?,
                 ),
           );
         }
@@ -247,10 +247,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (int index) {

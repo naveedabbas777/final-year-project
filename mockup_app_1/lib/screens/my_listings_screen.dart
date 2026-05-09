@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 import '../services/market_api_service.dart';
@@ -81,6 +83,16 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     }).toList();
   }
 
+  Widget _buildImageSummary() {
+    if (_selectedImages.isNotEmpty) {
+      final count = _selectedImages.length;
+      return Text('$count new image${count == 1 ? '' : 's'} selected');
+    }
+    if (_editingListingId == null) return const Text('No images selected');
+    final existing = _editingImageUrls.length;
+    return Text('$existing existing image${existing == 1 ? '' : 's'}');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -153,16 +165,10 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       if (!mounted) return;
       setState(() {
         final ids = _rows.map((row) => row.id).toSet();
-        _rows = [
-          ..._rows,
-          ...more.where((row) => !ids.contains(row.id)),
-        ];
+        _rows = [..._rows, ...more.where((row) => !ids.contains(row.id))];
         _hasMoreListings = more.length >= _listingLimit;
       });
-      await _service.cacheListings(
-        sellerUid: sellerUid,
-        listings: _rows,
-      );
+      await _service.cacheListings(sellerUid: sellerUid, listings: _rows);
       _fetchUnreadCountsInBackground(more);
     } finally {
       if (mounted) setState(() => _loadingMoreListings = false);
@@ -271,6 +277,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       ),
       builder:
           (sheetContext) => Padding(
+            // local form key for validation inside the sheet
+            key: ValueKey('listing_form_sheet'),
             padding: EdgeInsets.only(
               left: 16,
               right: 16,
@@ -278,271 +286,351 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
               bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
             ),
             child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.green.shade800,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => Navigator.pop(sheetContext),
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _cropController,
-                    decoration: const InputDecoration(
-                      labelText: 'Crop Name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _districtController,
-                    decoration: const InputDecoration(
-                      labelText: 'District',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _qtyController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Quantity',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _priceController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Asking Price',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _unitController,
-                    decoration: const InputDecoration(
-                      labelText: 'Unit',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Description',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<String>(
-                    value: _gradeController.text,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Quality Grade',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'A', child: Text('A')),
-                      DropdownMenuItem(value: 'B', child: Text('B')),
-                      DropdownMenuItem(value: 'C', child: Text('C')),
-                    ],
-                    onChanged: (value) => _gradeController.text = value ?? 'A',
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            final result = await Navigator.of(
-                              context,
-                            ).push<Map<String, dynamic>>(
-                              MaterialPageRoute(
-                                builder:
-                                    (_) => ListingLocationPicker(
-                                      initialLatitude: _selectedLatitude,
-                                      initialLongitude: _selectedLongitude,
-                                    ),
-                              ),
-                            );
-                            if (result != null) {
-                              setState(() {
-                                _selectedLatitude = result['latitude'];
-                                _selectedLongitude = result['longitude'];
-                              });
-                            }
-                          },
-                          icon: const Icon(Icons.location_on),
-                          label: const Text('Pin Location'),
-                        ),
-                      ),
-                      if (_selectedLatitude != null &&
-                          _selectedLongitude != null) ...[
-                        const SizedBox(width: 8),
+              child: Form(
+                key: GlobalKey<FormState>(),
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
                         Expanded(
                           child: Text(
-                            '📍 Pinned',
+                            title,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.green.shade700,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.green.shade800,
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close),
+                        ),
                       ],
-                    ],
-                  ),
-                  if (allowImages) ...[
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _cropController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      cursorColor: AppColors.primaryMid,
+                      decoration: const InputDecoration(
+                        labelText: 'Crop Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator:
+                          (v) =>
+                              FormValidators.validateCropName(v?.trim() ?? ''),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _districtController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      cursorColor: AppColors.primaryMid,
+                      decoration: const InputDecoration(
+                        labelText: 'District',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator:
+                          (v) =>
+                              FormValidators.validateDistrict(v?.trim() ?? ''),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _qtyController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      cursorColor: AppColors.primaryMid,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Quantity',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) {
+                        final val = v?.trim() ?? '';
+                        final parsed = double.tryParse(val);
+                        if (parsed == null)
+                          return 'Please enter a valid quantity';
+                        return FormValidators.validateQuantity(val);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _priceController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      cursorColor: AppColors.primaryMid,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Asking Price',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) {
+                        final val = v?.trim() ?? '';
+                        final parsed = double.tryParse(val);
+                        if (parsed == null) return 'Please enter a valid price';
+                        return FormValidators.validatePrice(val);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _unitController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      cursorColor: AppColors.primaryMid,
+                      decoration: const InputDecoration(
+                        labelText: 'Unit',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _descriptionController,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      cursorColor: AppColors.primaryMid,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (v) => null,
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: _gradeController.text,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Quality Grade',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'A', child: Text('A')),
+                        DropdownMenuItem(value: 'B', child: Text('B')),
+                        DropdownMenuItem(value: 'C', child: Text('C')),
+                      ],
+                      onChanged:
+                          (value) => _gradeController.text = value ?? 'A',
+                    ),
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        OutlinedButton.icon(
-                          onPressed: _pickImages,
-                          icon: const Icon(Icons.photo_library_outlined),
-                          label: Text(
-                            _editingListingId == null
-                                ? 'Attach Images'
-                                : 'Replace Images',
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final result = await Navigator.of(
+                                context,
+                              ).push<Map<String, dynamic>>(
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => ListingLocationPicker(
+                                        initialLatitude: _selectedLatitude,
+                                        initialLongitude: _selectedLongitude,
+                                      ),
+                                ),
+                              );
+                              if (result != null) {
+                                setState(() {
+                                  _selectedLatitude = result['latitude'];
+                                  _selectedLongitude = result['longitude'];
+                                });
+                              }
+                            },
+                            icon: const Icon(Icons.location_on),
+                            label: const Text('Pin Location'),
                           ),
                         ),
-                        if (_editingListingId != null) ...[
+                        if (_selectedLatitude != null &&
+                            _selectedLongitude != null) ...[
                           const SizedBox(width: 8),
-                          OutlinedButton(
-                            onPressed:
-                                _editingImageUrls.isEmpty
-                                    ? null
-                                    : () => setState(
-                                      () => _editingImageUrls.clear(),
-                                    ),
-                            child: const Text('Clear Existing'),
+                          Expanded(
+                            child: Text(
+                              '📍 Pinned',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ],
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _selectedImages.isEmpty
-                                ? (_editingListingId == null
-                                    ? 'No images selected'
-                                    : '${_editingImageUrls.length} existing image${_editingImageUrls.length == 1 ? '' : 's'}')
-                                : '${_selectedImages.length} new image${_selectedImages.length == 1 ? '' : 's'} selected',
-                          ),
-                        ),
                       ],
                     ),
-                    if (_editingListingId != null && _selectedImages.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          'Saving will replace existing images with selected images.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
+                    if (allowImages) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _pickImages,
+                            icon: const Icon(Icons.photo_library_outlined),
+                            label: Text(
+                              _editingListingId == null
+                                  ? 'Attach Images'
+                                  : 'Replace Images',
+                            ),
                           ),
-                        ),
+                          if (_editingListingId != null) ...[
+                            const SizedBox(width: 8),
+                            OutlinedButton(
+                              onPressed:
+                                  _editingImageUrls.isEmpty
+                                      ? null
+                                      : () => setState(
+                                        () => _editingImageUrls.clear(),
+                                      ),
+                              child: const Text('Clear Existing'),
+                            ),
+                          ],
+                          const SizedBox(width: 10),
+                          Expanded(child: _buildImageSummary()),
+                        ],
                       ),
-                    if (_editingListingId != null &&
-                        _selectedImages.isEmpty &&
-                        _editingImageUrls.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: SizedBox(
-                          height: 72,
+                      const SizedBox(height: 10),
+                      if (_selectedImages.isNotEmpty)
+                        SizedBox(
+                          height: 82,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
-                            itemCount: _editingImageUrls.length,
+                            itemCount: _selectedImages.length,
                             separatorBuilder:
                                 (_, __) => const SizedBox(width: 8),
                             itemBuilder: (context, index) {
-                              final imageUrl = _editingImageUrls[index];
+                              final f = File(_selectedImages[index].path);
                               return Stack(
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      imageUrl,
-                                      width: 72,
-                                      height: 72,
+                                    child: Image.file(
+                                      f,
+                                      width: 82,
+                                      height: 82,
                                       fit: BoxFit.cover,
                                     ),
                                   ),
-                                  Positioned(
-                                    right: -6,
-                                    top: -6,
-                                    child: IconButton(
-                                      visualDensity: VisualDensity.compact,
-                                      iconSize: 18,
-                                      onPressed:
-                                          () => setState(
-                                            () => _editingImageUrls.removeAt(
-                                              index,
-                                            ),
-                                          ),
-                                      icon: const Icon(
-                                        Icons.cancel,
-                                        color: Colors.black87,
+                                  if (_selectedLatitude != null &&
+                                      _selectedLongitude != null)
+                                    const Positioned(
+                                      right: 4,
+                                      bottom: 4,
+                                      child: Icon(
+                                        Icons.location_on,
+                                        color: Colors.white,
+                                        size: 18,
                                       ),
                                     ),
-                                  ),
                                 ],
                               );
                             },
                           ),
                         ),
-                      ),
-                  ],
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green.shade700,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                      onPressed:
-                          _creating
-                              ? null
-                              : () async {
-                                await _saveListing();
-                                if (mounted &&
-                                    Navigator.of(sheetContext).canPop()) {
-                                  Navigator.pop(sheetContext);
-                                }
+                      if (_editingListingId != null &&
+                          _selectedImages.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            'Saving will replace existing images with selected images.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ),
+                      if (_editingListingId != null &&
+                          _selectedImages.isEmpty &&
+                          _editingImageUrls.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: SizedBox(
+                            height: 72,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _editingImageUrls.length,
+                              separatorBuilder:
+                                  (_, __) => const SizedBox(width: 8),
+                              itemBuilder: (context, index) {
+                                final imageUrl = _editingImageUrls[index];
+                                return Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        imageUrl,
+                                        width: 72,
+                                        height: 72,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    if (_selectedLatitude != null &&
+                                        _selectedLongitude != null)
+                                      const Positioned(
+                                        right: 6,
+                                        bottom: 6,
+                                        child: Icon(
+                                          Icons.location_on,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                      ),
+                                    Positioned(
+                                      right: -6,
+                                      top: -6,
+                                      child: IconButton(
+                                        visualDensity: VisualDensity.compact,
+                                        iconSize: 18,
+                                        onPressed:
+                                            () => setState(
+                                              () => _editingImageUrls.removeAt(
+                                                index,
+                                              ),
+                                            ),
+                                        icon: const Icon(
+                                          Icons.cancel,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
                               },
-                      icon:
-                          _creating
-                              ? const CompactLoadingIndicator(
-                                size: 16,
-                                color: Colors.white,
-                              )
-                              : const Icon(Icons.save),
-                      label: Text(buttonLabel),
+                            ),
+                          ),
+                        ),
+                    ],
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade700,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed:
+                            _creating
+                                ? null
+                                : () async {
+                                  await _saveListing();
+                                  if (mounted &&
+                                      Navigator.of(sheetContext).canPop()) {
+                                    Navigator.pop(sheetContext);
+                                  }
+                                },
+                        icon:
+                            _creating
+                                ? const CompactLoadingIndicator(
+                                  size: 16,
+                                  color: Colors.white,
+                                )
+                                : const Icon(Icons.save),
+                        label: Text(buttonLabel),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-    );
+                  ],
+                ), // Column
+              ), // Form
+            ), // SingleChildScrollView
+          ), // Padding
+    ); // showModalBottomSheet
   }
 
   Future<void> _saveListing() async {
@@ -1097,9 +1185,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                             await _service.rejectOffer(offer.id);
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Offer rejected'),
-                              ),
+                              const SnackBar(content: Text('Offer rejected')),
                             );
                             Navigator.pop(context);
                             await _load();
@@ -1618,8 +1704,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                 padding: const EdgeInsets.only(top: 8, bottom: 8),
                 child: Center(
                   child: OutlinedButton.icon(
-                    onPressed:
-                        _loadingMoreListings ? null : _loadMoreListings,
+                    onPressed: _loadingMoreListings ? null : _loadMoreListings,
                     icon:
                         _loadingMoreListings
                             ? const CompactLoadingIndicator(size: 16)

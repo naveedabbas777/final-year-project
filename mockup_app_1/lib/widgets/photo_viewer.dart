@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../config/app_theme.dart';
 
 /// Full-screen interactive photo viewer dialog.
 /// Replaces the 4 duplicate `_openSellerPhotoViewer` implementations.
@@ -21,8 +20,13 @@ class PhotoViewer {
   }) {
     showDialog<void>(
       context: context,
-      barrierColor: Colors.black90,
-      builder: (_) => _PhotoViewerDialog(urls: [url], initialIndex: 0, caption: caption),
+      barrierColor: Colors.black.withOpacity(0.9),
+      builder:
+          (_) => _PhotoViewerDialog(
+            urls: [url],
+            initialIndex: 0,
+            caption: caption,
+          ),
     );
   }
 
@@ -36,12 +40,13 @@ class PhotoViewer {
     if (urls.isEmpty) return;
     showDialog<void>(
       context: context,
-      barrierColor: Colors.black90,
-      builder: (_) => _PhotoViewerDialog(
-        urls: urls,
-        initialIndex: initialIndex,
-        caption: caption,
-      ),
+      barrierColor: Colors.black.withOpacity(0.9),
+      builder:
+          (_) => _PhotoViewerDialog(
+            urls: urls,
+            initialIndex: initialIndex,
+            caption: caption,
+          ),
     );
   }
 }
@@ -93,21 +98,31 @@ class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
             controller: _pageController,
             itemCount: widget.urls.length,
             onPageChanged: (i) => setState(() => _currentPage = i),
-            itemBuilder: (_, i) => InteractiveViewer(
-              minScale: 1,
-              maxScale: 5,
-              child: Center(
-                child: Image.network(
-                  widget.urls[i],
-                  fit: BoxFit.contain,
-                  loadingBuilder: (_, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(child: CircularProgressIndicator(color: Colors.white54));
-                  },
-                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white54, size: 64),
+            itemBuilder:
+                (_, i) => InteractiveViewer(
+                  minScale: 1,
+                  maxScale: 5,
+                  child: Center(
+                    child: Image.network(
+                      widget.urls[i],
+                      fit: BoxFit.contain,
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white54,
+                          ),
+                        );
+                      },
+                      errorBuilder:
+                          (_, __, ___) => const Icon(
+                            Icons.broken_image,
+                            color: Colors.white54,
+                            size: 64,
+                          ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
           ),
 
           // Close button
@@ -139,7 +154,8 @@ class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
                         height: 6,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(3),
-                          color: _currentPage == i ? Colors.white : Colors.white38,
+                          color:
+                              _currentPage == i ? Colors.white : Colors.white38,
                         ),
                       );
                     }),
@@ -149,7 +165,10 @@ class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
                 // Caption bar
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(14),
@@ -157,12 +176,27 @@ class _PhotoViewerDialogState extends State<_PhotoViewerDialog> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.zoom_in, color: Colors.white70, size: 16),
+                      const Icon(
+                        Icons.zoom_in,
+                        color: Colors.white70,
+                        size: 16,
+                      ),
                       const SizedBox(width: 6),
                       if (widget.caption != null)
-                        Flexible(child: Text(widget.caption!, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+                        Flexible(
+                          child: Text(
+                            widget.caption!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
                       if (widget.caption != null) const SizedBox(width: 12),
-                      const Text('Pinch to zoom', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                      const Text(
+                        'Pinch to zoom',
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -182,14 +216,14 @@ class _CircleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.5),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: Colors.white, size: 22),
-        ),
-      );
+    onTap: onTap,
+    child: Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.5),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: Colors.white, size: 22),
+    ),
+  );
 }

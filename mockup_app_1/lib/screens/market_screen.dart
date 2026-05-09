@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 import 'package:mockup_app/widgets/photo_viewer.dart';
 import 'package:mockup_app/config/app_router.dart';
@@ -35,108 +36,20 @@ class _MarketScreenState extends State<MarketScreen>
   }
 
   void _openSellerPhotoViewer(String photoUrl, String sellerName) {
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black87,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(12),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: InteractiveViewer(
-                  minScale: 1,
-                  maxScale: 5,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      color: Colors.black,
-                      alignment: Alignment.center,
-                      child: Image.network(
-                        photoUrl,
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                        height: double.infinity,
-                        errorBuilder:
-                            (_, __, ___) => const Icon(
-                              Icons.person,
-                              color: Colors.white,
-                              size: 80,
-                            ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: SafeArea(
-                  child: IconButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
-                child: SafeArea(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.45),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.zoom_in,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            sellerName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const Text(
-                          'Pinch to zoom',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    PhotoViewer.show(context, url: photoUrl, caption: sellerName);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F5),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.storefront_rounded, size: 20),
@@ -168,7 +81,7 @@ class _MarketScreenState extends State<MarketScreen>
           Container(
             margin: const EdgeInsets.only(right: 4),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: IconButton(
@@ -184,7 +97,7 @@ class _MarketScreenState extends State<MarketScreen>
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: IconButton(
@@ -202,7 +115,7 @@ class _MarketScreenState extends State<MarketScreen>
           controller: _tabController,
           indicatorSize: TabBarIndicatorSize.tab,
           indicator: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(10),
           ),
           dividerColor: Colors.transparent,
@@ -360,8 +273,11 @@ class _RatesTabState extends State<_RatesTab> {
     final query = _searchController.text.trim().toLowerCase();
     return _allRates.where((row) {
       // Dropdown filters
-      if (_selectedCropFilter != null && row.cropName != _selectedCropFilter) return false;
-      if (_selectedDistrictFilter != null && row.district != _selectedDistrictFilter) return false;
+      if (_selectedCropFilter != null && row.cropName != _selectedCropFilter)
+        return false;
+      if (_selectedDistrictFilter != null &&
+          row.district != _selectedDistrictFilter)
+        return false;
       // Text search
       if (query.isEmpty) return true;
       return row.cropName.toLowerCase().contains(query) ||
@@ -817,6 +733,13 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   List<ListingDto> get _filteredRows {
     final query = _searchController.text.trim().toLowerCase();
     return _rows.where((row) {
+      if (_selectedCropFilter != null && row.cropName != _selectedCropFilter) {
+        return false;
+      }
+      if (_selectedDistrictFilter != null &&
+          row.district != _selectedDistrictFilter) {
+        return false;
+      }
       if (query.isEmpty) return true;
       return row.cropName.toLowerCase().contains(query) ||
           row.qualityGrade.toLowerCase().contains(query) ||
@@ -845,98 +768,6 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  void _openSellerPhotoViewer(String photoUrl, String sellerName) {
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black87,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          insetPadding: const EdgeInsets.all(12),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: InteractiveViewer(
-                  minScale: 1,
-                  maxScale: 5,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      color: Colors.black,
-                      alignment: Alignment.center,
-                      child: Image.network(
-                        photoUrl,
-                        fit: BoxFit.contain,
-                        width: double.infinity,
-                        height: double.infinity,
-                        errorBuilder:
-                            (_, __, ___) => const Icon(
-                              Icons.person,
-                              color: Colors.white,
-                              size: 80,
-                            ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 0,
-                right: 0,
-                child: SafeArea(
-                  child: IconButton(
-                    onPressed: () => Navigator.pop(dialogContext),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
-                child: SafeArea(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.45),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.zoom_in,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            sellerName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const Text(
-                          'Pinch to zoom',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Future<void> _load() async {
@@ -988,10 +819,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
       if (!mounted) return;
       setState(() {
         final ids = _rows.map((row) => row.id).toSet();
-        _rows = [
-          ..._rows,
-          ...more.where((row) => !ids.contains(row.id)),
-        ];
+        _rows = [..._rows, ...more.where((row) => !ids.contains(row.id))];
         _hasMoreListings = more.length >= _listingLimit;
       });
       await _service.cacheListings(
@@ -1269,10 +1097,10 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                 onTap:
                                     prof.photoUrl.isNotEmpty
                                         ? () => PhotoViewer.show(
-                                            context,
-                                            url: prof.photoUrl,
-                                            caption: prof.primaryName,
-                                          )
+                                          context,
+                                          url: prof.photoUrl,
+                                          caption: prof.primaryName,
+                                        )
                                         : null,
                                 child:
                                     prof.photoUrl.isNotEmpty
@@ -1367,9 +1195,9 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
 
     return InkWell(
       onTap:
-          () => Navigator.of(context).push(
-            AppRoutes.slideRight(ListingDetailScreen(listing: row)),
-          ),
+          () => Navigator.of(
+            context,
+          ).push(AppRoutes.slideRight(ListingDetailScreen(listing: row))),
       borderRadius: BorderRadius.circular(16),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1663,6 +1491,24 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                 ),
                                 onPressed: _loading ? null : _load,
                                 child: const Text('Apply'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 96,
+                              child: OutlinedButton(
+                                onPressed:
+                                    _selectedCropFilter != null ||
+                                            _selectedDistrictFilter != null
+                                        ? () {
+                                          setState(() {
+                                            _selectedCropFilter = null;
+                                            _selectedDistrictFilter = null;
+                                          });
+                                          _load();
+                                        }
+                                        : null,
+                                child: const Text('Clear'),
                               ),
                             ),
                           ],

@@ -46,7 +46,19 @@ class UserProfileDto {
   final String photoUrl;
 
   bool get isAdmin => role == 'admin';
-  String get primaryName => displayName.trim().isNotEmpty ? displayName : name;
+  String get primaryName {
+    if (displayName.trim().isNotEmpty) return displayName.trim();
+    if (name.trim().isNotEmpty) return name.trim();
+
+    final emailValue = email.trim();
+    if (emailValue.contains('@')) {
+      final username = emailValue.split('@').first.trim();
+      if (username.isNotEmpty) return username;
+    }
+
+    return '';
+  }
+
   String get contactPhone => phone.trim().isNotEmpty ? phone : phoneNumber;
   bool get hasVisibleContactInfo =>
       contactPhone.trim().isNotEmpty || email.trim().isNotEmpty;
@@ -65,7 +77,11 @@ class UserProfileDto {
 
   String get initials {
     final source =
-        primaryName.trim().isNotEmpty ? primaryName.trim() : firebaseUid;
+        primaryName.trim().isNotEmpty
+            ? primaryName.trim()
+            : (email.trim().contains('@')
+                ? email.trim().split('@').first
+                : firebaseUid);
     return source.isNotEmpty ? source[0].toUpperCase() : 'U';
   }
 
@@ -519,7 +535,10 @@ class MarketApiService {
       if (decoded is! List) return const [];
       return decoded
           .whereType<Map>()
-          .map((entry) => ChatMessageDto.fromJson(Map<String, dynamic>.from(entry)))
+          .map(
+            (entry) =>
+                ChatMessageDto.fromJson(Map<String, dynamic>.from(entry)),
+          )
           .toList();
     } catch (_) {
       return const [];
@@ -528,7 +547,10 @@ class MarketApiService {
 
   Future<void> cacheUserProfile(UserProfileDto profile) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_profileCacheKey(profile.firebaseUid), jsonEncode(profile.toMap()));
+    await prefs.setString(
+      _profileCacheKey(profile.firebaseUid),
+      jsonEncode(profile.toMap()),
+    );
   }
 
   Future<UserProfileDto?> readCachedUserProfile(String uid) async {
@@ -575,10 +597,7 @@ class MarketApiService {
     }
 
     try {
-      final data = await _client.get(
-        '/api/listings',
-        query: query,
-      );
+      final data = await _client.get('/api/listings', query: query);
       if (kDebugMode) {
         debugPrint('[MarketApi] Got listings data: $data');
       }
@@ -1006,7 +1025,10 @@ class MarketApiService {
   /// reason values: 'eligible' | 'no_completed_order' | 'already_rated' | 'cannot_rate_self'
   Future<Map<String, dynamic>> fetchRatingEligibility(String targetUid) async {
     try {
-      final data = await _client.get('/api/ratings/eligibility/$targetUid', auth: true);
+      final data = await _client.get(
+        '/api/ratings/eligibility/$targetUid',
+        auth: true,
+      );
       if (data is Map<String, dynamic>) return Map<String, dynamic>.from(data);
     } catch (_) {}
     return {'canRate': false, 'reason': 'unknown'};

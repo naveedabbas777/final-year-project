@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/services/weather_service.dart'; // Import DailyForecast model
 
 class DetailedForecastScreen extends StatelessWidget {
@@ -101,6 +102,7 @@ class DetailedForecastScreen extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -108,7 +110,7 @@ class DetailedForecastScreen extends StatelessWidget {
                         'Max: ${forecast.maxTemperature.round()}°C / Min: ${forecast.minTemperature.round()}°C',
                         style: TextStyle(
                           fontSize: 20,
-                          color: Colors.grey.shade700,
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -116,7 +118,7 @@ class DetailedForecastScreen extends StatelessWidget {
                         'Avg Temp: ${forecast.avgTemperature.round()}°C',
                         style: TextStyle(
                           fontSize: 18,
-                          color: Colors.grey.shade600,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -195,7 +197,11 @@ class DetailedForecastScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               'Hourly Forecast',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 10),
             SizedBox(
@@ -227,6 +233,7 @@ class DetailedForecastScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
+                                color: AppColors.textPrimary,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -238,6 +245,7 @@ class DetailedForecastScreen extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -278,7 +286,7 @@ class DetailedForecastScreen extends StatelessWidget {
                                       hourly.chanceOfRain > 0
                                           ? 9
                                           : 10, // Smaller if rain chance shown
-                                  color: Colors.grey.shade600,
+                                  color: AppColors.textSecondary,
                                 ),
                                 maxLines:
                                     hourly.chanceOfRain > 0
@@ -309,11 +317,15 @@ class DetailedForecastScreen extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+            style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
           ),
           Text(
             value,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary,
+            ),
           ),
         ],
       ),
@@ -322,7 +334,8 @@ class DetailedForecastScreen extends StatelessWidget {
 
   Widget _buildVisibilityRow(double rawVisibility) {
     // Some feeds provide meters; normalize to km when value looks like meters.
-    final double km = rawVisibility > 100 ? rawVisibility / 1000.0 : rawVisibility;
+    final double km =
+        rawVisibility > 100 ? rawVisibility / 1000.0 : rawVisibility;
     final hasData = km > 0;
     final status = _visibilityStatus(km);
     final color = hasData ? _visibilityColor(km) : Colors.grey.shade600;
@@ -339,7 +352,7 @@ class DetailedForecastScreen extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 'Visibility',
-                style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -350,7 +363,8 @@ class DetailedForecastScreen extends StatelessWidget {
                 valueText,
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
                 ),
               ),
               Text(

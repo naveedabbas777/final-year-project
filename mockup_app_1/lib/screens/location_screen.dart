@@ -517,9 +517,10 @@ class _LocationScreenState extends State<LocationScreen>
                 children: [
                   Text(
                     AppLocalizations.of(context)!.chooseLocationOption,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey.shade900,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -555,17 +556,28 @@ class _LocationScreenState extends State<LocationScreen>
 
                   Text(
                     AppLocalizations.of(context)!.orEnterLocationManually,
-                    style: const TextStyle(fontSize: 16),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade800,
+                    ),
                   ),
                   const SizedBox(height: 10),
 
                   TextField(
                     controller: _textController,
                     onSubmitted: _searchAndSaveLocation,
+                    style: TextStyle(
+                      color: Colors.grey.shade900,
+                      fontWeight: FontWeight.w500,
+                    ),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.edit_location_alt),
                       hintText:
                           AppLocalizations.of(context)!.searchOrEnterLocation,
+                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      prefixIconColor: Colors.grey.shade700,
+                      suffixIconColor: Colors.grey.shade700,
                       focusedBorder: const OutlineInputBorder(
                         borderSide: BorderSide(color: Colors.green),
                       ),
@@ -590,7 +602,11 @@ class _LocationScreenState extends State<LocationScreen>
 
                   Text(
                     AppLocalizations.of(context)!.orTapOnMapToSelect,
-                    style: const TextStyle(fontSize: 16),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade800,
+                    ),
                   ),
                   const SizedBox(height: 10),
 
@@ -608,9 +624,10 @@ class _LocationScreenState extends State<LocationScreen>
 
                   Text(
                     AppLocalizations.of(context)!.currentSelectedLocation,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey.shade900,
                     ),
                   ),
                   const SizedBox(height: 10),

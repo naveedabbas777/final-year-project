@@ -27,7 +27,11 @@ class TipCard extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 16),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.green.shade900,
+              ),
               softWrap: true,
               maxLines: 3,
               overflow: TextOverflow.fade,

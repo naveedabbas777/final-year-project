@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:mockup_app/config/app_theme.dart';
 import 'location_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../services/market_api_service.dart';
+import '../services/firebase_service.dart';
 import '../widgets/confirm_dialog.dart';
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/notification_service.dart';
@@ -45,10 +47,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (profile.address.isNotEmpty) {
         display = profile.address;
         if (profile.latitude != null && profile.longitude != null) {
-          display += '\n(${profile.latitude!.toStringAsFixed(4)}, ${profile.longitude!.toStringAsFixed(4)})';
+          display +=
+              '\n(${profile.latitude!.toStringAsFixed(4)}, ${profile.longitude!.toStringAsFixed(4)})';
         }
         if (profile.locationUpdatedAt != null) {
-          display += '\nUpdated: ${_formatTimestamp(profile.locationUpdatedAt!.toIso8601String())}';
+          display +=
+              '\nUpdated: ${_formatTimestamp(profile.locationUpdatedAt!.toIso8601String())}';
         }
       } else if (profile.district.isNotEmpty) {
         display = profile.locationSummary;
@@ -59,7 +63,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) setState(() => _savedLocation = 'No location set');
     }
   }
-
 
   String _formatTimestamp(String isoString) {
     try {
@@ -170,14 +173,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+                color: Colors.white.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.settings_rounded, size: 18),
             ),
@@ -185,7 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Text(
               AppLocalizations.of(context)!.settings,
               style: const TextStyle(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
                 fontSize: 20,
                 letterSpacing: -0.3,
               ),
@@ -204,57 +208,212 @@ class _SettingsScreenState extends State<SettingsScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      backgroundColor: const Color(0xFFF5F7F5),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.green.shade50, AppColors.background],
+          ),
+        ),
         child: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            SwitchListTile(
-              secondary: Icon(
-                Icons.notifications,
-                color: Colors.green.shade700,
-              ),
-              title: Text(AppLocalizations.of(context)!.notifications),
-              value: _notificationsEnabled,
-              onChanged: _handleNotificationToggle,
-            ),
-            ListTile(
-              leading: Icon(Icons.location_on, color: Colors.green.shade700),
-              title: Text(AppLocalizations.of(context)!.location),
-              subtitle: Text(_savedLocation),
-              trailing: const Icon(Icons.edit),
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const LocationScreen(),
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.green.shade700, Colors.green.shade500],
+                ),
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.shade700.withOpacity(0.15),
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
                   ),
-                );
-                await _loadSaved();
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(Icons.info, color: Colors.green.shade700),
-              title: Text(AppLocalizations.of(context)!.aboutApp),
-              subtitle: const Text(
-                'Version 1.0\nDigital Kissan App for smart agriculture.',
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.tune_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'App preferences',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Notifications, location, and support controls in one place.',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 13,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            ListTile(
-              leading: Icon(Icons.support_agent, color: Colors.green.shade700),
-              title: Text(AppLocalizations.of(context)!.contactSupport),
-              onTap: () {},
-            ),
-            const SizedBox(height: 8),
-            if (kDebugMode) ...
-              [
-                ListTile(
-                  leading: Icon(
-                    Icons.cloud_upload,
-                    color: Colors.green.shade700,
+            const SizedBox(height: 16),
+            Card(
+              elevation: 0,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    secondary: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.notifications,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                    title: Text(
+                      AppLocalizations.of(context)!.notifications,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: const Text(
+                      'Control alerts and push notifications',
+                    ),
+                    value: _notificationsEnabled,
+                    onChanged: _handleNotificationToggle,
                   ),
-                  title: const Text('Save sample data to Firebase'),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.location_on,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                    title: Text(
+                      AppLocalizations.of(context)!.location,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: Text(_savedLocation),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LocationScreen(),
+                        ),
+                      );
+                      await _loadSaved();
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 0,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.info, color: Colors.green.shade700),
+                    ),
+                    title: Text(
+                      AppLocalizations.of(context)!.aboutApp,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: const Text(
+                      'Version 1.0\nDigital Kissan App for smart agriculture.',
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.support_agent,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                    title: Text(
+                      AppLocalizations.of(context)!.contactSupport,
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    subtitle: const Text('Get help with account or app issues'),
+                    onTap: () {},
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (kDebugMode)
+              Card(
+                elevation: 0,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.cloud_upload,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
+                  title: const Text(
+                    'Save sample data to Firebase',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   subtitle: const Text('DEV ONLY'),
                   onTap: () async {
                     final service = FirebaseService();
@@ -278,55 +437,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     }
                   },
                 ),
-              ],
-            ListTile(
-              leading: Icon(
-                Icons.notifications_active,
-                color: Colors.green.shade700,
               ),
-              title: const Text('Show Test Notification'),
-              onTap: () async {
-                final notificationService = Provider.of<NotificationService>(
-                  context,
-                  listen: false,
-                );
-                final sent = await notificationService.showNotification(
-                  title: 'Test Notification',
-                  body: 'This is a test notification from Digital Kissan App.',
-                  payload: 'test_notification_payload',
-                );
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        sent
-                            ? 'Test notification sent!'
-                            : 'Notifications are off. Enable them in settings to receive notifications.',
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-            const SizedBox(height: 8),
-            const Divider(),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: Icon(Icons.logout_rounded, color: Colors.red.shade600),
-              title: Text(
-                'Sign Out',
-                style: TextStyle(
-                  color: Colors.red.shade700,
-                  fontWeight: FontWeight.w600,
+            if (kDebugMode) const SizedBox(height: 16),
+            Card(
+              elevation: 0,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.notifications_active,
+                    color: Colors.green.shade700,
+                  ),
                 ),
+                title: const Text(
+                  'Show Test Notification',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+                subtitle: const Text(
+                  'Send a local notification to verify the channel',
+                ),
+                onTap: () async {
+                  final notificationService = Provider.of<NotificationService>(
+                    context,
+                    listen: false,
+                  );
+                  final sent = await notificationService.showNotification(
+                    title: 'Test Notification',
+                    body:
+                        'This is a test notification from Digital Kissan App.',
+                    payload: 'test_notification_payload',
+                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          sent
+                              ? 'Test notification sent!'
+                              : 'Notifications are off. Enable them in settings to receive notifications.',
+                        ),
+                      ),
+                    );
+                  }
+                },
               ),
-              subtitle: const Text('Sign out of your account'),
-              trailing: Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Colors.red.shade300,
+            ),
+            const SizedBox(height: 16),
+            Card(
+              elevation: 0,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
               ),
-              onTap: _signOut,
+              child: ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.logout_rounded, color: Colors.red.shade600),
+                ),
+                title: Text(
+                  'Sign Out',
+                  style: TextStyle(
+                    color: Colors.red.shade700,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: const Text('Sign out of your account'),
+                trailing: Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Colors.red.shade300,
+                ),
+                onTap: _signOut,
+              ),
             ),
           ],
         ),

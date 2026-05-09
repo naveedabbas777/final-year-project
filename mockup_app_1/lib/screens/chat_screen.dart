@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 import '../config/app_config.dart';
@@ -23,6 +24,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _service = MarketApiService();
   final _controller = TextEditingController();
+  final _scrollController = ScrollController();
   final _messages = <ChatMessageDto>[];
   bool _loadedInitialMessages = false;
   StreamSubscription<String>? _sseSub;
@@ -43,10 +45,26 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _loadingPeer = false;
 
   String get _peerName {
-    final fallback = widget.toUid ?? 'Chat';
-    return _peerProfile?.primaryName.trim().isNotEmpty == true
-        ? _peerProfile!.primaryName
-        : fallback;
+    final profileName = _peerProfile?.primaryName.trim() ?? '';
+    if (profileName.isNotEmpty) return profileName;
+
+    final email = _peerProfile?.email.trim() ?? '';
+    if (email.isNotEmpty && email.contains('@')) {
+      return email.split('@').first;
+    }
+
+    if (widget.toUid == null || widget.toUid!.trim().isEmpty) {
+      return 'Listing Chat';
+    }
+
+    return 'Chat';
+  }
+
+  String get _presenceText {
+    if (_sellerIsOnline) return 'Online now';
+    final presence = _formatPresence();
+    if (presence.isNotEmpty) return presence;
+    return _loadingPeer ? 'Loading profile...' : '';
   }
 
   String get _peerPhotoUrl {
@@ -97,6 +115,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _sseSub?.cancel();
     _httpClient?.close(force: true);
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -214,6 +233,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (rows.isNotEmpty) {
         await _service.cacheMessagesForListing(widget.listingId, rows);
         await _markReadIfNeeded(rows);
+        _scrollToBottom();
       }
     } catch (_) {
       if (!mounted) return;
@@ -240,8 +260,10 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
       setState(() {
-        _messages
-          ..insertAll(0, rows.where((row) => !_messages.any((msg) => msg.id == row.id)));
+        _messages..insertAll(
+          0,
+          rows.where((row) => !_messages.any((msg) => msg.id == row.id)),
+        );
         _hasMoreMessages = rows.length >= _messageLimit;
       });
       await _service.cacheMessagesForListing(widget.listingId, _messages);
@@ -251,6 +273,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   String _pendingEvent = 'message';
+
+  void _scrollToBottom() {
+    Future.microtask(() {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   void _handleSseLine(String line) {
     if (line.startsWith('event:')) {
@@ -275,14 +309,16 @@ class _ChatScreenState extends State<ChatScreen> {
           for (final message in _messages) message.id: message,
           for (final message in rows) message.id: message,
         };
-        final sorted = merged.values.toList()
-          ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        final sorted =
+            merged.values.toList()
+              ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
         _messages
           ..clear()
           ..addAll(sorted);
       });
       _service.cacheMessagesForListing(widget.listingId, _messages);
       _markReadIfNeeded(rows);
+      _scrollToBottom();
       return;
     }
 
@@ -456,16 +492,41 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.toUid == null ? 'Listing Chat' : _peerName),
-            Text(
-              widget.toUid == null
-                  ? 'Conversation attached to this listing'
-                  : (_loadingPeer ? 'Loading profile...' : _formatPresence()),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.normal,
+            Text(_peerName, maxLines: 1, overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 2),
+            if (widget.toUid == null)
+              const Text(
+                'Conversation attached to this listing',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+              )
+            else
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _sellerIsOnline ? Icons.circle : Icons.circle_outlined,
+                    size: 10,
+                    color:
+                        _sellerIsOnline
+                            ? Colors.lightGreenAccent.shade100
+                            : Colors.white70,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      _presenceText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
           ],
         ),
         backgroundColor: Colors.green.shade700,
@@ -473,8 +534,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          if (widget.toUid != null) _buildConversationHeader(),
-          if (widget.toUid != null) _buildPrivacyNote(),
           if (_typingUids.isNotEmpty)
             Container(
               width: double.infinity,
@@ -518,6 +577,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       message: 'No messages yet. Start the conversation below.',
                     )
                     : ListView.builder(
+                      controller: _scrollController,
                       padding: const EdgeInsets.all(12),
                       itemCount: _messages.length + (_hasMoreMessages ? 1 : 0),
                       itemBuilder: (context, index) {
@@ -660,15 +720,26 @@ class _ChatScreenState extends State<ChatScreen> {
                                 : 'Message $_peerName...',
                         filled: true,
                         fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(24),
-                          borderSide: BorderSide.none,
+                        hintStyle: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
                         ),
+                        labelStyle: const TextStyle(color: Colors.black87),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
                         ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      cursorColor: AppColors.primaryMid,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -689,96 +760,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildConversationHeader() {
-    final photoUrl = _peerPhotoUrl.trim();
-    return Material(
-      color: Colors.white,
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _peerName,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.green.shade900,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.green.shade100,
-                  backgroundImage:
-                      photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                  child:
-                      photoUrl.isEmpty
-                          ? Icon(Icons.person, color: Colors.green.shade700)
-                          : null,
-                ),
-              ],
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Chat',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.green.shade900,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Messages stay attached to this listing.',
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrivacyNote() {
-    if (_peerProfile?.hasVisibleContactInfo != false) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.fromLTRB(12, 10, 12, 0),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        border: Border.all(color: Colors.green.shade100),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.privacy_tip_outlined, color: Colors.green.shade700),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Some seller contact details can stay hidden for privacy. Messages still work normally here.',
-              style: TextStyle(color: Colors.green.shade900, fontSize: 12),
             ),
           ),
         ],

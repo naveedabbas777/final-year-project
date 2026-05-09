@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/services/auth_service.dart';
 import 'package:mockup_app/services/firebase_service.dart';
 import 'package:mockup_app/utils/form_validators.dart';
@@ -204,6 +205,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _nameController,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primaryMid,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.person),
                       labelText: 'Full name',
@@ -215,6 +218,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _emailController,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primaryMid,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.email_outlined),
@@ -260,6 +265,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       Expanded(
                         child: TextField(
                           controller: _phoneController,
+                          style: const TextStyle(color: AppColors.textPrimary),
+                          cursorColor: AppColors.primaryMid,
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             prefixIcon: const Icon(Icons.phone),
@@ -276,6 +283,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _passController,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primaryMid,
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock),
@@ -298,6 +307,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: _confirmPassController,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primaryMid,
                     obscureText: _obscureConfirmPassword,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock_outline),
