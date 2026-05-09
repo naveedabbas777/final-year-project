@@ -102,7 +102,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (value) {
-      // Request permission using the new NotificationService
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder:
+            (dialogContext) => AlertDialog(
+              title: const Text('Enable notifications?'),
+              content: const Text(
+                'We use push notifications for new offers, new messages, and weather alerts that may affect your crops.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Not now'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Allow'),
+                ),
+              ],
+            ),
+      );
+
+      if (confirmed != true) {
+        await _updateNotificationSetting(false);
+        return;
+      }
+
       final bool granted =
           await notificationService.requestNotificationPermissions();
 
@@ -279,6 +304,68 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            if (!_notificationsEnabled)
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.notifications_off_outlined,
+                        color: Colors.orange.shade800,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Push notifications are off',
+                            style: TextStyle(
+                              color: Colors.orange.shade900,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Enable them to receive offers, chat messages, and weather alerts in time.',
+                            style: TextStyle(
+                              color: Colors.orange.shade900.withOpacity(0.85),
+                              fontSize: 12,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange.shade700,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                      ),
+                      onPressed: () => _handleNotificationToggle(true),
+                      child: const Text('Enable'),
+                    ),
+                  ],
+                ),
+              ),
             Card(
               elevation: 0,
               color: Colors.white,

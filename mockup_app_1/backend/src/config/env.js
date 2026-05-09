@@ -12,6 +12,7 @@ export const env = {
     .filter(Boolean),
   firebaseProjectId: process.env.FIREBASE_PROJECT_ID || '',
   openWeatherKey: process.env.OPENWEATHER_KEY || '',
+  weatherRainNext3hThreshold: Number(process.env.WEATHER_RAIN_NEXT_3H_THRESHOLD || 0.6),
   mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN || '',
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',

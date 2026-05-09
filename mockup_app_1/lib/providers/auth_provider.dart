@@ -20,9 +20,32 @@ class AuthProvider extends ChangeNotifier {
   User? _user;
   AuthBootstrapState _bootstrapState = AuthBootstrapState.unknown;
   StreamSubscription<User?>? _sub;
+  Timer? _bootstrapFallbackTimer;
 
   AuthProvider() {
     _sub = _auth.authStateChanges().listen(_onAuthStateChanged);
+
+    // Fail-safe bootstrap: resolve quickly from current user and avoid
+    // indefinite splash if the auth stream event is delayed on startup.
+    Future.microtask(() {
+      if (_bootstrapState != AuthBootstrapState.unknown) return;
+      _user = _auth.currentUser;
+      _bootstrapState =
+          _user != null
+              ? AuthBootstrapState.authenticated
+              : AuthBootstrapState.unauthenticated;
+      notifyListeners();
+    });
+
+    _bootstrapFallbackTimer = Timer(const Duration(seconds: 5), () {
+      if (_bootstrapState != AuthBootstrapState.unknown) return;
+      _user = _auth.currentUser;
+      _bootstrapState =
+          _user != null
+              ? AuthBootstrapState.authenticated
+              : AuthBootstrapState.unauthenticated;
+      notifyListeners();
+    });
   }
 
   User? get user => _user;
@@ -35,6 +58,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isBootstrapComplete => _bootstrapState != AuthBootstrapState.unknown;
 
   Future<void> _onAuthStateChanged(User? u) async {
+    _bootstrapFallbackTimer?.cancel();
     _user = u;
 
     // Update bootstrap state based on auth result
@@ -93,6 +117,7 @@ class AuthProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _bootstrapFallbackTimer?.cancel();
     _sub?.cancel();
     super.dispose();
   }

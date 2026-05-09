@@ -28,6 +28,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:mockup_app/providers/plant_disease_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Top-level background handler required by `firebase_messaging`.
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -63,9 +65,6 @@ Future<void> main() async {
 
   // Register background handler for FCM messages
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-  // Request notification permissions (iOS / Android 13+)
-  await notificationService.requestNotificationPermissions();
 
   // Initialize PushService (handles token registration, channels, tap nav)
   await PushService.instance.init();
@@ -149,13 +148,73 @@ class DigitalKissanApp extends StatelessWidget {
 ///
 /// This single widget handles ALL navigation transitions including sign-out;
 /// no imperative Navigator calls are required anywhere in the auth flow.
-class AppRouter extends StatelessWidget {
+class AppRouter extends StatefulWidget {
   const AppRouter({super.key});
+
+  @override
+  State<AppRouter> createState() => _AppRouterState();
+}
+
+class _AppRouterState extends State<AppRouter> {
+  static const String _kNotificationsEnabled = 'notifications_enabled';
+  bool _notificationPromptShown = false;
+
+  Future<void> _maybeShowNotificationReminder({
+    required bool isBootstrapComplete,
+    required bool isSignedIn,
+  }) async {
+    if (!isBootstrapComplete || !isSignedIn || _notificationPromptShown) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final localPreference = prefs.getBool(_kNotificationsEnabled) ?? true;
+    final systemStatus = await Permission.notification.status;
+    final notificationsEnabled = localPreference && systemStatus.isGranted;
+
+    if (notificationsEnabled || !mounted) return;
+
+    _notificationPromptShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final shouldOpenSettings = await showDialog<bool>(
+        context: context,
+        builder:
+            (dialogContext) => AlertDialog(
+              title: const Text('Turn on notifications'),
+              content: const Text(
+                'Enable notifications to receive real-time weather updates, offer alerts, and new messages.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: const Text('Later'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(dialogContext, true),
+                  child: const Text('Open Settings'),
+                ),
+              ],
+            ),
+      );
+
+      if (shouldOpenSettings == true && mounted) {
+        await Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<app_auth.AuthProvider>(
       builder: (_, auth, __) {
+        _maybeShowNotificationReminder(
+          isBootstrapComplete: auth.isBootstrapComplete,
+          isSignedIn: auth.isSignedIn,
+        );
+
         // Auth state not yet resolved — keep showing splash
         if (!auth.isBootstrapComplete) {
           return const SplashScreen();

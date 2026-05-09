@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'market_api_service.dart';
 
@@ -11,6 +12,8 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 class PushService {
   PushService._();
   static final instance = PushService._();
+
+  static const String _kNotificationsEnabled = 'notifications_enabled';
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _local =
@@ -54,13 +57,6 @@ class PushService {
   );
 
   Future<void> init() async {
-    // Request permission on iOS / Android 13+
-    await _messaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-
     // Create Android notification channels
     final androidPlugin =
         _local.resolvePlatformSpecificImplementation<
@@ -121,6 +117,11 @@ class PushService {
 
   /// Show a local notification when a foreground FCM message arrives.
   Future<void> _handleForegroundMessage(RemoteMessage msg) async {
+    final prefs = await SharedPreferences.getInstance();
+    final notificationsEnabled =
+        prefs.getBool(_kNotificationsEnabled) ?? true;
+    if (!notificationsEnabled) return;
+
     final nt = msg.notification;
     final title = nt?.title ?? msg.data['title'] ?? 'Notification';
     final body = nt?.body ?? msg.data['body'] ?? '';
@@ -205,6 +206,11 @@ class PushService {
         break;
       case 'admin_notice':
       case 'weather_alert':
+      case 'severe_weather':
+      case 'storm':
+      case 'visibility':
+      case 'snow':
+      case 'morning_weather':
         navigator.pushNamed('/alerts');
         break;
       default:
@@ -224,6 +230,11 @@ class PushService {
       case 'order_status':
         return _orderChannel;
       case 'weather_alert':
+      case 'severe_weather':
+      case 'storm':
+      case 'visibility':
+      case 'snow':
+      case 'morning_weather':
         return _weatherChannel;
       default:
         return _defaultChannel;

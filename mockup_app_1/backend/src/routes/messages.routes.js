@@ -141,6 +141,9 @@ messagesRouter.post('/', requireAuth, asyncHandler(async (req, res) => {
     if (targetUid && targetUid !== req.user.uid) {
       const userSnap = await admin.firestore().collection('users').doc(targetUid).get();
       const userData = userSnap.exists ? userSnap.data() : null;
+      if (userData?.notificationsEnabled === false) {
+        return;
+      }
       const tokens = Array.isArray(userData?.fcmTokens) ? userData.fcmTokens.filter(Boolean) : [];
       if (tokens.length > 0) {
         const notifPayload = {

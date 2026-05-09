@@ -181,6 +181,7 @@ usersRouter.patch('/me', requireAuth, attachDbUser, asyncHandler(async (req, res
     address,
     lat,
     lon,
+    notificationsEnabled,
   } = req.body || {};
 
   // SECURITY: role is explicitly NOT allowed in self-edit
@@ -210,6 +211,9 @@ usersRouter.patch('/me', requireAuth, attachDbUser, asyncHandler(async (req, res
   if (typeof address === 'string') req.dbUser.address = address.trim();
   if (typeof lat === 'number' && Number.isFinite(lat)) req.dbUser.lat = lat;
   if (typeof lon === 'number' && Number.isFinite(lon)) req.dbUser.lon = lon;
+  if (typeof notificationsEnabled === 'boolean') {
+    req.dbUser.notificationsEnabled = notificationsEnabled;
+  }
   if (typeof address === 'string' || typeof lat === 'number' || typeof lon === 'number') {
     req.dbUser.locationUpdatedAt = new Date().toISOString();
   }

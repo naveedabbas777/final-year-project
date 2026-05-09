@@ -259,6 +259,10 @@ adminRouter.post('/notifications/send', requireAuth, attachDbUser, requireRole('
     });
     alertCreated += 1;
 
+    if (user.notificationsEnabled === false) {
+      continue;
+    }
+
     const tokens = collectFcmTokens(user);
     if (tokens.length === 0) continue;
 

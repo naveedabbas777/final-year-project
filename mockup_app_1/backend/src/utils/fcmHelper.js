@@ -46,6 +46,7 @@ export async function sendPushToUser(uid, title, body, data = {}) {
   try {
     const userSnap = await admin.firestore().collection('users').doc(uid).get();
     const userData = userSnap.exists ? userSnap.data() : null;
+    if (userData?.notificationsEnabled === false) return { sent: 0, failed: 0 };
     const tokens = collectFcmTokens(userData);
     if (tokens.length === 0) return { sent: 0, failed: 0 };
 
