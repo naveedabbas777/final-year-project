@@ -22,6 +22,8 @@ class MarketScreen extends StatefulWidget {
 class _MarketScreenState extends State<MarketScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   @override
   void initState() {
@@ -33,10 +35,6 @@ class _MarketScreenState extends State<MarketScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  void _openSellerPhotoViewer(String photoUrl, String sellerName) {
-    PhotoViewer.show(context, url: photoUrl, caption: sellerName);
   }
 
   @override
@@ -55,8 +53,8 @@ class _MarketScreenState extends State<MarketScreen>
               child: const Icon(Icons.storefront_rounded, size: 20),
             ),
             const SizedBox(width: 10),
-            const Text(
-              'Marketplace',
+            Text(
+              _t('Marketplace', 'مارکیٹ پلیس'),
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 20,
@@ -85,7 +83,7 @@ class _MarketScreenState extends State<MarketScreen>
               borderRadius: BorderRadius.circular(10),
             ),
             child: IconButton(
-              tooltip: 'Offers',
+              tooltip: _t('Offers', 'آفرز'),
               onPressed: () {
                 Navigator.of(
                   context,
@@ -101,7 +99,7 @@ class _MarketScreenState extends State<MarketScreen>
               borderRadius: BorderRadius.circular(10),
             ),
             child: IconButton(
-              tooltip: 'Order history',
+              tooltip: _t('Order history', 'آرڈر ہسٹری'),
               onPressed: () {
                 Navigator.of(
                   context,
@@ -130,14 +128,14 @@ class _MarketScreenState extends State<MarketScreen>
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
-          tabs: const [
+          tabs: [
             Tab(
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.trending_up_rounded, size: 16),
-                  SizedBox(width: 6),
-                  Text('Rates'),
+                  const Icon(Icons.trending_up_rounded, size: 16),
+                  const SizedBox(width: 6),
+                  Text(_t('Rates', 'ریٹس')),
                 ],
               ),
             ),
@@ -145,9 +143,9 @@ class _MarketScreenState extends State<MarketScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.shopping_bag_outlined, size: 16),
-                  SizedBox(width: 6),
-                  Text('Buy/Sell'),
+                  const Icon(Icons.shopping_bag_outlined, size: 16),
+                  const SizedBox(width: 6),
+                  Text(_t('Buy/Sell', 'خرید/فروخت')),
                 ],
               ),
             ),
@@ -155,9 +153,9 @@ class _MarketScreenState extends State<MarketScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.inventory_2_outlined, size: 16),
-                  SizedBox(width: 6),
-                  Text('My Items'),
+                  const Icon(Icons.inventory_2_outlined, size: 16),
+                  const SizedBox(width: 6),
+                  Text(_t('My Items', 'میری اشیاء')),
                 ],
               ),
             ),
@@ -192,6 +190,8 @@ class _RatesTabState extends State<_RatesTab> {
   String? _selectedCropFilter;
   String? _selectedDistrictFilter;
   UserProfileDto? _me;
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   @override
   void initState() {
@@ -292,9 +292,12 @@ class _RatesTabState extends State<_RatesTab> {
         _error != null
             ? ErrorPresenter.present(_error!)
             : isRatesTab
-            ? 'No rates available yet.\nIngest official rates from the backend.'
-            : 'No active listings found.';
-    final actionLabel = _error != null ? 'Retry' : 'Refresh';
+            ? _t(
+                'No rates available yet.\nIngest official rates from the backend.',
+                'ابھی کوئی ریٹس دستیاب نہیں۔\nبیک اینڈ سے سرکاری ریٹس انجیست کریں۔',
+              )
+            : _t('No active listings found.', 'کوئی فعال لسٹنگ نہیں ملی۔');
+    final actionLabel = _error != null ? _t('Retry', 'دوبارہ کوشش') : _t('Refresh', 'ریفریش');
     final iconData =
         _error != null
             ? Icons.error_outline
@@ -367,7 +370,7 @@ class _RatesTabState extends State<_RatesTab> {
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Go Back'),
+                    label: Text(_t('Go Back', 'واپس جائیں')),
                   ),
                 ],
               ],
@@ -397,7 +400,7 @@ class _RatesTabState extends State<_RatesTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Official Crop Rates',
+                    _t('Official Crop Rates', 'سرکاری فصل ریٹس'),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -417,7 +420,7 @@ class _RatesTabState extends State<_RatesTab> {
                           );
                         },
                         icon: const Icon(Icons.admin_panel_settings),
-                        label: const Text('Open Admin Console'),
+                        label: Text(_t('Open Admin Console', 'ایڈمن کنسول کھولیں')),
                       ),
                     ),
                   if (isAdmin) const SizedBox(height: 8),
@@ -436,14 +439,14 @@ class _RatesTabState extends State<_RatesTab> {
                                 vertical: 10,
                               ),
                               isDense: true,
-                              hintText: 'Search',
+                              hintText: _t('Search', 'تلاش کریں'),
                               prefixIcon: const Icon(Icons.search, size: 18),
                               border: const OutlineInputBorder(),
                               suffixIcon:
                                   _searchController.text.isEmpty
                                       ? null
                                       : IconButton(
-                                        tooltip: 'Clear search',
+                                        tooltip: _t('Clear search', 'تلاش صاف کریں'),
                                         visualDensity: VisualDensity.compact,
                                         onPressed: () {
                                           _searchController.clear();
@@ -460,19 +463,19 @@ class _RatesTabState extends State<_RatesTab> {
                           child: DropdownButtonFormField<String?>(
                             value: _selectedCropFilter,
                             isExpanded: true,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 10,
                                 vertical: 10,
                               ),
-                              labelText: 'Crop',
+                              labelText: _t('Crop', 'فصل'),
                               border: OutlineInputBorder(),
                             ),
                             items: [
-                              const DropdownMenuItem<String?>(
+                              DropdownMenuItem<String?>(
                                 value: null,
-                                child: Text('All crops'),
+                                child: Text(_t('All crops', 'تمام فصلیں')),
                               ),
                               ..._cropOptions.map(
                                 (value) => DropdownMenuItem<String?>(
@@ -492,19 +495,19 @@ class _RatesTabState extends State<_RatesTab> {
                           child: DropdownButtonFormField<String?>(
                             value: _selectedDistrictFilter,
                             isExpanded: true,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               isDense: true,
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: 10,
                                 vertical: 10,
                               ),
-                              labelText: 'District',
+                              labelText: _t('District', 'ضلع'),
                               border: OutlineInputBorder(),
                             ),
                             items: [
-                              const DropdownMenuItem<String?>(
+                              DropdownMenuItem<String?>(
                                 value: null,
-                                child: Text('All districts'),
+                                child: Text(_t('All districts', 'تمام اضلاع')),
                               ),
                               ..._districtOptions.map(
                                 (value) => DropdownMenuItem<String?>(
@@ -528,7 +531,7 @@ class _RatesTabState extends State<_RatesTab> {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
                             onPressed: () => setState(() {}),
-                            child: const Text('Apply'),
+                            child: Text(_t('Apply', 'لاگو کریں')),
                           ),
                         ),
                         if (isAdmin) ...[
@@ -550,7 +553,7 @@ class _RatesTabState extends State<_RatesTab> {
                                         size: 16,
                                         color: Colors.white,
                                       )
-                                      : const Text('Ingest'),
+                                      : Text(_t('Ingest', 'انجیست')),
                             ),
                           ),
                         ],
@@ -633,7 +636,7 @@ class _RatesTabState extends State<_RatesTab> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Min Price',
+                                      _t('Min Price', 'کم از کم قیمت'),
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: Colors.grey.shade600,
@@ -654,7 +657,7 @@ class _RatesTabState extends State<_RatesTab> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Max Price',
+                                      _t('Max Price', 'زیادہ سے زیادہ قیمت'),
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: Colors.grey.shade600,
@@ -675,7 +678,7 @@ class _RatesTabState extends State<_RatesTab> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Unit',
+                                      _t('Unit', 'یونٹ'),
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: Colors.grey.shade600,
@@ -757,6 +760,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
   String? _selectedDistrictFilter;
   int _listingLimit = 20;
   bool _hasMoreListings = true;
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   @override
   void initState() {
@@ -866,8 +871,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final message =
         _error != null
             ? ErrorPresenter.present(_error!)
-            : 'No active listings found.';
-    final actionLabel = _error != null ? 'Retry' : 'Refresh';
+            : _t('No active listings found.', 'کوئی فعال لسٹنگ نہیں ملی۔');
+    final actionLabel = _error != null ? _t('Retry', 'دوبارہ کوشش') : _t('Refresh', 'ریفریش');
 
     return Center(
       child: Padding(
@@ -936,7 +941,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                     ),
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('Go Back'),
+                    label: Text(_t('Go Back', 'واپس جائیں')),
                   ),
                 ],
               ],
@@ -972,7 +977,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Make Offer - ${row.cropName}',
+                      '${_t('Make Offer', 'آفر دیں')} - ${row.cropName}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -982,8 +987,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                     TextField(
                       controller: offerPriceController,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Offer Price (PKR)',
+                      decoration: InputDecoration(
+                        labelText: _t('Offer Price (PKR)', 'آفر قیمت (PKR)'),
                         prefixIcon: Icon(Icons.payments_outlined),
                         border: OutlineInputBorder(),
                       ),
@@ -993,10 +998,10 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                       controller: quantityController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'Quantity (${row.unit})',
+                        labelText: '${_t('Quantity', 'مقدار')} (${row.unit})',
                         prefixIcon: const Icon(Icons.scale_outlined),
                         border: const OutlineInputBorder(),
-                        hintText: 'Max: ${row.quantity.toStringAsFixed(0)}',
+                        hintText: '${_t('Max', 'زیادہ سے زیادہ')}: ${row.quantity.toStringAsFixed(0)}',
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -1005,7 +1010,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(sheetCtx, false),
-                            child: const Text('Cancel'),
+                            child: Text(_t('Cancel', 'منسوخ')),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -1016,7 +1021,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                               foregroundColor: Colors.white,
                             ),
                             onPressed: () => Navigator.pop(sheetCtx, true),
-                            child: const Text('Send Offer'),
+                            child: Text(_t('Send Offer', 'آفر بھیجیں')),
                           ),
                         ),
                       ],
@@ -1034,7 +1039,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final qty = double.tryParse(quantityController.text.trim());
     if (price == null || qty == null) {
       if (!mounted) return;
-      _showError('Invalid offer values');
+      _showError(_t('Invalid offer values', 'آفر کی قدریں درست نہیں'));
       return;
     }
 
@@ -1047,7 +1052,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Offer sent successfully')));
+      ).showSnackBar(SnackBar(content: Text(_t('Offer sent successfully', 'آفر کامیابی سے بھیج دی گئی'))));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -1073,7 +1078,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Message Seller - ${row.cropName}',
+                      '${_t('Message Seller', 'فروخت کنندہ کو پیغام')} - ${row.cropName}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
@@ -1125,7 +1130,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                               subtitle: Text(
                                 prof.contactPhone.isNotEmpty
                                     ? prof.contactPhone
-                                    : 'Contact hidden',
+                                    : _t('Contact hidden', 'رابطہ چھپایا گیا'),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -1136,8 +1141,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                     TextField(
                       controller: messageController,
                       maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Message',
+                      decoration: InputDecoration(
+                        labelText: _t('Message', 'پیغام'),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -1147,14 +1152,14 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                         Expanded(
                           child: OutlinedButton(
                             onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Cancel'),
+                            child: Text(_t('Cancel', 'منسوخ')),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () => Navigator.pop(context, true),
-                            child: const Text('Send'),
+                            child: Text(_t('Send', 'بھیجیں')),
                           ),
                         ),
                       ],
@@ -1170,7 +1175,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final text = messageController.text.trim();
     if (text.isEmpty) {
       if (!mounted) return;
-      _showError('Please enter a message');
+      _showError(_t('Please enter a message', 'براہ کرم پیغام درج کریں'));
       return;
     }
 
@@ -1183,7 +1188,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Message sent')));
+      ).showSnackBar(SnackBar(content: Text(_t('Message sent', 'پیغام بھیج دیا گیا'))));
     } catch (e) {
       if (!mounted) return;
       _showError(ErrorPresenter.present(e));
@@ -1241,7 +1246,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${row.cropName} • Grade ${row.qualityGrade}',
+                      '${row.cropName} • ${_t('Grade', 'گریڈ')} ${row.qualityGrade}',
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
@@ -1276,7 +1281,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                     Row(
                       children: [
                         Text(
-                          'Qty: ${row.quantity.toStringAsFixed(0)} ${row.unit}',
+                          '${_t('Qty', 'مقدار')}: ${row.quantity.toStringAsFixed(0)} ${row.unit}',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -1345,8 +1350,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                 ),
                               ),
                               onPressed: () => _offerDialog(row),
-                              child: const Text(
-                                'Make Offer',
+                              child: Text(
+                                _t('Make Offer', 'آفر دیں'),
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -1368,8 +1373,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                 ),
                               ),
                               onPressed: () => _messageSellerDialog(row),
-                              child: const Text(
-                                'Message',
+                              child: Text(
+                                _t('Message', 'پیغام'),
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
@@ -1409,7 +1414,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Filter Products',
+                        _t('Filter Products', 'مصنوعات فلٹر کریں'),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -1426,15 +1431,15 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                               child: DropdownButtonFormField<String?>(
                                 value: _selectedCropFilter,
                                 isExpanded: true,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isDense: true,
-                                  labelText: 'Crop',
+                                  labelText: _t('Crop', 'فصل'),
                                   border: OutlineInputBorder(),
                                 ),
                                 items: [
-                                  const DropdownMenuItem<String?>(
+                                  DropdownMenuItem<String?>(
                                     value: null,
-                                    child: Text('All crops'),
+                                    child: Text(_t('All crops', 'تمام فصلیں')),
                                   ),
                                   ..._cropOptions.map(
                                     (value) => DropdownMenuItem<String?>(
@@ -1454,15 +1459,15 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                               child: DropdownButtonFormField<String?>(
                                 value: _selectedDistrictFilter,
                                 isExpanded: true,
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   isDense: true,
-                                  labelText: 'District',
+                                  labelText: _t('District', 'ضلع'),
                                   border: OutlineInputBorder(),
                                 ),
                                 items: [
-                                  const DropdownMenuItem<String?>(
+                                  DropdownMenuItem<String?>(
                                     value: null,
-                                    child: Text('All districts'),
+                                    child: Text(_t('All districts', 'تمام اضلاع')),
                                   ),
                                   ..._districtOptions.map(
                                     (value) => DropdownMenuItem<String?>(
@@ -1490,7 +1495,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                   ),
                                 ),
                                 onPressed: _loading ? null : _load,
-                                child: const Text('Apply'),
+                                child: Text(_t('Apply', 'لاگو کریں')),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -1508,7 +1513,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                           _load();
                                         }
                                         : null,
-                                child: const Text('Clear'),
+                                child: Text(_t('Clear', 'صاف')),
                               ),
                             ),
                           ],
@@ -1549,8 +1554,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                         : const Icon(Icons.expand_more),
                                 label: Text(
                                   _loadingMoreListings
-                                      ? 'Loading more...'
-                                      : 'Load more listings',
+                                      ? _t('Loading more...', 'مزید لوڈ ہو رہا ہے...')
+                                      : _t('Load more listings', 'مزید لسٹنگز لوڈ کریں'),
                                 ),
                               ),
                             ),

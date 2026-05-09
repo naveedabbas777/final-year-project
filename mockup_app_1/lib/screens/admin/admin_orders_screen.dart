@@ -13,6 +13,10 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
   final _api = AdminApiService();
   Future<List<AdminOrderDto>>? _future;
 
+  String _t(BuildContext context, String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +38,9 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const AsyncLoadingWidget(message: 'Loading orders...');
+          return AsyncLoadingWidget(
+            message: _t(context, 'Loading orders...', 'آرڈرز لوڈ ہو رہے ہیں...'),
+          );
         }
         if (snapshot.hasError) {
           return AsyncErrorWidget(
@@ -43,7 +49,11 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
           );
         }
         final rows = snapshot.data ?? const <AdminOrderDto>[];
-        if (rows.isEmpty) return const AsyncEmptyWidget(message: 'No orders found');
+        if (rows.isEmpty) {
+          return AsyncEmptyWidget(
+            message: _t(context, 'No orders found', 'کوئی آرڈر نہیں ملا'),
+          );
+        }
         return RefreshIndicator(
           onRefresh: () async => _reload(),
           child: ListView.separated(
@@ -55,9 +65,11 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
               return Card(
                 child: ListTile(
                   isThreeLine: true,
-                  title: Text('Order ${row.id.substring(0, row.id.length > 12 ? 12 : row.id.length)}'),
+                  title: Text(
+                    '${_t(context, 'Order', 'آرڈر')} ${row.id.substring(0, row.id.length > 12 ? 12 : row.id.length)}',
+                  ),
                   subtitle: Text(
-                    'Buyer: ${row.buyerUid}\nSeller: ${row.sellerUid}\nPKR ${row.finalPrice.toStringAsFixed(0)}',
+                    '${_t(context, 'Buyer', 'خریدار')}: ${row.buyerUid}\n${_t(context, 'Seller', 'فروخت کنندہ')}: ${row.sellerUid}\nPKR ${row.finalPrice.toStringAsFixed(0)}',
                   ),
                   trailing: DropdownButton<String>(
                     value: row.status,
@@ -77,7 +89,11 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                       } catch (e) {
                         if (!mounted) return;
                         messenger.showSnackBar(
-                          SnackBar(content: Text('Order update failed: $e')),
+                          SnackBar(
+                            content: Text(
+                              _t(context, 'Order update failed: $e', 'آرڈر اپڈیٹ ناکام: $e'),
+                            ),
+                          ),
                         );
                       }
                     },

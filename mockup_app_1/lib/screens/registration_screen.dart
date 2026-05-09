@@ -46,6 +46,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     '+34',
   ];
 
+  String _t(String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -90,7 +94,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     }
 
     if (pass != confirmPass) {
-      _showError('Passwords do not match');
+      _showError(_t('Passwords do not match', 'پاس ورڈز ایک جیسے نہیں ہیں'));
       return;
     }
 
@@ -115,7 +119,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         _showError(
-          'Account created but verification failed. Please login manually.',
+          _t(
+            'Account created but verification failed. Please login manually.',
+            'اکاؤنٹ بن گیا لیکن تصدیق ناکام رہی۔ براہ کرم دستی طور پر لاگ ان کریں۔',
+          ),
         );
         if (mounted) setState(() => _sending = false);
         return;
@@ -159,7 +166,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       );
     } catch (e) {
       debugPrint('Unexpected error during registration: $e');
-      _showError('Registration failed: ${e.toString()}');
+      _showError('${_t('Registration failed', 'رجسٹریشن ناکام')}: ${e.toString()}');
       if (mounted) setState(() => _sending = false);
     }
   }
@@ -198,9 +205,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Create an account',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Text(
+                    _t('Create an account', 'اکاؤنٹ بنائیں'),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -209,7 +219,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     cursorColor: AppColors.primaryMid,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.person),
-                      labelText: 'Full name',
+                      labelText: _t('Full name', 'پورا نام'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -223,7 +233,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.email_outlined),
-                      labelText: 'Email',
+                      labelText: _t('Email', 'ای میل'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -237,7 +247,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         child: DropdownButtonFormField<String>(
                           value: _countryCode,
                           decoration: InputDecoration(
-                            labelText: 'Country',
+                            labelText: _t('Country', 'ملک'),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -270,11 +280,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           keyboardType: TextInputType.phone,
                           decoration: InputDecoration(
                             prefixIcon: const Icon(Icons.phone),
-                            labelText: 'Phone number',
+                            labelText: _t('Phone number', 'فون نمبر'),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            hintText: 'e.g., 3001234567',
+                            hintText: _t('e.g., 3001234567', 'مثال: 3001234567'),
                           ),
                         ),
                       ),
@@ -288,7 +298,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     obscureText: _obscurePassword,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock),
-                      labelText: 'Password',
+                      labelText: _t('Password', 'پاس ورڈ'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -312,7 +322,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     obscureText: _obscureConfirmPassword,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock_outline),
-                      labelText: 'Confirm password',
+                      labelText: _t('Confirm password', 'پاس ورڈ کی تصدیق'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -343,7 +353,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                 color: Colors.white,
                               )
                               : const Icon(Icons.person_add),
-                      label: const Text('Register'),
+                      label: Text(_t('Register', 'رجسٹر کریں')),
                       onPressed: _sending ? null : _startRegistration,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green.shade700,

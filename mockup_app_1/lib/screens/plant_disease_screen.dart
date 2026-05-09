@@ -18,6 +18,10 @@ class PlantDiseaseScreen extends StatefulWidget {
 class _PlantDiseaseScreenState extends State<PlantDiseaseScreen> {
   Uint8List? _pickedImage;
 
+  String _t(String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   Future<void> _pickAndClassify() async {
     if (kIsWeb) return;
     final picker = ImagePicker();
@@ -33,12 +37,15 @@ class _PlantDiseaseScreenState extends State<PlantDiseaseScreen> {
     final provider = context.watch<PlantDiseaseProvider>();
     final unsupportedText =
         kIsWeb
-            ? 'Plant disease detection is not supported on web. Please run on Android/iOS.'
+            ? _t(
+                'Plant disease detection is not supported on web. Please run on Android/iOS.',
+                'ویب پر پودوں کی بیماری کی شناخت دستیاب نہیں۔ براہ کرم Android/iOS پر چلائیں۔',
+              )
             : null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Plant Disease Detector'),
+        title: Text(_t('Plant Disease Detector', 'پودوں کی بیماری معلوم کرنے والا')),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -73,7 +80,7 @@ class _PlantDiseaseScreenState extends State<PlantDiseaseScreen> {
             ElevatedButton.icon(
               onPressed: provider.isLoading || kIsWeb ? null : _pickAndClassify,
               icon: const Icon(Icons.photo_library_outlined),
-              label: const Text('Pick image from gallery'),
+              label: Text(_t('Pick image from gallery', 'گیلری سے تصویر منتخب کریں')),
             ),
             const SizedBox(height: 16),
             if (provider.isLoading)
@@ -81,7 +88,7 @@ class _PlantDiseaseScreenState extends State<PlantDiseaseScreen> {
             else if (provider.error != null)
               Text(provider.error!, style: const TextStyle(color: AppColors.red))
             else if (provider.predictions.isEmpty)
-              const Text('Pick an image to get disease prediction.')
+              Text(_t('Pick an image to get disease prediction.', 'بیماری کی پیش گوئی کے لیے تصویر منتخب کریں۔'))
             else
               Expanded(
                 child: ListView.separated(

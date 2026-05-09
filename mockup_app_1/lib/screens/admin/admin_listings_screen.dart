@@ -14,6 +14,10 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
   final _api = AdminApiService();
   Future<List<ListingDto>>? _future;
 
+  String _t(BuildContext context, String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -35,7 +39,9 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const AsyncLoadingWidget(message: 'Loading listings...');
+          return AsyncLoadingWidget(
+            message: _t(context, 'Loading listings...', 'لسٹنگز لوڈ ہو رہی ہیں...'),
+          );
         }
         if (snapshot.hasError) {
           return AsyncErrorWidget(
@@ -45,7 +51,9 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
         }
         final rows = snapshot.data ?? const <ListingDto>[];
         if (rows.isEmpty) {
-          return const AsyncEmptyWidget(message: 'No listings found');
+          return AsyncEmptyWidget(
+            message: _t(context, 'No listings found', 'کوئی لسٹنگ نہیں ملی'),
+          );
         }
         return RefreshIndicator(
           onRefresh: () async => _reload(),
@@ -77,7 +85,11 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
                       } catch (e) {
                         if (!mounted) return;
                         messenger.showSnackBar(
-                          SnackBar(content: Text('Listing update failed: $e')),
+                          SnackBar(
+                            content: Text(
+                              _t(context, 'Listing update failed: $e', 'لسٹنگ اپڈیٹ ناکام: $e'),
+                            ),
+                          ),
                         );
                       }
                     },

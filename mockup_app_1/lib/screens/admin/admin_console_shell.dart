@@ -19,6 +19,10 @@ class AdminConsoleShell extends StatefulWidget {
 class _AdminConsoleShellState extends State<AdminConsoleShell> {
   int _index = 0;
 
+  String _t(BuildContext context, String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   late final List<Widget> _screens = const [
     AdminOverviewScreen(),
     AdminUsersScreen(),
@@ -34,7 +38,7 @@ class _AdminConsoleShellState extends State<AdminConsoleShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Console'),
+        title: Text(_t(context, 'Admin Console', 'ایڈمن کنسول')),
         backgroundColor: Colors.green.shade800,
         foregroundColor: Colors.white,
       ),
@@ -42,15 +46,39 @@ class _AdminConsoleShellState extends State<AdminConsoleShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (value) => setState(() => _index = value),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard), label: 'Overview'),
-          NavigationDestination(icon: Icon(Icons.people), label: 'Users'),
-          NavigationDestination(icon: Icon(Icons.storefront), label: 'Listings'),
-          NavigationDestination(icon: Icon(Icons.receipt_long), label: 'Orders'),
-          NavigationDestination(icon: Icon(Icons.notifications), label: 'Alerts'),
-          NavigationDestination(icon: Icon(Icons.send), label: 'Notify'),
-          NavigationDestination(icon: Icon(Icons.trending_up), label: 'Rates'),
-          NavigationDestination(icon: Icon(Icons.tune), label: 'Ops'),
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.dashboard),
+            label: _t(context, 'Overview', 'جائزہ'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.people),
+            label: _t(context, 'Users', 'صارفین'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.storefront),
+            label: _t(context, 'Listings', 'لسٹنگز'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.receipt_long),
+            label: _t(context, 'Orders', 'آرڈرز'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.notifications),
+            label: _t(context, 'Alerts', 'الرٹس'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.send),
+            label: _t(context, 'Notify', 'اطلاع'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.trending_up),
+            label: _t(context, 'Rates', 'ریٹس'),
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.tune),
+            label: _t(context, 'Ops', 'آپریشنز'),
+          ),
         ],
       ),
     );

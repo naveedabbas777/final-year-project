@@ -31,6 +31,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   List<ChatMessageDto> _messages = const [];
   int _currentImagePage = 0;
   late final PageController _imagePageController;
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   @override
   void initState() {
@@ -86,27 +88,18 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     final now = DateTime.now();
     final diff = now.difference(date);
     if (diff.inDays == 0) {
-      if (diff.inHours == 0) return 'Just listed';
-      return '${diff.inHours}h ago';
+      if (diff.inHours == 0) return _t('Just listed', 'ابھی شامل کی گئی');
+      return '${diff.inHours}${_t('h ago', ' گھنٹے پہلے')}';
     } else if (diff.inDays == 1) {
-      return 'Yesterday';
+      return _t('Yesterday', 'کل');
     } else if (diff.inDays < 30) {
-      return '${diff.inDays}d ago';
+      return '${diff.inDays}${_t('d ago', ' دن پہلے')}';
     } else if (diff.inDays < 365) {
       final months = (diff.inDays / 30).floor();
-      return '${months}mo ago';
+      return '${months}${_t('mo ago', ' ماہ پہلے')}';
     } else {
       final years = (diff.inDays / 365).floor();
-      return '${years}y ago';
-    }
-  }
-
-  Color _gradeColor(String grade) {
-    switch (grade.toUpperCase()) {
-      case 'A': return Colors.green.shade700;
-      case 'B': return Colors.amber.shade700;
-      case 'C': return Colors.orange.shade700;
-      default: return Colors.grey.shade600;
+      return '${years}${_t('y ago', ' سال پہلے')}';
     }
   }
 
@@ -128,13 +121,13 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   String _formatStatus(String status) {
     switch (status.toLowerCase()) {
       case 'open':
-        return 'Available';
+        return _t('Available', 'دستیاب');
       case 'reserved':
-        return 'Reserved';
+        return _t('Reserved', 'ریزرو');
       case 'sold':
-        return 'Sold';
+        return _t('Sold', 'فروخت شدہ');
       case 'cancelled':
-        return 'Cancelled';
+        return _t('Cancelled', 'منسوخ');
       default:
         return status;
     }
@@ -283,7 +276,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Pinch to zoom • Swipe for more',
+                          _t('Pinch to zoom • Swipe for more', 'زوم کے لیے پنچ کریں • مزید کے لیے سوائپ کریں'),
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 12,
@@ -377,8 +370,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             ),
                           ),
                         ),
-                        const Text(
-                          'Pinch to zoom',
+                        Text(
+                          _t('Pinch to zoom', 'زوم کے لیے پنچ کریں'),
                           style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
                       ],
@@ -435,7 +428,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Edit Listing',
+                        _t('Edit Listing', 'لسٹنگ ترمیم کریں'),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -452,16 +445,16 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: cropController,
-                  decoration: const InputDecoration(
-                    labelText: 'Crop Name',
+                  decoration: InputDecoration(
+                    labelText: _t('Crop Name', 'فصل کا نام'),
                     border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: districtController,
-                  decoration: const InputDecoration(
-                    labelText: 'District',
+                  decoration: InputDecoration(
+                    labelText: _t('District', 'ضلع'),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -469,8 +462,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 TextField(
                   controller: qtyController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Quantity',
+                  decoration: InputDecoration(
+                    labelText: _t('Quantity', 'مقدار'),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -478,16 +471,16 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 TextField(
                   controller: priceController,
                   keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Asking Price',
+                  decoration: InputDecoration(
+                    labelText: _t('Asking Price', 'مانگی گئی قیمت'),
                     border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: unitController,
-                  decoration: const InputDecoration(
-                    labelText: 'Unit',
+                  decoration: InputDecoration(
+                    labelText: _t('Unit', 'یونٹ'),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -495,11 +488,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 DropdownButtonFormField<String>(
                   value: grade,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Quality Grade',
+                  decoration: InputDecoration(
+                    labelText: _t('Quality Grade', 'معیار گریڈ'),
                     border: OutlineInputBorder(),
                   ),
-                  items: const [
+                  items: [
                     DropdownMenuItem(value: 'A', child: Text('A')),
                     DropdownMenuItem(value: 'B', child: Text('B')),
                     DropdownMenuItem(value: 'C', child: Text('C')),
@@ -510,20 +503,20 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 DropdownButtonFormField<String>(
                   value: status,
                   isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Status',
+                  decoration: InputDecoration(
+                    labelText: _t('Status', 'حالت'),
                     border: OutlineInputBorder(),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'open', child: Text('open')),
+                  items: [
+                    DropdownMenuItem(value: 'open', child: Text(_t('Open', 'اوپن'))),
                     DropdownMenuItem(
                       value: 'reserved',
-                      child: Text('reserved'),
+                      child: Text(_t('Reserved', 'ریزرو')),
                     ),
-                    DropdownMenuItem(value: 'sold', child: Text('sold')),
+                    DropdownMenuItem(value: 'sold', child: Text(_t('Sold', 'فروخت شدہ'))),
                     DropdownMenuItem(
                       value: 'cancelled',
-                      child: Text('cancelled'),
+                      child: Text(_t('Cancelled', 'منسوخ')),
                     ),
                   ],
                   onChanged: (value) => status = value ?? 'open',
@@ -532,8 +525,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 TextField(
                   controller: descriptionController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
+                  decoration: InputDecoration(
+                    labelText: _t('Description', 'تفصیل'),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -575,7 +568,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       Navigator.pop(sheetContext, true);
                     },
                     icon: const Icon(Icons.save),
-                    label: const Text('Save Changes'),
+                    label: Text(_t('Save Changes', 'تبدیلیاں محفوظ کریں')),
                   ),
                 ),
               ],
@@ -588,7 +581,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     if (saved == true && mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Listing updated')));
+      ).showSnackBar(SnackBar(content: Text(_t('Listing updated', 'لسٹنگ اپڈیٹ ہو گئی'))));
       await _loadSeller();
       await _loadMessages();
       setState(() {});
@@ -717,19 +710,19 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: IconButton(
-                  tooltip: 'Share listing',
+                  tooltip: _t('Share listing', 'لسٹنگ شیئر کریں'),
                   icon: const Icon(Icons.share_rounded, size: 20),
                   onPressed: () {
                     final text =
-                        '${l.cropName} - Grade ${l.qualityGrade}\n'
+                        '${l.cropName} - ${_t('Grade', 'گریڈ')} ${l.qualityGrade}\n'
                         'PKR ${l.askingPrice.toStringAsFixed(0)} per ${l.unit}\n'
-                        'District: ${l.district}\n'
-                        'Digital Kissan Marketplace';
+                        '${_t('District', 'ضلع')}: ${l.district}\n'
+                        '${_t('Digital Kissan Marketplace', 'ڈیجیٹل کسان مارکیٹ پلیس')}';
                     Clipboard.setData(ClipboardData(text: text));
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text(
-                          'Listing details copied to clipboard',
+                        content: Text(
+                          _t('Listing details copied to clipboard', 'لسٹنگ کی تفصیلات کلپ بورڈ میں کاپی ہو گئیں'),
                         ),
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
@@ -754,7 +747,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          '${l.cropName} • Grade ${l.qualityGrade}',
+                          '${l.cropName} • ${_t('Grade', 'گریڈ')} ${l.qualityGrade}',
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,
@@ -816,7 +809,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               ),
                             ),
                             Text(
-                              'per ${l.unit}',
+                              '${_t('per', 'فی')} ${l.unit}',
                               style: TextStyle(
                                 fontSize: 13,
                                 color: Colors.green.shade600,
@@ -883,8 +876,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   ),
                   const SizedBox(height: 24),
                   // ── Description ─────────────────────────────────────────
-                  const Text(
-                    'Description',
+                  Text(
+                    _t('Description', 'تفصیل'),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 8),
@@ -892,7 +885,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     builder: (context) {
                       final text =
                           l.description.trim().isEmpty
-                              ? 'Fresh produce available in good condition.'
+                              ? _t('Fresh produce available in good condition.', 'تازہ پیداوار اچھی حالت میں دستیاب ہے۔')
                               : l.description.trim();
                       const clamp = 180;
                       final long = text.length > clamp;
@@ -921,7 +914,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                 foregroundColor: Colors.green.shade700,
                               ),
                               child: Text(
-                                _showFullDescription ? '▲ Show less' : '▼ Show more',
+                                _showFullDescription ? _t('▲ Show less', '▲ کم دکھائیں') : _t('▼ Show more', '▼ مزید دکھائیں'),
                               ),
                             ),
                         ],
@@ -971,7 +964,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  _seller?.primaryName ?? 'Seller',
+                                  _seller?.primaryName ?? _t('Seller', 'فروخت کنندہ'),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -997,7 +990,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                   ? Icons.bookmark
                                   : Icons.bookmark_border,
                             ),
-                            label: Text(_savedSeller ? 'Saved' : 'Save Seller'),
+                            label: Text(_savedSeller ? _t('Saved', 'محفوظ') : _t('Save Seller', 'فروخت کنندہ محفوظ کریں')),
                           ),
                         ],
                       ),
@@ -1033,7 +1026,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '(${_sellerRatings!['stats']?['count'] ?? 0} reviews)',
+                                      '(${_sellerRatings!['stats']?['count'] ?? 0} ${_t('reviews', 'ریویوز')})',
                                       style: TextStyle(
                                         color: Colors.grey.shade600,
                                         fontSize: 12,
@@ -1050,7 +1043,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                     child: SizedBox(
                                       width: 260,
                                       child: Text(
-                                        '${_sellerRatings!['recent'][0]['buyerName'] ?? 'Buyer'}: "${_sellerRatings!['recent'][0]['comment'] ?? ''}"',
+                                        '${_sellerRatings!['recent'][0]['buyerName'] ?? _t('Buyer', 'خریدار')}: "${_sellerRatings!['recent'][0]['comment'] ?? ''}"',
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
@@ -1086,7 +1079,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         onPressed: _openChat,
                         icon: const Icon(Icons.chat_bubble_outline),
                         label: Text(
-                          _canManage ? 'Open Listing Chat' : 'Message Seller',
+                          _canManage ? _t('Open Listing Chat', 'لسٹنگ چیٹ کھولیں') : _t('Message Seller', 'فروخت کنندہ کو پیغام'),
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -1112,8 +1105,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           );
                         },
                         icon: const Icon(Icons.person_outline),
-                        label: const Text(
-                          'Seller Profile',
+                        label: Text(
+                          _t('Seller Profile', 'فروخت کنندہ پروفائل'),
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
@@ -1130,8 +1123,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           ),
                           onPressed: _openEditSheet,
                           icon: const Icon(Icons.edit_outlined),
-                          label: const Text(
-                            'Edit Listing',
+                          label: Text(
+                            _t('Edit Listing', 'لسٹنگ ترمیم کریں'),
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
@@ -1146,7 +1139,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Recent Messages',
+                            _t('Recent Messages', 'حالیہ پیغامات'),
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
@@ -1155,7 +1148,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Showing the latest conversation activity for this listing.',
+                            _t('Showing the latest conversation activity for this listing.', 'اس لسٹنگ کے لیے تازہ ترین گفتگو کی سرگرمی دکھائی جا رہی ہے۔'),
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.grey.shade700,
@@ -1168,7 +1161,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             )
                           else if (recentMessages.isEmpty)
                             Text(
-                              'No messages yet for this listing.',
+                              _t('No messages yet for this listing.', 'اس لسٹنگ کے لیے ابھی کوئی پیغام نہیں۔'),
                               style: TextStyle(color: Colors.grey.shade700),
                             )
                           else
@@ -1208,8 +1201,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                         : const Icon(Icons.more_horiz),
                                 label: Text(
                                   _loadingMoreMessages
-                                      ? 'Loading more...'
-                                      : 'Load more messages',
+                                      ? _t('Loading more...', 'مزید لوڈ ہو رہا ہے...')
+                                      : _t('Load more messages', 'مزید پیغامات لوڈ کریں'),
                                 ),
                               ),
                             ),
@@ -1218,8 +1211,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Location',
+                  Text(
+                    _t('Location', 'مقام'),
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(height: 10),
@@ -1298,7 +1291,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          'Pinned Location',
+                                          _t('Pinned Location', 'پن شدہ مقام'),
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 12,
@@ -1327,7 +1320,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           ),
                           alignment: Alignment.center,
                           child: Text(
-                            'Location approximate: ${l.district}',
+                            '${_t('Location approximate', 'تقریبی مقام')}: ${l.district}',
                             style: TextStyle(color: Colors.grey.shade700),
                           ),
                         );

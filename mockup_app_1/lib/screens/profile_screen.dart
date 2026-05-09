@@ -28,6 +28,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _data;
   bool _loading = true;
   bool _uploading = false;
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   bool _loadError = false;
 
@@ -70,7 +72,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _data?['name'] ??
             user?.displayName ??
             user?.email ??
-            'User')
+            _t('User', 'صارف'))
         .toString();
   }
 
@@ -85,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _data?['displayName'] ??
             user?.displayName ??
             user?.uid ??
-            'User')
+            _t('User', 'صارف'))
         .toString();
   }
 
@@ -121,7 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _accountType() {
     final role = (_data?['role'] ?? '').toString().trim();
     if (role.isNotEmpty) return role[0].toUpperCase() + role.substring(1);
-    return 'User';
+    return _t('User', 'صارف');
   }
 
   String _profileInitial() {
@@ -129,7 +131,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (name.isNotEmpty) return name[0].toUpperCase();
     final email = _emailAddress().trim();
     if (email.isNotEmpty) return email[0].toUpperCase();
-    return 'U';
+    return _t('U', 'ص');
   }
 
   String? _locationSummary() {
@@ -148,7 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final uidToUpdate = user?.uid ?? (_data?['uid'] ?? _data?['id']);
     if (uidToUpdate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No editable user available')),
+        SnackBar(content: Text(_t('No editable user available', 'ترمیم کے لیے صارف دستیاب نہیں'))),
       );
       return;
     }
@@ -183,8 +185,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            title: const Text(
-              'Edit Profile',
+            title: Text(
+              _t('Edit Profile', 'پروفائل ترمیم کریں'),
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             content: SingleChildScrollView(
@@ -195,7 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     controller: nameCtrl,
                     style: const TextStyle(color: AppColors.textPrimary),
                     cursorColor: AppColors.primaryMid,
-                    decoration: _field('Full Name', Icons.person_outline),
+                    decoration: _field(_t('Full Name', 'پورا نام'), Icons.person_outline),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -203,14 +205,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: const TextStyle(color: AppColors.textPrimary),
                     cursorColor: AppColors.primaryMid,
                     keyboardType: TextInputType.phone,
-                    decoration: _field('Phone Number', Icons.phone_outlined),
+                    decoration: _field(_t('Phone Number', 'فون نمبر'), Icons.phone_outlined),
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: districtCtrl,
                     style: const TextStyle(color: AppColors.textPrimary),
                     cursorColor: AppColors.primaryMid,
-                    decoration: _field('District', Icons.map_outlined),
+                    decoration: _field(_t('District', 'ضلع'), Icons.map_outlined),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -218,7 +220,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: const TextStyle(color: AppColors.textPrimary),
                     cursorColor: AppColors.primaryMid,
                     decoration: _field(
-                      'Province',
+                      _t('Province', 'صوبہ'),
                       Icons.location_city_outlined,
                     ),
                   ),
@@ -228,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: const TextStyle(color: AppColors.textPrimary),
                     cursorColor: AppColors.primaryMid,
                     maxLines: 2,
-                    decoration: _field('Address', Icons.home_outlined),
+                    decoration: _field(_t('Address', 'پتہ'), Icons.home_outlined),
                   ),
                 ],
               ),
@@ -236,7 +238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
+                child: Text(_t('Cancel', 'منسوخ')),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -276,7 +278,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     if (ctx.mounted) Navigator.of(ctx).pop(false);
                   }
                 },
-                child: const Text('Save Changes'),
+                child: Text(_t('Save Changes', 'تبدیلیاں محفوظ کریں')),
               ),
             ],
           ),
@@ -287,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Profile updated successfully'),
+            content: Text(_t('Profile updated successfully', 'پروفائل کامیابی سے اپڈیٹ ہو گیا')),
             backgroundColor: Colors.green.shade700,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -306,17 +308,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            title: const Text(
-              'Sign Out',
+            title: Text(
+              _t('Sign Out', 'سائن آؤٹ'),
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
-            content: const Text(
-              'Are you sure you want to sign out of your account?',
-            ),
+            content: Text(_t('Are you sure you want to sign out of your account?', 'کیا آپ واقعی اپنے اکاؤنٹ سے سائن آؤٹ کرنا چاہتے ہیں؟')),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Cancel'),
+                child: Text(_t('Cancel', 'منسوخ')),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -327,7 +327,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Sign Out'),
+                child: Text(_t('Sign Out', 'سائن آؤٹ')),
               ),
             ],
           ),
@@ -351,7 +351,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Image too large (${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB). Max 5 MB.',
+            '${_t('Image too large', 'تصویر بہت بڑی ہے')} (${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB). ${_t('Max 5 MB.', 'زیادہ سے زیادہ 5 MB۔')}',
           ),
         ),
       );
@@ -381,8 +381,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               SnackBar(
                 content: Text(
                   url.contains('res.cloudinary.com')
-                      ? 'Profile photo uploaded to Cloudinary'
-                      : 'Profile photo uploaded locally',
+                      ? _t('Profile photo uploaded to Cloudinary', 'پروفائل تصویر کلاؤڈینری پر اپلوڈ ہو گئی')
+                      : _t('Profile photo uploaded locally', 'پروفائل تصویر لوکل اپلوڈ ہو گئی'),
                 ),
               ),
             );
@@ -391,7 +391,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (mounted)
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(const SnackBar(content: Text('Upload failed')));
+          ).showSnackBar(SnackBar(content: Text(_t('Upload failed', 'اپلوڈ ناکام'))));
       }
     } catch (e) {
       if (mounted)
@@ -444,8 +444,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Profile',
+        title: Text(
+          _t('Profile', 'پروفائل'),
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         centerTitle: true,
@@ -548,9 +548,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               size: 18,
                             ),
                             const SizedBox(width: 8),
-                            const Expanded(
+                            Expanded(
                               child: Text(
-                                'Could not load full profile from server. Showing cached data.',
+                                _t('Could not load full profile from server. Showing cached data.', 'سرور سے مکمل پروفائل لوڈ نہ ہو سکا۔ کیش شدہ ڈیٹا دکھایا جا رہا ہے۔'),
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textPrimary,
@@ -563,8 +563,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 padding: EdgeInsets.zero,
                                 minimumSize: const Size(48, 32),
                               ),
-                              child: const Text(
-                                'Retry',
+                              child: Text(
+                                _t('Retry', 'دوبارہ کوشش'),
                                 style: TextStyle(fontSize: 12),
                               ),
                             ),
@@ -590,7 +590,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Account Summary',
+                                        _t('Account Summary', 'اکاؤنٹ خلاصہ'),
                                         style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.w700,
@@ -623,7 +623,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                     ),
                                     child: Text(
-                                      'Verified account',
+                                      _t('Verified account', 'تصدیق شدہ اکاؤنٹ'),
                                       style: TextStyle(
                                         fontSize: 11,
                                         color: AppColors.textPrimary,
@@ -636,48 +636,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 16),
                             _ProfileFieldTile(
                               icon: Icons.person,
-                              label: 'Full name',
+                              label: _t('Full name', 'پورا نام'),
                               value: name,
                             ),
                             _ProfileFieldTile(
                               icon: Icons.badge_outlined,
-                              label: 'Username',
+                              label: _t('Username', 'یوزرنیم'),
                               value: username,
                             ),
                             if (email.isNotEmpty)
                               _ProfileFieldTile(
                                 icon: Icons.email_outlined,
-                                label: 'Email',
+                                label: _t('Email', 'ای میل'),
                                 value: email,
                               ),
                             if (phone.isNotEmpty)
                               _ProfileFieldTile(
                                 icon: Icons.phone_iphone,
-                                label: 'Contact',
+                                label: _t('Contact', 'رابطہ'),
                                 value: phone,
                               ),
                             if (location != null)
                               _ProfileFieldTile(
                                 icon: Icons.location_on_outlined,
-                                label: 'Location',
+                                label: _t('Location', 'مقام'),
                                 value: location,
                               ),
                             if (district.isNotEmpty)
                               _ProfileFieldTile(
                                 icon: Icons.map_outlined,
-                                label: 'District',
+                                label: _t('District', 'ضلع'),
                                 value: district,
                               ),
                             if (province.isNotEmpty)
                               _ProfileFieldTile(
                                 icon: Icons.location_city_outlined,
-                                label: 'Province',
+                                label: _t('Province', 'صوبہ'),
                                 value: province,
                               ),
                             _ProfileFieldTile(
                               icon: Icons.date_range,
-                              label: 'Member since',
-                              value: memberSince ?? 'Not available',
+                              label: _t('Member since', 'رکنیت از'),
+                              value: memberSince ?? _t('Not available', 'دستیاب نہیں'),
                             ),
                           ],
                         ),
@@ -688,7 +688,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.edit),
-                        label: const Text('Edit profile'),
+                        label: Text(_t('Edit profile', 'پروفائل ترمیم کریں')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green.shade700,
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -701,7 +701,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         icon: const Icon(Icons.logout),
-                        label: const Text('Sign out'),
+                        label: Text(_t('Sign out', 'سائن آؤٹ')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red.shade700,
                           padding: const EdgeInsets.symmetric(vertical: 12),

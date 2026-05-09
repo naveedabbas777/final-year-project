@@ -32,6 +32,8 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _sending = false;
   bool _obscurePassword = true;
   bool _hasNavigated = false;
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   @override
   void dispose() {
@@ -80,12 +82,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (email.isEmpty || !_looksLikeEmail(email)) {
-      _showError('Please enter a valid email address');
+      _showError(_t('Please enter a valid email address', 'براہ کرم درست ای میل درج کریں'));
       return;
     }
 
     if (pass.isEmpty) {
-      _showError('Please enter your password');
+      _showError(_t('Please enter your password', 'براہ کرم اپنا پاس ورڈ درج کریں'));
       return;
     }
 
@@ -106,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        _showError('Login failed. Please try again.');
+        _showError(_t('Login failed. Please try again.', 'لاگ اِن ناکام۔ دوبارہ کوشش کریں۔'));
         return;
       }
 
@@ -162,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final currentLocale = languageProvider.locale;
     final currentLanguageString =
-        currentLocale.languageCode == 'en' ? 'English' : 'Urdu';
+        currentLocale.languageCode == 'en' ? _t('English', 'انگریزی') : _t('Urdu', 'اردو');
 
     return Scaffold(
       body: Container(
@@ -272,7 +274,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
-                                      'Sign in to manage crops, alerts, and market activity.',
+                                      _t('Sign in to manage crops, alerts, and market activity.', 'فصلوں، الرٹس اور مارکیٹ سرگرمی کے لیے سائن اِن کریں۔'),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 14,
@@ -292,13 +294,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                       validator: (value) {
                                         final email = value?.trim() ?? '';
                                         if (email.isEmpty)
-                                          return 'Email is required';
+                                          return _t('Email is required', 'ای میل لازمی ہے');
                                         if (!_looksLikeEmail(email))
-                                          return 'Enter a valid email address';
+                                          return _t('Enter a valid email address', 'درست ای میل درج کریں');
                                         return null;
                                       },
                                       decoration: _fieldDecoration(
-                                        'Email address',
+                                        _t('Email address', 'ای میل ایڈریس'),
                                         Icons.email_outlined,
                                       ),
                                     ),
@@ -313,14 +315,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                       textInputAction: TextInputAction.done,
                                       validator: (value) {
                                         if ((value ?? '').isEmpty)
-                                          return 'Password is required';
+                                          return _t('Password is required', 'پاس ورڈ لازمی ہے');
                                         return null;
                                       },
                                       onFieldSubmitted:
                                           (_) =>
                                               _sending ? null : _attemptLogin(),
                                       decoration: _fieldDecoration(
-                                        'Password',
+                                        _t('Password', 'پاس ورڈ'),
                                         Icons.lock_outline,
                                         suffixIcon: IconButton(
                                           icon: Icon(
@@ -354,7 +356,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                     ),
                                                   );
                                                 },
-                                        child: const Text('Forgot password?'),
+                                        child: Text(_t('Forgot password?', 'پاس ورڈ بھول گئے؟')),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -381,8 +383,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   size: 16,
                                                   color: Colors.white,
                                                 )
-                                                : const Text(
-                                                  'Login',
+                                                : Text(
+                                                  _t('Login', 'لاگ اِن'),
                                                   style: TextStyle(
                                                     fontSize: 15,
                                                     fontWeight: FontWeight.w700,
@@ -403,7 +405,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                               MainAxisAlignment.center,
                                           children: [
                                             Text(
-                                              "Don't have an account?",
+                                              _t("Don't have an account?", 'اکاؤنٹ نہیں ہے؟'),
                                               style: TextStyle(
                                                 color: Colors.grey.shade700,
                                               ),
@@ -431,15 +433,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   ScaffoldMessenger.of(
                                                     context,
                                                   ).showSnackBar(
-                                                    const SnackBar(
+                                                    SnackBar(
                                                       content: Text(
-                                                        'Registration successful. Verify your email then login.',
+                                                        _t('Registration successful. Verify your email then login.', 'رجسٹریشن کامیاب۔ ای میل تصدیق کریں پھر لاگ اِن کریں۔'),
                                                       ),
                                                     ),
                                                   );
                                                 }
                                               },
-                                              child: const Text('Register'),
+                                              child: Text(_t('Register', 'رجسٹر')),
                                             ),
                                           ],
                                         ),
@@ -487,11 +489,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                               color: AppColors.textPrimary,
                                               fontWeight: FontWeight.w600,
                                             ),
-                                            items: const [
+                                            items: [
                                               DropdownMenuItem(
-                                                value: 'English',
+                                              value: _t('English', 'انگریزی'),
                                                 child: Text(
-                                                  'English',
+                                                  _t('English', 'انگریزی'),
                                                   style: TextStyle(
                                                     color:
                                                         AppColors.textPrimary,
@@ -499,9 +501,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 ),
                                               ),
                                               DropdownMenuItem(
-                                                value: 'Urdu',
+                                              value: _t('Urdu', 'اردو'),
                                                 child: Text(
-                                                  'Urdu',
+                                                  _t('Urdu', 'اردو'),
                                                   style: TextStyle(
                                                     color:
                                                         AppColors.textPrimary,
@@ -512,7 +514,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             onChanged: (String? newValue) {
                                               if (newValue == null) return;
                                               languageProvider.setLocale(
-                                                newValue == 'English'
+                                                newValue == _t('English', 'انگریزی')
                                                     ? const Locale('en', '')
                                                     : const Locale('ur', ''),
                                               );
@@ -565,7 +567,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            'Signing in…',
+                                            _t('Signing in…', 'سائن اِن ہو رہا ہے…'),
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,

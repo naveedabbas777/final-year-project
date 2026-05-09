@@ -13,6 +13,8 @@ class AlertsScreen extends StatefulWidget {
 }
 
 class _AlertsScreenState extends State<AlertsScreen> {
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
   @override
   void initState() {
     super.initState();
@@ -39,13 +41,13 @@ class _AlertsScreenState extends State<AlertsScreen> {
                 style: TextButton.styleFrom(foregroundColor: Colors.white),
                 onPressed: service.isLoading ? null : service.markAllAsRead,
                 icon: const Icon(Icons.done_all, size: 18),
-                label: const Text('Mark all read'),
+                label: Text(_t('Mark all read', 'سب پڑھا ہوا نشان کریں')),
               );
             },
           ),
           Consumer<AlertService>(
             builder: (_, service, __) => IconButton(
-              tooltip: 'Refresh',
+              tooltip: _t('Refresh', 'ریفریش'),
               icon: service.isLoading
                   ? const SizedBox(
                       width: 18,
@@ -83,7 +85,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No weather alerts',
+                    _t('No weather alerts', 'کوئی موسمی الرٹ نہیں'),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -92,7 +94,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Alerts appear here when weather conditions\naffect your crops.',
+                    _t('Alerts appear here when weather conditions\naffect your crops.', 'جب موسمی حالات آپ کی فصلوں پر اثر انداز ہوں گے تو الرٹس یہاں نظر آئیں گے۔'),
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
@@ -134,6 +136,8 @@ class _AlertCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String t(String en, String ur) =>
+        Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
     final palette = _palette(alert.type);
 
     return GestureDetector(
@@ -232,7 +236,7 @@ class _AlertCard extends StatelessWidget {
                         const Spacer(),
                         if (alert.isRead)
                           Text(
-                            'Read',
+                            t('Read', 'پڑھ لیا گیا'),
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.grey.shade400,
@@ -240,7 +244,7 @@ class _AlertCard extends StatelessWidget {
                           )
                         else
                           Text(
-                            'Tap to dismiss',
+                            t('Tap to dismiss', 'ختم کرنے کے لیے ٹیپ کریں'),
                             style: TextStyle(
                               fontSize: 11,
                               color: palette.accent,

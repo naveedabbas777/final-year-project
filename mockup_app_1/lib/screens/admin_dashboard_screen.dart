@@ -12,6 +12,8 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final AdminApiService _adminApi = AdminApiService();
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   Future<AdminOverviewDto>? _overviewFuture;
   Future<List<AdminUserDto>>? _usersFuture;
@@ -98,7 +100,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         ),
         title: Text(user.name.isNotEmpty ? user.name : user.firebaseUid),
         subtitle: Text(
-          '${user.role} • ${user.district.isNotEmpty ? user.district : 'No district'}${user.isOnline ? ' • online' : ''}',
+          '${user.role} • ${user.district.isNotEmpty ? user.district : _t('No district', 'ضلع نہیں')}${user.isOnline ? ' • ${_t('online', 'آن لائن')}' : ''}',
         ),
         trailing: DropdownButton<String>(
           value: user.role,
@@ -120,10 +122,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Card(
       child: ListTile(
         title: Text(
-          'Order ${order.id.substring(0, order.id.length > 10 ? 10 : order.id.length)}',
+          '${_t('Order', 'آرڈر')} ${order.id.substring(0, order.id.length > 10 ? 10 : order.id.length)}',
         ),
         subtitle: Text(
-          'Buyer: ${order.buyerUid}\nSeller: ${order.sellerUid}\n${order.quantity.toStringAsFixed(0)} ${order.unit} • PKR ${order.finalPrice.toStringAsFixed(0)}',
+          '${_t('Buyer', 'خریدار')}: ${order.buyerUid}\n${_t('Seller', 'فروخت کنندہ')}: ${order.sellerUid}\n${order.quantity.toStringAsFixed(0)} ${order.unit} • PKR ${order.finalPrice.toStringAsFixed(0)}',
         ),
         isThreeLine: true,
         trailing: DropdownButton<String>(
@@ -143,7 +145,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             } catch (e) {
               if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Order update failed: $e')),
+                SnackBar(content: Text('${_t('Order update failed', 'آرڈر اپڈیٹ ناکام')}: $e')),
               );
             }
           },
@@ -175,25 +177,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Scaffold(
         backgroundColor: Colors.green.shade50,
         appBar: AppBar(
-          title: const Text('Admin Console'),
+          title: Text(_t('Admin Console', 'ایڈمن کنسول')),
           backgroundColor: Colors.green.shade800,
           foregroundColor: Colors.white,
           actions: [
             IconButton(
-              tooltip: 'Refresh all',
+              tooltip: _t('Refresh all', 'سب ریفریش کریں'),
               onPressed: _reloadAll,
               icon: const Icon(Icons.refresh),
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
             tabs: [
-              Tab(text: 'Overview'),
-              Tab(text: 'All Users'),
-              Tab(text: 'Sellers'),
-              Tab(text: 'Buyers'),
-              Tab(text: 'Orders'),
-              Tab(text: 'Alerts'),
+              Tab(text: _t('Overview', 'جائزہ')),
+              Tab(text: _t('All Users', 'تمام صارفین')),
+              Tab(text: _t('Sellers', 'فروخت کنندگان')),
+              Tab(text: _t('Buyers', 'خریدار')),
+              Tab(text: _t('Orders', 'آرڈرز')),
+              Tab(text: _t('Alerts', 'الرٹس')),
             ],
           ),
         ),
@@ -203,8 +205,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               future: _overviewFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AsyncLoadingWidget(
-                    message: 'Loading admin overview...',
+                  return AsyncLoadingWidget(
+                    message: _t('Loading admin overview...', 'ایڈمن جائزہ لوڈ ہو رہا ہے...'),
                   );
                 }
                 if (snapshot.hasError) {
@@ -215,8 +217,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 }
                 final overview = snapshot.data;
                 if (overview == null) {
-                  return const AsyncEmptyWidget(
-                    message: 'No admin metrics available',
+                  return AsyncEmptyWidget(
+                    message: _t('No admin metrics available', 'ایڈمن میٹرکس دستیاب نہیں'),
                   );
                 }
 
@@ -226,14 +228,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     Row(
                       children: [
                         _metricCard(
-                          'Users',
+                          _t('Users', 'صارفین'),
                           overview.users.toString(),
                           Icons.people,
                           Colors.green.shade700,
                         ),
                         const SizedBox(width: 10),
                         _metricCard(
-                          'Admins',
+                          _t('Admins', 'ایڈمنز'),
                           overview.admins.toString(),
                           Icons.admin_panel_settings,
                           Colors.red.shade700,
@@ -243,14 +245,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     Row(
                       children: [
                         _metricCard(
-                          'Listings',
+                          _t('Listings', 'لسٹنگز'),
                           overview.listings.toString(),
                           Icons.storefront,
                           Colors.blue.shade700,
                         ),
                         const SizedBox(width: 10),
                         _metricCard(
-                          'Open',
+                          _t('Open', 'اوپن'),
                           overview.openListings.toString(),
                           Icons.inventory_2,
                           Colors.teal.shade700,
@@ -260,14 +262,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     Row(
                       children: [
                         _metricCard(
-                          'Orders',
+                          _t('Orders', 'آرڈرز'),
                           overview.orders.toString(),
                           Icons.receipt_long,
                           Colors.orange.shade700,
                         ),
                         const SizedBox(width: 10),
                         _metricCard(
-                          'Offers',
+                          _t('Offers', 'آفرز'),
                           overview.offers.toString(),
                           Icons.local_offer,
                           Colors.purple.shade700,
@@ -277,14 +279,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     Row(
                       children: [
                         _metricCard(
-                          'Rates',
+                          _t('Rates', 'ریٹس'),
                           overview.rates.toString(),
                           Icons.trending_up,
                           Colors.brown.shade700,
                         ),
                         const SizedBox(width: 10),
                         _metricCard(
-                          'Online',
+                          _t('Online', 'آن لائن'),
                           overview.onlineUsers.toString(),
                           Icons.circle,
                           Colors.cyan.shade700,
@@ -295,26 +297,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     Card(
                       child: ListTile(
                         leading: const Icon(Icons.cloud_sync),
-                        title: const Text('Weather refresh'),
+                        title: Text(_t('Weather refresh', 'موسم ریفریش')),
                         subtitle: Text(
-                          '${overview.recentAlerts} recent weather alerts tracked',
+                          '${overview.recentAlerts} ${_t('recent weather alerts tracked', 'حالیہ موسمی الرٹس ٹریک کیے گئے')}',
                         ),
                         trailing: ElevatedButton(
                           onPressed: _refreshWeather,
-                          child: const Text('Refresh now'),
+                          child: Text(_t('Refresh now', 'ابھی ریفریش کریں')),
                         ),
                       ),
                     ),
                     Card(
                       child: ListTile(
                         leading: const Icon(Icons.agriculture),
-                        title: const Text('Official crop rates'),
-                        subtitle: const Text(
-                          'Ingest the latest market rates from the configured source',
+                        title: Text(_t('Official crop rates', 'سرکاری فصل ریٹس')),
+                        subtitle: Text(
+                          _t('Ingest the latest market rates from the configured source', 'ترتیب شدہ ذریعے سے تازہ ترین مارکیٹ ریٹس انجیست کریں'),
                         ),
                         trailing: ElevatedButton(
                           onPressed: _ingestRates,
-                          child: const Text('Ingest'),
+                          child: Text(_t('Ingest', 'انجیست')),
                         ),
                       ),
                     ),
@@ -326,7 +328,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               future: _usersFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AsyncLoadingWidget(message: 'Loading users...');
+                  return AsyncLoadingWidget(message: _t('Loading users...', 'صارفین لوڈ ہو رہے ہیں...'));
                 }
                 if (snapshot.hasError) {
                   return AsyncErrorWidget(
@@ -336,7 +338,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 }
                 final users = snapshot.data ?? const [];
                 if (users.isEmpty) {
-                  return const AsyncEmptyWidget(message: 'No users found');
+                  return AsyncEmptyWidget(message: _t('No users found', 'کوئی صارف نہیں ملا'));
                 }
                 return RefreshIndicator(
                   onRefresh: () async => _reloadAll(),
@@ -353,8 +355,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               future: _sellersFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AsyncLoadingWidget(
-                    message: 'Loading sellers...',
+                  return AsyncLoadingWidget(
+                    message: _t('Loading sellers...', 'فروخت کنندگان لوڈ ہو رہے ہیں...'),
                   );
                 }
                 if (snapshot.hasError) {
@@ -365,7 +367,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 }
                 final users = snapshot.data ?? const [];
                 if (users.isEmpty)
-                  return const AsyncEmptyWidget(message: 'No sellers found');
+                  return AsyncEmptyWidget(message: _t('No sellers found', 'کوئی فروخت کنندہ نہیں ملا'));
                 return RefreshIndicator(
                   onRefresh: () async => _reloadAll(),
                   child: ListView.separated(
@@ -381,7 +383,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               future: _buyersFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AsyncLoadingWidget(message: 'Loading buyers...');
+                  return AsyncLoadingWidget(message: _t('Loading buyers...', 'خریدار لوڈ ہو رہے ہیں...'));
                 }
                 if (snapshot.hasError) {
                   return AsyncErrorWidget(
@@ -391,7 +393,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 }
                 final users = snapshot.data ?? const [];
                 if (users.isEmpty)
-                  return const AsyncEmptyWidget(message: 'No buyers found');
+                  return AsyncEmptyWidget(message: _t('No buyers found', 'کوئی خریدار نہیں ملا'));
                 return RefreshIndicator(
                   onRefresh: () async => _reloadAll(),
                   child: ListView.separated(
@@ -407,7 +409,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               future: _ordersFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AsyncLoadingWidget(message: 'Loading orders...');
+                  return AsyncLoadingWidget(message: _t('Loading orders...', 'آرڈرز لوڈ ہو رہے ہیں...'));
                 }
                 if (snapshot.hasError) {
                   return AsyncErrorWidget(
@@ -417,7 +419,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 }
                 final orders = snapshot.data ?? const [];
                 if (orders.isEmpty) {
-                  return const AsyncEmptyWidget(message: 'No orders found');
+                  return AsyncEmptyWidget(message: _t('No orders found', 'کوئی آرڈر نہیں ملا'));
                 }
                 return RefreshIndicator(
                   onRefresh: () async => _reloadAll(),
@@ -434,7 +436,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               future: _alertsFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const AsyncLoadingWidget(message: 'Loading alerts...');
+                  return AsyncLoadingWidget(message: _t('Loading alerts...', 'الرٹس لوڈ ہو رہے ہیں...'));
                 }
                 if (snapshot.hasError) {
                   return AsyncErrorWidget(
@@ -444,7 +446,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 }
                 final alerts = snapshot.data ?? const [];
                 if (alerts.isEmpty) {
-                  return const AsyncEmptyWidget(message: 'No alerts found');
+                  return AsyncEmptyWidget(message: _t('No alerts found', 'کوئی الرٹ نہیں ملا'));
                 }
                 return RefreshIndicator(
                   onRefresh: () async => _reloadAll(),

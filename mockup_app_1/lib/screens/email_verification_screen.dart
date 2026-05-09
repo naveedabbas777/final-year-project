@@ -21,6 +21,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   bool _resending = false;
   bool _verified = false;
 
+  String _t(String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -39,20 +43,24 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
       if (verified) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email verified successfully.')),
+          SnackBar(
+            content: Text(
+              _t('Email verified successfully.', 'ای میل کامیابی سے تصدیق ہو گئی۔'),
+            ),
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email is not verified yet.')),
+          SnackBar(
+            content: Text(_t('Email is not verified yet.', 'ای میل ابھی تک تصدیق شدہ نہیں ہے۔')),
+          ),
         );
       }
     } catch (e) {
       debugPrint('[EmailVerification] Error checking verification: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not check verification right now.'),
-        ),
+        SnackBar(content: Text(_t('Could not check verification right now.', 'اس وقت تصدیق چیک نہیں ہو سکی۔'))),
       );
     } finally {
       if (mounted) setState(() => _checking = false);
@@ -67,7 +75,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       debugPrint('[EmailVerification] Verification email sent');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Verification email sent again.')),
+        SnackBar(content: Text(_t('Verification email sent again.', 'تصدیقی ای میل دوبارہ بھیج دی گئی۔'))),
       );
     } on FirebaseAuthException catch (e) {
       debugPrint(
@@ -77,13 +85,20 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       String message;
       switch (e.code) {
         case 'too-many-requests':
-          message = 'Too many requests. Please try again in a moment.';
+          message = _t(
+            'Too many requests. Please try again in a moment.',
+            'بہت زیادہ درخواستیں۔ کچھ دیر بعد دوبارہ کوشش کریں۔',
+          );
           break;
         case 'network-request-failed':
-          message = 'Network issue detected. Please check internet and retry.';
+          message = _t(
+            'Network issue detected. Please check internet and retry.',
+            'نیٹ ورک مسئلہ ہے۔ انٹرنیٹ چیک کریں اور دوبارہ کوشش کریں۔',
+          );
           break;
         default:
-          message = e.message ?? 'Could not resend verification email.';
+          message =
+              e.message ?? _t('Could not resend verification email.', 'تصدیقی ای میل دوبارہ نہیں بھیجی جا سکی۔');
       }
       ScaffoldMessenger.of(
         context,
@@ -92,7 +107,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       debugPrint('[EmailVerification] Error resending email: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not resend verification email.')),
+        SnackBar(content: Text(_t('Could not resend verification email.', 'تصدیقی ای میل دوبارہ نہیں بھیجی جا سکی۔'))),
       );
     } finally {
       if (mounted) setState(() => _resending = false);
@@ -124,16 +139,16 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
             : (_checking ? Icons.hourglass_top : Icons.mark_email_unread);
     final String statusText =
         _verified
-            ? 'Email verified'
+            ? _t('Email verified', 'ای میل تصدیق شدہ')
             : (_checking
-                ? 'Checking verification status...'
-                : 'Email not verified yet');
+                ? _t('Checking verification status...', 'تصدیقی حیثیت چیک کی جا رہی ہے...')
+                : _t('Email not verified yet', 'ای میل ابھی تک تصدیق شدہ نہیں'));
 
     return PopScope(
       canPop: false,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Email Verification'),
+          title: Text(_t('Email Verification', 'ای میل کی تصدیق')),
           backgroundColor: Colors.green.shade700,
           foregroundColor: Colors.white,
           automaticallyImplyLeading: false,
@@ -153,17 +168,20 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'Verify your email',
+                    Text(
+                      _t('Verify your email', 'اپنی ای میل کی تصدیق کریں'),
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'A verification link was sent to ${widget.email}. Open your inbox and verify your account.',
+                      _t(
+                        'A verification link was sent to ${widget.email}. Open your inbox and verify your account.',
+                        '${widget.email} پر تصدیقی لنک بھیج دیا گیا ہے۔ اپنا ان باکس کھولیں اور اکاؤنٹ کی تصدیق کریں۔',
+                      ),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey.shade700),
                     ),
@@ -206,7 +224,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                 color: Colors.white,
                               )
                               : const Icon(Icons.email_outlined),
-                      label: const Text('Resend verification email'),
+                      label: Text(_t('Resend verification email', 'تصدیقی ای میل دوبارہ بھیجیں')),
                     ),
                     const SizedBox(height: 10),
                     OutlinedButton.icon(
@@ -218,7 +236,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                           _checking
                               ? const CompactLoadingIndicator(size: 16)
                               : const Icon(Icons.refresh),
-                      label: const Text('I have verified, check now'),
+                      label: Text(_t('I have verified, check now', 'میں نے تصدیق کر لی ہے، ابھی چیک کریں')),
                     ),
                     const SizedBox(height: 10),
                     ElevatedButton(
@@ -231,12 +249,12 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text('Continue to login'),
+                      child: Text(_t('Continue to login', 'لاگ ان جاری رکھیں')),
                     ),
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () => _finishAndReturn(verified: false),
-                      child: const Text('Back to login'),
+                      child: Text(_t('Back to login', 'لاگ ان پر واپس جائیں')),
                     ),
                   ],
                 ),

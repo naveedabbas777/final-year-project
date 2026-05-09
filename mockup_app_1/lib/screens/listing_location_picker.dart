@@ -19,6 +19,8 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
   PointAnnotationManager? _pointAnnotationManager;
   double _selectedLatitude = 33.6844; // Default: Islamabad, Pakistan
   double _selectedLongitude = 73.0479;
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   @override
   void initState() {
@@ -79,7 +81,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
       appBar: AppBar(
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
-        title: const Text('Pin Product Location'),
+        title: Text(_t('Pin Product Location', 'پروڈکٹ کا مقام پن کریں')),
         elevation: 0,
       ),
       body: Stack(
@@ -118,13 +120,13 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(
+                    Row(
                       children: [
                         Icon(Icons.touch_app, size: 16, color: Colors.green),
                         SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            'Tap on the map to pin your product location',
+                            _t('Tap on the map to pin your product location', 'اپنی پروڈکٹ کا مقام پن کرنے کے لیے نقشے پر ٹیپ کریں'),
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                         ),
@@ -165,7 +167,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                     ),
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.close),
-                    label: const Text('Cancel'),
+                    label: Text(_t('Cancel', 'منسوخ')),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -186,7 +188,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
                       });
                     },
                     icon: const Icon(Icons.check),
-                    label: const Text('Confirm'),
+                    label: Text(_t('Confirm', 'تصدیق')),
                   ),
                 ),
               ],

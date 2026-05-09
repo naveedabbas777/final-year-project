@@ -15,6 +15,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
   final _bodyController = TextEditingController();
 
   String _mode = 'all';
+  String _audience = 'farmers';
   bool _sending = false;
   Future<List<AdminUserDto>>? _farmersFuture;
   Future<List<AdminNotificationLogDto>>? _historyFuture;
@@ -24,11 +25,22 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
   DateTime? _historyFrom;
   DateTime? _historyTo;
 
+  String _t(BuildContext context, String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   @override
   void initState() {
     super.initState();
-    _farmersFuture = _api.fetchUsers(limit: 200, role: 'farmer');
+    _farmersFuture = _loadAudienceUsers();
     _reloadHistory();
+  }
+
+  Future<List<AdminUserDto>> _loadAudienceUsers() {
+    if (_audience == 'admins') {
+      return _api.fetchUsers(limit: 200, role: 'admin');
+    }
+    return _api.fetchUsers(limit: 200, role: 'farmer');
   }
 
   @override
@@ -43,7 +55,11 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     final body = _bodyController.text.trim();
     if (title.isEmpty || body.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title and message are required')),
+        SnackBar(
+          content: Text(
+            _t(context, 'Title and message are required', 'عنوان اور پیغام ضروری ہیں'),
+          ),
+        ),
       );
       return;
     }
@@ -52,7 +68,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     if (_mode == 'single') {
       if (_singleFarmerId == null || _singleFarmerId!.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please choose one farmer')),
+          SnackBar(content: Text(_t(context, 'Please choose one user', 'براہ کرم ایک صارف منتخب کریں'))),
         );
         return;
       }
@@ -60,7 +76,11 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     } else if (_mode == 'some') {
       if (_selectedFarmerIds.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select at least one farmer')),
+          SnackBar(
+            content: Text(
+              _t(context, 'Please select at least one user', 'براہ کرم کم از کم ایک صارف منتخب کریں'),
+            ),
+          ),
         );
         return;
       }
@@ -72,6 +92,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     try {
       final result = await _api.sendNotificationToFarmers(
         mode: _mode,
+        audience: _audience,
         title: title,
         body: body,
         targetUserIds: targets,
@@ -80,7 +101,11 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            'Sent to ${result['recipients'] ?? 0} farmers, pushes: ${result['pushSent'] ?? 0}',
+            _t(
+              context,
+              'Sent to ${result['recipients'] ?? 0} users, pushes: ${result['pushSent'] ?? 0}',
+              '${result['recipients'] ?? 0} صارفین کو بھیجا گیا، پشز: ${result['pushSent'] ?? 0}',
+            ),
           ),
         ),
       );
@@ -92,7 +117,9 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       setState(() {});
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text('Send failed: $e')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(_t(context, 'Send failed: $e', 'بھیجنے میں ناکامی: $e'))),
+      );
     } finally {
       if (mounted) {
         setState(() => _sending = false);
@@ -106,10 +133,10 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       length: 2,
       child: Column(
         children: [
-          const TabBar(
+          TabBar(
             tabs: [
-              Tab(icon: Icon(Icons.send), text: 'Compose'),
-              Tab(icon: Icon(Icons.history), text: 'History'),
+              Tab(icon: const Icon(Icons.send), text: _t(context, 'Compose', 'تحریر')),
+              Tab(icon: const Icon(Icons.history), text: _t(context, 'History', 'ہسٹری')),
             ],
           ),
           Expanded(
@@ -132,21 +159,48 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Send Farmer Notifications',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                Text(
+                  _t(context, 'Send Farmer Notifications', 'کسانوں کو اطلاعات بھیجیں'),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  initialValue: _mode,
-                  decoration: const InputDecoration(
-                    labelText: 'Target Mode',
+                  initialValue: _audience,
+                  decoration: InputDecoration(
+                    labelText: _t(context, 'Audience', 'ہدف سامعین'),
                     border: OutlineInputBorder(),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 'all', child: Text('All farmers')),
-                    DropdownMenuItem(value: 'some', child: Text('Selected farmers')),
-                    DropdownMenuItem(value: 'single', child: Text('Single farmer')),
+                  items: [
+                    DropdownMenuItem(value: 'farmers', child: Text(_t(context, 'Farmers', 'کسان'))),
+                    DropdownMenuItem(value: 'admins', child: Text(_t(context, 'Admins', 'ایڈمنز'))),
+                    DropdownMenuItem(value: 'all_users', child: Text(_t(context, 'All users', 'تمام صارفین'))),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _audience = value;
+                      if (_audience == 'all_users') {
+                        _mode = 'all';
+                      }
+                      _selectedFarmerIds.clear();
+                      _singleFarmerId = null;
+                      _farmersFuture = _loadAudienceUsers();
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: _mode,
+                  decoration: InputDecoration(
+                    labelText: _t(context, 'Target Mode', 'ٹارگٹ موڈ'),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    DropdownMenuItem(value: 'all', child: Text(_t(context, 'All in selected audience', 'منتخب سامعین میں سب'))),
+                    if (_audience != 'all_users')
+                      DropdownMenuItem(value: 'some', child: Text(_t(context, 'Selected users', 'منتخب صارفین'))),
+                    if (_audience != 'all_users')
+                      DropdownMenuItem(value: 'single', child: Text(_t(context, 'Single user', 'ایک صارف'))),
                   ],
                   onChanged: (value) {
                     if (value == null) return;
@@ -160,8 +214,8 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                 const SizedBox(height: 10),
                 TextField(
                   controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notification Title',
+                  decoration: InputDecoration(
+                    labelText: _t(context, 'Notification Title', 'اطلاع کا عنوان'),
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -169,13 +223,13 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                 TextField(
                   controller: _bodyController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Notification Message',
+                  decoration: InputDecoration(
+                    labelText: _t(context, 'Notification Message', 'اطلاع کا پیغام'),
                     border: OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (_mode != 'all')
+                if (_mode != 'all' && _audience != 'all_users')
                   FutureBuilder<List<AdminUserDto>>(
                     future: _farmersFuture,
                     builder: (context, snapshot) {
@@ -187,20 +241,20 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                       }
                       if (snapshot.hasError) {
                         return Text(
-                          'Could not load farmers: ${snapshot.error}',
+                          '${_t(context, 'Could not load farmers', 'کسان لوڈ نہیں ہو سکے')}: ${snapshot.error}',
                           style: const TextStyle(color: Colors.red),
                         );
                       }
                       final farmers = snapshot.data ?? const <AdminUserDto>[];
                       if (farmers.isEmpty) {
-                        return const Text('No farmers found');
+                        return Text(_t(context, 'No users found for selected audience', 'منتخب سامعین کے لیے کوئی صارف نہیں ملا'));
                       }
 
                       if (_mode == 'single') {
                         return DropdownButtonFormField<String>(
                           initialValue: _singleFarmerId,
-                          decoration: const InputDecoration(
-                            labelText: 'Choose Farmer',
+                          decoration: InputDecoration(
+                            labelText: _t(context, 'Choose User', 'صارف منتخب کریں'),
                             border: OutlineInputBorder(),
                           ),
                           items: farmers
@@ -208,7 +262,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                                 (farmer) => DropdownMenuItem(
                                   value: farmer.firebaseUid,
                                   child: Text(
-                                    farmer.name.isEmpty
+                                farmer.name.isEmpty
                                         ? farmer.firebaseUid
                                         : '${farmer.name} (${farmer.district})',
                                   ),
@@ -246,7 +300,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                               ),
                               subtitle: Text(
                                 farmer.district.isEmpty
-                                    ? 'No district'
+                                    ? _t(context, 'No district', 'ضلع نہیں')
                                     : farmer.district,
                               ),
                             );
@@ -261,7 +315,11 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _sending ? null : _send,
                     icon: const Icon(Icons.send),
-                    label: Text(_sending ? 'Sending...' : 'Send Notification'),
+                    label: Text(
+                      _sending
+                          ? _t(context, 'Sending...', 'بھیجا جا رہا ہے...')
+                          : _t(context, 'Send Notification', 'اطلاع بھیجیں'),
+                    ),
                   ),
                 ),
               ],
@@ -303,7 +361,9 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       future: _historyFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const AsyncLoadingWidget(message: 'Loading history...');
+          return AsyncLoadingWidget(
+            message: _t(context, 'Loading history...', 'ہسٹری لوڈ ہو رہی ہے...'),
+          );
         }
         if (snapshot.hasError) {
           return AsyncErrorWidget(
@@ -318,8 +378,14 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
           return Column(
             children: [
               _buildHistoryFilters(pickDate),
-              const Expanded(
-                child: AsyncEmptyWidget(message: 'No notification history yet'),
+              Expanded(
+                child: AsyncEmptyWidget(
+                  message: _t(
+                    context,
+                    'No notification history yet',
+                    'ابھی تک کوئی اطلاع ہسٹری نہیں',
+                  ),
+                ),
               ),
             ],
           );
@@ -342,7 +408,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                         leading: const Icon(Icons.notifications_active),
                         title: Text(row.title),
                         subtitle: Text(
-                          '${row.createdAt ?? 'Unknown time'}\nmode: ${row.mode} • recipients: ${row.recipients} • pushes: ${row.pushSent}',
+                          '${row.createdAt ?? _t(context, 'Unknown time', 'نامعلوم وقت')}\n${_t(context, 'mode', 'موڈ')}: ${row.mode} • ${_t(context, 'audience', 'سامعین')}: ${row.audience.isEmpty ? _t(context, 'farmers', 'کسان') : row.audience} • ${_t(context, 'recipients', 'وصول کنندگان')}: ${row.recipients} • ${_t(context, 'pushes', 'پشز')}: ${row.pushSent}',
                         ),
                         onTap: () => _showHistoryDetailDialog(row),
                       ),
@@ -361,7 +427,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
     Future<void> Function({required bool isFrom}) pickDate,
   ) {
     String formatDate(DateTime? value) {
-      if (value == null) return 'Any';
+      if (value == null) return _t(context, 'Any', 'کوئی بھی');
       return '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
     }
 
@@ -374,16 +440,16 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
             children: [
               DropdownButtonFormField<String>(
                 initialValue: _historyMode,
-                decoration: const InputDecoration(
-                  labelText: 'Mode Filter',
+                decoration: InputDecoration(
+                  labelText: _t(context, 'Mode Filter', 'موڈ فلٹر'),
                   border: OutlineInputBorder(),
                   isDense: true,
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'all_modes', child: Text('All modes')),
-                  DropdownMenuItem(value: 'all', child: Text('All farmers')),
-                  DropdownMenuItem(value: 'some', child: Text('Selected farmers')),
-                  DropdownMenuItem(value: 'single', child: Text('Single farmer')),
+                items: [
+                  DropdownMenuItem(value: 'all_modes', child: Text(_t(context, 'All modes', 'تمام موڈز'))),
+                  DropdownMenuItem(value: 'all', child: Text(_t(context, 'All farmers', 'تمام کسان'))),
+                  DropdownMenuItem(value: 'some', child: Text(_t(context, 'Selected farmers', 'منتخب کسان'))),
+                  DropdownMenuItem(value: 'single', child: Text(_t(context, 'Single farmer', 'ایک کسان'))),
                 ],
                 onChanged: (value) =>
                     setState(() => _historyMode = value ?? 'all_modes'),
@@ -394,14 +460,14 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => pickDate(isFrom: true),
-                      child: Text('From: ${formatDate(_historyFrom)}'),
+                      child: Text('${_t(context, 'From', 'سے')}: ${formatDate(_historyFrom)}'),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => pickDate(isFrom: false),
-                      child: Text('To: ${formatDate(_historyTo)}'),
+                      child: Text('${_t(context, 'To', 'تک')}: ${formatDate(_historyTo)}'),
                     ),
                   ),
                 ],
@@ -413,7 +479,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _reloadHistory,
                       icon: const Icon(Icons.filter_alt),
-                      label: const Text('Apply'),
+                      label: Text(_t(context, 'Apply', 'لاگو کریں')),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -428,7 +494,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                         _reloadHistory();
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Reset'),
+                      label: Text(_t(context, 'Reset', 'ری سیٹ')),
                     ),
                   ),
                 ],
@@ -463,16 +529,16 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Sent at: ${row.createdAt ?? 'Unknown'}'),
+                Text('${_t(context, 'Sent at', 'بھیجا گیا وقت')}: ${row.createdAt ?? _t(context, 'Unknown', 'نامعلوم')}'),
                 const SizedBox(height: 8),
-                Text('Mode: ${row.mode}'),
-                Text('Recipients: ${row.recipients}'),
-                Text('Push sent: ${row.pushSent}'),
-                Text('Alerts created: ${row.alertCreated}'),
+                Text('${_t(context, 'Mode', 'موڈ')}: ${row.mode}'),
+                Text('${_t(context, 'Recipients', 'وصول کنندگان')}: ${row.recipients}'),
+                Text('${_t(context, 'Push sent', 'پش بھیجے گئے')}: ${row.pushSent}'),
+                Text('${_t(context, 'Alerts created', 'بنائے گئے الرٹس')}: ${row.alertCreated}'),
                 const SizedBox(height: 12),
-                const Text(
-                  'Message',
-                  style: TextStyle(fontWeight: FontWeight.w700),
+                Text(
+                  _t(context, 'Message', 'پیغام'),
+                  style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
                 Text(row.body),
@@ -482,7 +548,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Close'),
+              child: Text(_t(context, 'Close', 'بند کریں')),
             ),
           ],
         );

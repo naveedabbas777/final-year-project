@@ -25,6 +25,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
   String? _loadError;
   bool _canRate = false;
   String _rateBlockReason = '';
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   @override
   void initState() {
@@ -83,7 +85,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
   void _openChat() {
     final id = widget.listingId ?? (_openListings.isNotEmpty ? _openListings.first.id : null);
     if (id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No active listing to start a chat.')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_t('No active listing to start a chat.', 'چیٹ شروع کرنے کے لیے کوئی فعال لسٹنگ نہیں۔'))));
       return;
     }
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatScreen(listingId: id, toUid: widget.sellerUid)));
@@ -102,11 +104,11 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
           builder: (ctx, setLocal) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Rate this Seller', style: TextStyle(fontWeight: FontWeight.w800)),
+              title: Text(_t('Rate this Seller', 'اس فروخت کنندہ کو ریٹ کریں'), style: const TextStyle(fontWeight: FontWeight.w800)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Tap the stars to rate your experience:', style: TextStyle(fontSize: 13)),
+                  Text(_t('Tap the stars to rate your experience:', 'اپنا تجربہ ریٹ کرنے کے لیے ستاروں پر ٹیپ کریں:'), style: const TextStyle(fontSize: 13)),
                   const SizedBox(height: 12),
                   // Interactive star row
                   IgnorePointer(
@@ -130,7 +132,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    selectedStars == 0 ? 'Tap to select' : _starLabel(selectedStars),
+                    selectedStars == 0 ? _t('Tap to select', 'منتخب کرنے کے لیے ٹیپ کریں') : _starLabel(selectedStars),
                     style: TextStyle(
                       fontSize: 12,
                       color: selectedStars > 0 ? Colors.green.shade700 : Colors.grey.shade500,
@@ -143,7 +145,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                     maxLines: 3,
                     enabled: !submitting,
                     decoration: InputDecoration(
-                      hintText: 'Write a comment (optional)…',
+                      hintText: _t('Write a comment (optional)…', 'تبصرہ لکھیں (اختیاری)…'),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                       contentPadding: const EdgeInsets.all(10),
                     ),
@@ -155,7 +157,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                       children: [
                         SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green.shade700)),
                         const SizedBox(width: 8),
-                        Text('Submitting…', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                        Text(_t('Submitting…', 'جمع کیا جا رہا ہے…'), style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                       ],
                     ),
                   ],
@@ -164,7 +166,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
               actions: [
                 TextButton(
                   onPressed: submitting ? null : () => Navigator.pop(ctx),
-                  child: const Text('Cancel'),
+                  child: Text(_t('Cancel', 'منسوخ')),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -186,7 +188,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Thanks for your $selectedStars-star rating!'),
+                                content: Text('${_t('Thanks for your', 'آپ کی')} $selectedStars-${_t('star rating', 'اسٹار ریٹنگ')}!'),
                                 backgroundColor: Colors.green.shade700,
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -203,11 +205,11 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                             setLocal(() => submitting = false);
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Failed to submit rating: $e'), backgroundColor: Colors.red.shade700),
+                              SnackBar(content: Text('${_t('Failed to submit rating', 'ریٹنگ جمع کرنے میں ناکامی')}: $e'), backgroundColor: Colors.red.shade700),
                             );
                           }
                         },
-                  child: const Text('Submit Rating'),
+                  child: Text(_t('Submit Rating', 'ریٹنگ جمع کریں')),
                 ),
               ],
             );
@@ -220,31 +222,31 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
 
   String _starLabel(int stars) {
     switch (stars) {
-      case 1: return '⭐ Poor';
-      case 2: return '⭐⭐ Fair';
-      case 3: return '⭐⭐⭐ Good';
-      case 4: return '⭐⭐⭐⭐ Very Good';
-      case 5: return '⭐⭐⭐⭐⭐ Excellent!';
+      case 1: return _t('⭐ Poor', '⭐ کمزور');
+      case 2: return _t('⭐⭐ Fair', '⭐⭐ مناسب');
+      case 3: return _t('⭐⭐⭐ Good', '⭐⭐⭐ اچھا');
+      case 4: return _t('⭐⭐⭐⭐ Very Good', '⭐⭐⭐⭐ بہت اچھا');
+      case 5: return _t('⭐⭐⭐⭐⭐ Excellent!', '⭐⭐⭐⭐⭐ بہترین!');
       default: return '';
     }
   }
 
   String _formatPresence() {
     final isOnline = _stats['isOnline'] == true;
-    if (isOnline) return 'Online now';
+    if (isOnline) return _t('Online now', 'ابھی آن لائن');
     final raw = _stats['lastSeen'];
-    if (raw == null) return 'Offline';
+    if (raw == null) return _t('Offline', 'آف لائن');
     final last = raw is DateTime ? raw : DateTime.tryParse(raw.toString());
-    if (last == null) return 'Offline';
+    if (last == null) return _t('Offline', 'آف لائن');
     final diff = DateTime.now().difference(last);
-    if (diff.inMinutes < 1) return 'Last seen just now';
-    if (diff.inHours < 1) return 'Last seen ${diff.inMinutes}m ago';
-    if (diff.inDays < 1) return 'Last seen ${diff.inHours}h ago';
-    return 'Last seen ${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return _t('Last seen just now', 'آخری بار ابھی دیکھا گیا');
+    if (diff.inHours < 1) return '${_t('Last seen', 'آخری بار دیکھا گیا')} ${diff.inMinutes}${_t('m ago', ' منٹ پہلے')}';
+    if (diff.inDays < 1) return '${_t('Last seen', 'آخری بار دیکھا گیا')} ${diff.inHours}${_t('h ago', ' گھنٹے پہلے')}';
+    return '${_t('Last seen', 'آخری بار دیکھا گیا')} ${diff.inDays}${_t('d ago', ' دن پہلے')}';
   }
 
   String _formatDate(DateTime? d) {
-    if (d == null) return 'Unknown';
+    if (d == null) return _t('Unknown', 'نامعلوم');
     return '${d.day}/${d.month}/${d.year}';
   }
 
@@ -252,14 +254,14 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, title: const Text('Seller Profile')),
+        appBar: AppBar(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, title: Text(_t('Seller Profile', 'فروخت کنندہ پروفائل'))),
         body: const AsyncLoadingWidget(),
       );
     }
 
     if (_loadError != null) {
       return Scaffold(
-        appBar: AppBar(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, title: const Text('Seller Profile')),
+        appBar: AppBar(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white, title: Text(_t('Seller Profile', 'فروخت کنندہ پروفائل'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -272,7 +274,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                   child: Icon(Icons.error_outline_rounded, size: 48, color: Colors.red.shade400),
                 ),
                 const SizedBox(height: 16),
-                Text('Failed to load seller profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+                Text(_t('Failed to load seller profile', 'فروخت کنندہ پروفائل لوڈ نہ ہو سکا'), style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
                 const SizedBox(height: 8),
                 Text(_loadError!, textAlign: TextAlign.center, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
                 const SizedBox(height: 20),
@@ -284,7 +286,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                   ),
                   onPressed: _loadAll,
                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Retry'),
+                  label: Text(_t('Retry', 'دوبارہ کوشش')),
                 ),
               ],
             ),
@@ -294,14 +296,14 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
     }
 
     final s = _seller;
-    final name = s?.primaryName ?? 'Seller';
+    final name = s?.primaryName ?? _t('Seller', 'فروخت کنندہ');
     final photo = s?.photoUrl ?? '';
     final phone = s?.contactPhone ?? '';
     final email = s?.email ?? '';
     final district = s?.district ?? '';
     final province = s?.province ?? '';
     final address = s?.address ?? '';
-    final role = s?.role ?? 'farmer';
+    final role = s?.role ?? _t('farmer', 'کسان');
     final roleLabel = role[0].toUpperCase() + role.substring(1);
     final joiningDate = _formatDate(s?.createdAt);
     final isOnline = _stats['isOnline'] == true;
@@ -328,7 +330,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
               foregroundColor: Colors.white,
               actions: [
                 IconButton(
-                  tooltip: _savedSeller ? 'Saved' : 'Save seller',
+                  tooltip: _savedSeller ? _t('Saved', 'محفوظ') : _t('Save seller', 'فروخت کنندہ محفوظ کریں'),
                   icon: Icon(_savedSeller ? Icons.bookmark : Icons.bookmark_border),
                   onPressed: _toggleSaved,
                 ),
@@ -355,7 +357,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                               backgroundColor: Colors.white24,
                               backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
                               child: photo.isEmpty
-                                  ? Text(name.isNotEmpty ? name[0].toUpperCase() : 'S',
+                                  ? Text(name.isNotEmpty ? name[0].toUpperCase() : _t('S', 'ف'),
                                       style: const TextStyle(fontSize: 36, color: Colors.white, fontWeight: FontWeight.w700))
                                   : null,
                             ),
@@ -414,18 +416,18 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Row(
                       children: [
-                        _statCell('${completedOrders.toInt()}', 'Orders\nCompleted', Icons.check_circle_outline, Colors.green.shade700),
+                        _statCell('${completedOrders.toInt()}', _t('Orders\nCompleted', 'آرڈرز\nمکمل'), Icons.check_circle_outline, Colors.green.shade700),
                         _divider(),
                         _statCell(
                           ratingCount > 0 ? avgScore.toStringAsFixed(1) : '—',
-                          '$ratingCount ${ratingCount == 1 ? 'Review' : 'Reviews'}',
+                          '$ratingCount ${ratingCount == 1 ? _t('Review', 'ریویو') : _t('Reviews', 'ریویوز')}',
                           Icons.star_rounded,
                           Colors.amber.shade700,
                         ),
                         _divider(),
-                        _statCell('${totalListings.toInt()}', 'Total\nListings', Icons.inventory_2_outlined, Colors.blue.shade700),
+                        _statCell('${totalListings.toInt()}', _t('Total\nListings', 'کل\nلسٹنگز'), Icons.inventory_2_outlined, Colors.blue.shade700),
                         _divider(),
-                        _statCell(joiningDate, 'Member\nSince', Icons.calendar_today_outlined, Colors.purple.shade700),
+                        _statCell(joiningDate, _t('Member\nSince', 'رکنیت\nاز'), Icons.calendar_today_outlined, Colors.purple.shade700),
                       ],
                     ),
                   ),
@@ -448,7 +450,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                                 ),
                                 onPressed: _openChat,
                                 icon: const Icon(Icons.chat_bubble_outline),
-                                label: const Text('Message Seller', style: TextStyle(fontWeight: FontWeight.w700)),
+                                label: Text(_t('Message Seller', 'فروخت کنندہ کو پیغام'), style: const TextStyle(fontWeight: FontWeight.w700)),
                               ),
                             ),
                             if (phone.isNotEmpty) ...[
@@ -464,12 +466,12 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                                   onPressed: () {
                                     Clipboard.setData(ClipboardData(text: phone));
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: const Text('Phone number copied'), backgroundColor: Colors.green.shade700,
+                                      SnackBar(content: Text(_t('Phone number copied', 'فون نمبر کاپی ہو گیا')), backgroundColor: Colors.green.shade700,
                                         behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
                                     );
                                   },
                                   icon: const Icon(Icons.call),
-                                  label: const Text('Copy No.'),
+                                  label: Text(_t('Copy No.', 'نمبر کاپی')),
                                 ),
                               ),
                             ],
@@ -489,7 +491,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                               ),
                               onPressed: _showRateDialog,
                               icon: const Icon(Icons.star_outline_rounded),
-                              label: const Text('Rate this Seller', style: TextStyle(fontWeight: FontWeight.w700)),
+                              label: Text(_t('Rate this Seller', 'اس فروخت کنندہ کو ریٹ کریں'), style: const TextStyle(fontWeight: FontWeight.w700)),
                             ),
                           )
                         else
@@ -509,12 +511,12 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   _rateBlockReason == 'already_rated'
-                                      ? 'You have already rated this seller'
+                                      ? _t('You have already rated this seller', 'آپ اس فروخت کنندہ کو پہلے ہی ریٹ کر چکے ہیں')
                                       : _rateBlockReason == 'no_completed_order'
-                                          ? 'Complete an order with this seller to rate them'
+                                          ? _t('Complete an order with this seller to rate them', 'انہیں ریٹ کرنے کے لیے پہلے اس فروخت کنندہ کے ساتھ آرڈر مکمل کریں')
                                           : _rateBlockReason == 'cannot_rate_self'
-                                              ? 'You cannot rate yourself'
-                                              : 'Rating not available',
+                                              ? _t('You cannot rate yourself', 'آپ خود کو ریٹ نہیں کر سکتے')
+                                              : _t('Rating not available', 'ریٹنگ دستیاب نہیں'),
                                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                                 ),
                               ],
@@ -526,21 +528,21 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
 
                   // ── Contact & Location ────────────────────────────────────
                   _sectionCard(
-                    title: 'Contact & Location',
+                    title: _t('Contact & Location', 'رابطہ اور مقام'),
                     icon: Icons.person_outline,
                     children: [
-                      if (phone.isNotEmpty) _infoRow(Icons.phone_outlined, 'Phone', phone),
-                      if (email.isNotEmpty) _infoRow(Icons.email_outlined, 'Email', email),
-                      if (district.isNotEmpty) _infoRow(Icons.location_on_outlined, 'District', district),
-                      if (province.isNotEmpty) _infoRow(Icons.map_outlined, 'Province', province),
-                      if (address.isNotEmpty) _infoRow(Icons.home_outlined, 'Address', address),
+                      if (phone.isNotEmpty) _infoRow(Icons.phone_outlined, _t('Phone', 'فون'), phone),
+                      if (email.isNotEmpty) _infoRow(Icons.email_outlined, _t('Email', 'ای میل'), email),
+                      if (district.isNotEmpty) _infoRow(Icons.location_on_outlined, _t('District', 'ضلع'), district),
+                      if (province.isNotEmpty) _infoRow(Icons.map_outlined, _t('Province', 'صوبہ'), province),
+                      if (address.isNotEmpty) _infoRow(Icons.home_outlined, _t('Address', 'پتہ'), address),
                       if (phone.isEmpty && email.isEmpty && district.isEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 4),
                           child: Row(children: [
                             Icon(Icons.privacy_tip_outlined, size: 16, color: Colors.amber.shade700),
                             const SizedBox(width: 6),
-                            Expanded(child: Text('Contact details are hidden until you have a shared transaction.', style: TextStyle(color: Colors.grey.shade600, fontSize: 12))),
+                            Expanded(child: Text(_t('Contact details are hidden until you have a shared transaction.', 'رابطے کی تفصیلات تب تک مخفی رہیں گی جب تک آپ کا مشترکہ لین دین نہ ہو۔'), style: TextStyle(color: Colors.grey.shade600, fontSize: 12))),
                           ]),
                         ),
                     ],
@@ -548,19 +550,19 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
 
                   // ── About ─────────────────────────────────────────────────
                   _sectionCard(
-                    title: 'About',
+                    title: _t('About', 'تعارف'),
                     icon: Icons.info_outline,
                     children: [
-                      _infoRow(Icons.work_outline, 'Role', roleLabel),
-                      _infoRow(Icons.calendar_today_outlined, 'Member since', joiningDate),
-                      _infoRow(Icons.inventory_2_outlined, 'Open listings', '${_openListings.length}'),
+                      _infoRow(Icons.work_outline, _t('Role', 'کردار'), roleLabel),
+                      _infoRow(Icons.calendar_today_outlined, _t('Member since', 'رکنیت از'), joiningDate),
+                      _infoRow(Icons.inventory_2_outlined, _t('Open listings', 'اوپن لسٹنگز'), '${_openListings.length}'),
                     ],
                   ),
 
                   // ── Ratings & Reviews ─────────────────────────────────────
                   if (_ratings != null)
                     _sectionCard(
-                      title: 'Ratings & Reviews',
+                      title: _t('Ratings & Reviews', 'ریٹنگز اور ریویوز'),
                       icon: Icons.star_rounded,
                       children: [
                         if (ratingCount > 0) ...[
@@ -572,7 +574,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                                 _starRow(avgScore.toDouble()),
                                 const SizedBox(height: 4),
-                                Text('Based on $ratingCount ${ratingCount == 1 ? 'review' : 'reviews'}',
+                                Text('${_t('Based on', 'بنیاد پر')} $ratingCount ${ratingCount == 1 ? _t('review', 'ریویو') : _t('reviews', 'ریویوز')}',
                                     style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                               ]),
                             ],
@@ -580,16 +582,16 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                           const SizedBox(height: 12),
                           ...recentReviews.take(3).map((r) => _reviewTile(r as Map)),
                         ] else
-                          Text('No reviews yet.', style: TextStyle(color: Colors.grey.shade500)),
+                          Text(_t('No reviews yet.', 'ابھی کوئی ریویو نہیں۔'), style: TextStyle(color: Colors.grey.shade500)),
                       ],
                     ),
 
                   // ── Open Listings ─────────────────────────────────────────
                   _sectionCard(
-                    title: 'Open Listings (${_openListings.length})',
+                    title: '${_t('Open Listings', 'اوپن لسٹنگز')} (${_openListings.length})',
                     icon: Icons.storefront_outlined,
                     children: _openListings.isEmpty
-                        ? [Text('No open listings at the moment.', style: TextStyle(color: Colors.grey.shade500))]
+                        ? [Text(_t('No open listings at the moment.', 'اس وقت کوئی اوپن لسٹنگ نہیں۔'), style: TextStyle(color: Colors.grey.shade500))]
                         : _openListings.map((l) => _listingTile(l)).toList(),
                   ),
 
@@ -663,7 +665,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
   }
 
   Widget _reviewTile(Map review) {
-    final buyer = review['buyerName'] ?? review['raterUid'] ?? 'Buyer';
+    final buyer = review['buyerName'] ?? review['raterUid'] ?? _t('Buyer', 'خریدار');
     final score = (review['score'] ?? 0) as num;
     final comment = (review['comment'] ?? '').toString().trim();
     return Container(
@@ -677,7 +679,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           CircleAvatar(radius: 14, backgroundColor: Colors.green.shade200,
-              child: Text(buyer.isNotEmpty ? buyer[0].toUpperCase() : 'B', style: TextStyle(fontSize: 12, color: Colors.green.shade900, fontWeight: FontWeight.w700))),
+              child: Text(buyer.isNotEmpty ? buyer[0].toUpperCase() : _t('B', 'خ'), style: TextStyle(fontSize: 12, color: Colors.green.shade900, fontWeight: FontWeight.w700))),
           const SizedBox(width: 8),
           Expanded(child: Text(buyer, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13))),
           _starRow(score.toDouble()),

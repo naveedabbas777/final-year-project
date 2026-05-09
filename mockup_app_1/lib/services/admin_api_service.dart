@@ -175,6 +175,7 @@ class AdminNotificationLogDto {
     required this.senderUid,
     required this.senderName,
     required this.mode,
+    required this.audience,
     required this.title,
     required this.body,
     required this.recipients,
@@ -187,6 +188,7 @@ class AdminNotificationLogDto {
   final String senderUid;
   final String senderName;
   final String mode;
+  final String audience;
   final String title;
   final String body;
   final int recipients;
@@ -200,6 +202,7 @@ class AdminNotificationLogDto {
       senderUid: toStringOrEmpty(json['senderUid']),
       senderName: toStringOrEmpty(json['senderName']),
       mode: toStringOrEmpty(json['mode']),
+      audience: toStringOrEmpty(json['audience']),
       title: toStringOrEmpty(json['title']),
       body: toStringOrEmpty(json['body']),
       recipients: toIntOrZero(json['recipients']),
@@ -336,6 +339,7 @@ class AdminApiService {
 
   Future<Map<String, dynamic>> sendNotificationToFarmers({
     required String mode,
+    String audience = 'farmers',
     required String title,
     required String body,
     List<String> targetUserIds = const [],
@@ -345,6 +349,7 @@ class AdminApiService {
       auth: true,
       body: {
         'mode': mode,
+        'audience': audience,
         'title': title,
         'body': body,
         'targetUserIds': targetUserIds,

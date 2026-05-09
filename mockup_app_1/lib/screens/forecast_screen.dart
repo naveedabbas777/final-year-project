@@ -23,6 +23,8 @@ class _ForecastScreenState extends State<ForecastScreen> {
   double? _longitude;
   Future<List<DailyForecast>>? _dailyForecastFuture;
   bool _backendUnreachable = false;
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   Icon _buildWeatherIcon(String iconUrl) {
     final match = RegExp(r"/(\d{2}[dn])@").firstMatch(iconUrl);
@@ -222,7 +224,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                     Icon(Icons.cloud_off, size: 48, color: Colors.red.shade400),
                     const SizedBox(height: 16),
                     Text(
-                      'Backend Unreachable',
+                      _t('Backend Unreachable', 'بیک اینڈ دستیاب نہیں'),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -231,13 +233,13 @@ class _ForecastScreenState extends State<ForecastScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Unable to connect to the server. Please check your network and try again.',
+                      _t('Unable to connect to the server. Please check your network and try again.', 'سرور سے رابطہ نہیں ہو سکا۔ براہ کرم نیٹ ورک چیک کریں اور دوبارہ کوشش کریں۔'),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.red.shade600),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'USB-connected Android devices need adb reverse tcp:5000 tcp:5000, or launch with --dart-define=API_BASE_URL=http://<your-pc-ip>:5000.',
+                      _t('USB-connected Android devices need adb reverse tcp:5000 tcp:5000, or launch with --dart-define=API_BASE_URL=http://<your-pc-ip>:5000.', 'USB سے منسلک اینڈرائیڈ ڈیوائسز کے لیے adb reverse tcp:5000 tcp:5000 چلائیں، یا --dart-define=API_BASE_URL=http://<your-pc-ip>:5000 کے ساتھ لانچ کریں۔'),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.red.shade500,
@@ -251,7 +253,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                         ElevatedButton.icon(
                           onPressed: _loadForecastData,
                           icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
+                          label: Text(_t('Retry', 'دوبارہ کوشش')),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red.shade500,
                           ),
@@ -260,7 +262,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                         OutlinedButton.icon(
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.arrow_back),
-                          label: const Text('Go Back'),
+                          label: Text(_t('Go Back', 'واپس جائیں')),
                         ),
                       ],
                     ),
@@ -290,13 +292,13 @@ class _ForecastScreenState extends State<ForecastScreen> {
                         ElevatedButton.icon(
                           onPressed: _loadForecastData,
                           icon: const Icon(Icons.refresh),
-                          label: const Text('Retry'),
+                          label: Text(_t('Retry', 'دوبارہ کوشش')),
                         ),
                         const SizedBox(width: 12),
                         OutlinedButton.icon(
                           onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.arrow_back),
-                          label: const Text('Go Back'),
+                          label: Text(_t('Go Back', 'واپس جائیں')),
                         ),
                       ],
                     ),
@@ -313,7 +315,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                     ElevatedButton.icon(
                       onPressed: _loadForecastData,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Refresh'),
+                      label: Text(_t('Refresh', 'ریفریش')),
                     ),
                   ],
                 ),

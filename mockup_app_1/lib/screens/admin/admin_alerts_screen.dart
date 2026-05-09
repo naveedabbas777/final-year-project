@@ -13,6 +13,10 @@ class _AdminAlertsScreenState extends State<AdminAlertsScreen> {
   final _api = AdminApiService();
   Future<List<AdminAlertDto>>? _future;
 
+  String _t(BuildContext context, String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -29,7 +33,9 @@ class _AdminAlertsScreenState extends State<AdminAlertsScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const AsyncLoadingWidget(message: 'Loading alerts...');
+          return AsyncLoadingWidget(
+            message: _t(context, 'Loading alerts...', 'الرٹس لوڈ ہو رہے ہیں...'),
+          );
         }
         if (snapshot.hasError) {
           return AsyncErrorWidget(
@@ -38,7 +44,11 @@ class _AdminAlertsScreenState extends State<AdminAlertsScreen> {
           );
         }
         final rows = snapshot.data ?? const <AdminAlertDto>[];
-        if (rows.isEmpty) return const AsyncEmptyWidget(message: 'No alerts found');
+        if (rows.isEmpty) {
+          return AsyncEmptyWidget(
+            message: _t(context, 'No alerts found', 'کوئی الرٹ نہیں ملا'),
+          );
+        }
         return RefreshIndicator(
           onRefresh: () async => _reload(),
           child: ListView.separated(

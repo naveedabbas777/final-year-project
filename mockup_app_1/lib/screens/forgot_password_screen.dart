@@ -16,6 +16,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   bool _sending = false;
 
+  String _t(String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -30,17 +34,36 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   String _friendlyAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'invalid-email':
-        return 'Please enter a valid email address.';
+        return _t(
+          'Please enter a valid email address.',
+          'براہ کرم درست ای میل ایڈریس درج کریں۔',
+        );
       case 'operation-not-allowed':
-        return 'Password reset is currently disabled in Firebase.';
+        return _t(
+          'Password reset is currently disabled in Firebase.',
+          'فائر بیس میں پاس ورڈ ری سیٹ فی الحال غیر فعال ہے۔',
+        );
       case 'network-request-failed':
-        return 'Network issue detected. Please check internet and try again.';
+        return _t(
+          'Network issue detected. Please check internet and try again.',
+          'نیٹ ورک مسئلہ ہے۔ انٹرنیٹ چیک کریں اور دوبارہ کوشش کریں۔',
+        );
       case 'too-many-requests':
-        return 'Too many attempts. Please wait a moment and try again.';
+        return _t(
+          'Too many attempts. Please wait a moment and try again.',
+          'بہت زیادہ کوششیں ہو چکی ہیں۔ کچھ دیر بعد دوبارہ کوشش کریں۔',
+        );
       case 'user-not-found':
-        return 'No account found for this email. Please register first.';
+        return _t(
+          'No account found for this email. Please register first.',
+          'اس ای میل پر کوئی اکاؤنٹ نہیں ملا۔ پہلے رجسٹر کریں۔',
+        );
       default:
-        return e.message ?? 'Could not send reset email. Please try again.';
+        return e.message ??
+            _t(
+              'Could not send reset email. Please try again.',
+              'ری سیٹ ای میل نہیں بھیجی جا سکی۔ دوبارہ کوشش کریں۔',
+            );
     }
   }
 
@@ -49,7 +72,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     if (!_looksLikeEmail(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
+        SnackBar(
+          content: Text(
+            _t(
+              'Please enter a valid email address',
+              'براہ کرم درست ای میل ایڈریس درج کریں',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -63,14 +93,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         context: context,
         builder:
             (_) => AlertDialog(
-              title: const Text('Reset email sent'),
+              title: Text(_t('Reset email sent', 'ری سیٹ ای میل بھیج دی گئی')),
               content: Text(
-                'If this email is registered, a password reset link has been sent to $email.',
+                _t(
+                  'If this email is registered, a password reset link has been sent to $email.',
+                  'اگر یہ ای میل رجسٹرڈ ہے تو $email پر پاس ورڈ ری سیٹ لنک بھیج دیا گیا ہے۔',
+                ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK'),
+                  child: Text(_t('OK', 'ٹھیک ہے')),
                 ),
               ],
             ),
@@ -85,8 +118,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not send reset email. Please try again.'),
+        SnackBar(
+          content: Text(
+            _t(
+              'Could not send reset email. Please try again.',
+              'ری سیٹ ای میل نہیں بھیجی جا سکی۔ دوبارہ کوشش کریں۔',
+            ),
+          ),
         ),
       );
     } finally {
@@ -98,7 +136,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Forgot Password'),
+        title: Text(_t('Forgot Password', 'پاس ورڈ بھول گئے')),
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
       ),
@@ -117,14 +155,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text(
-                    'Reset your password',
+                  Text(
+                    _t('Reset your password', 'اپنا پاس ورڈ ری سیٹ کریں'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Enter your email address and we will send you a reset link.',
+                    _t(
+                      'Enter your email address and we will send you a reset link.',
+                      'اپنا ای میل ایڈریس درج کریں، ہم آپ کو ری سیٹ لنک بھیجیں گے۔',
+                    ),
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.green.shade700),
                   ),
@@ -134,7 +178,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.email_outlined),
-                      labelText: 'Email',
+                      labelText: _t('Email', 'ای میل'),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -155,7 +199,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               color: Colors.white,
                             )
                             : const Icon(Icons.send),
-                    label: const Text('Send reset link'),
+                    label: Text(_t('Send reset link', 'ری سیٹ لنک بھیجیں')),
                   ),
                 ],
               ),

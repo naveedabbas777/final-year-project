@@ -13,6 +13,10 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   final _api = AdminApiService();
   Future<List<AdminUserDto>>? _future;
 
+  String _t(BuildContext context, String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -34,7 +38,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const AsyncLoadingWidget(message: 'Loading users...');
+          return AsyncLoadingWidget(
+            message: _t(context, 'Loading users...', 'صارفین لوڈ ہو رہے ہیں...'),
+          );
         }
         if (snapshot.hasError) {
           return AsyncErrorWidget(
@@ -44,7 +50,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
         }
         final users = snapshot.data ?? const <AdminUserDto>[];
         if (users.isEmpty) {
-          return const AsyncEmptyWidget(message: 'No users found');
+          return AsyncEmptyWidget(
+            message: _t(context, 'No users found', 'کوئی صارف نہیں ملا'),
+          );
         }
         return RefreshIndicator(
           onRefresh: () async => _reload(),
@@ -69,7 +77,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                   ),
                   title: Text(user.name.isEmpty ? user.firebaseUid : user.name),
                   subtitle: Text(
-                    '${user.role} • ${user.district.isEmpty ? 'No district' : user.district}',
+                    '${user.role} • ${user.district.isEmpty ? _t(context, 'No district', 'ضلع نہیں') : user.district}',
                   ),
                   trailing: DropdownButton<String>(
                     value: user.role,
@@ -86,7 +94,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                       } catch (e) {
                         if (!mounted) return;
                         messenger.showSnackBar(
-                          SnackBar(content: Text('Role update failed: $e')),
+                          SnackBar(
+                            content: Text(
+                              _t(context, 'Role update failed: $e', 'رول اپڈیٹ ناکام: $e'),
+                            ),
+                          ),
                         );
                       }
                     },

@@ -15,6 +15,8 @@ class OrdersScreen extends StatefulWidget {
 class _OrdersScreenState extends State<OrdersScreen> {
   final _service = MarketApiService();
   String? _currentUserUid;
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   bool _loading = false;
   String? _error;
@@ -102,18 +104,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
               title: Text(
-                nextStatus == 'cancelled' ? 'Cancel Order?' : 'Dispute Order?',
+                nextStatus == 'cancelled'
+                    ? _t('Cancel Order?', 'آرڈر منسوخ کریں؟')
+                    : _t('Dispute Order?', 'آرڈر پر تنازع اٹھائیں؟'),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               content: Text(
                 nextStatus == 'cancelled'
-                    ? 'Are you sure you want to cancel this order? This action cannot be undone.'
-                    : 'Are you sure you want to raise a dispute for this order?',
+                    ? _t(
+                        'Are you sure you want to cancel this order? This action cannot be undone.',
+                        'کیا آپ واقعی یہ آرڈر منسوخ کرنا چاہتے ہیں؟ یہ عمل واپس نہیں ہو سکتا۔',
+                      )
+                    : _t(
+                        'Are you sure you want to raise a dispute for this order?',
+                        'کیا آپ واقعی اس آرڈر پر تنازع اٹھانا چاہتے ہیں؟',
+                      ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('No, go back'),
+                  child: Text(_t('No, go back', 'نہیں، واپس جائیں')),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -129,8 +139,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   onPressed: () => Navigator.pop(ctx, true),
                   child: Text(
                     nextStatus == 'cancelled'
-                        ? 'Cancel Order'
-                        : 'Raise Dispute',
+                        ? _t('Cancel Order', 'آرڈر منسوخ کریں')
+                        : _t('Raise Dispute', 'تنازع اٹھائیں'),
                   ),
                 ),
               ],
@@ -144,7 +154,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Order updated to ${_statusLabel(nextStatus)}'),
+          content: Text(
+            '${_t('Order updated to', 'آرڈر اپڈیٹ ہوا')}: ${_statusLabel(nextStatus)}',
+          ),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -202,17 +214,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
   String _statusLabel(String status) {
     switch (status.toLowerCase()) {
       case 'created':
-        return 'Created';
+        return _t('Created', 'بنایا گیا');
       case 'in_transit':
-        return 'In Transit';
+        return _t('In Transit', 'راستے میں');
       case 'delivered':
-        return 'Delivered';
+        return _t('Delivered', 'پہنچا دیا گیا');
       case 'completed':
-        return 'Completed';
+        return _t('Completed', 'مکمل');
       case 'cancelled':
-        return 'Cancelled';
+        return _t('Cancelled', 'منسوخ');
       case 'disputed':
-        return 'Disputed';
+        return _t('Disputed', 'متنازع');
       default:
         return status;
     }
@@ -221,15 +233,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
   String _actionLabel(String nextStatus) {
     switch (nextStatus.toLowerCase()) {
       case 'in_transit':
-        return 'Ship';
+        return _t('Ship', 'بھیجیں');
       case 'delivered':
-        return 'Mark Delivered';
+        return _t('Mark Delivered', 'پہنچا دیا نشان کریں');
       case 'completed':
-        return 'Complete';
+        return _t('Complete', 'مکمل کریں');
       case 'cancelled':
-        return 'Cancel';
+        return _t('Cancel', 'منسوخ');
       case 'disputed':
-        return 'Dispute';
+        return _t('Dispute', 'تنازع');
       default:
         return nextStatus;
     }
@@ -273,8 +285,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
               child: const Icon(Icons.receipt_long_rounded, size: 18),
             ),
             const SizedBox(width: 10),
-            const Text(
-              'Orders',
+            Text(
+              _t('Orders', 'آرڈرز'),
               style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 20,
@@ -339,9 +351,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final uid = _currentUserUid;
     final String roleLabel;
     if (uid == order.sellerUid) {
-      roleLabel = 'Selling';
+      roleLabel = _t('Selling', 'فروخت');
     } else if (uid == order.buyerUid) {
-      roleLabel = 'Buying';
+      roleLabel = _t('Buying', 'خرید');
     } else {
       roleLabel = '';
     }
@@ -443,14 +455,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 Row(
                   children: [
                     _buildInfoTile(
-                      label: 'Amount',
+                      label: _t('Amount', 'رقم'),
                       value: 'PKR ${order.finalPrice.toStringAsFixed(0)}',
                       valueColor: Colors.green.shade700,
                       icon: Icons.payments_outlined,
                     ),
                     const SizedBox(width: 16),
                     _buildInfoTile(
-                      label: 'Quantity',
+                      label: _t('Quantity', 'مقدار'),
                       value:
                           '${order.quantity.toStringAsFixed(0)} ${order.unit}',
                       icon: Icons.scale_outlined,
@@ -717,7 +729,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ),
               const SizedBox(height: 24),
               Text(
-                'No orders yet',
+                _t('No orders yet', 'ابھی تک کوئی آرڈر نہیں'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -726,7 +738,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'When you accept or place offers,\norders will appear here.',
+                _t(
+                  'When you accept or place offers,\norders will appear here.',
+                  'جب آپ آفر قبول کریں یا بھیجیں گے،\nآرڈرز یہاں نظر آئیں گے۔',
+                ),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -762,7 +777,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Something went wrong',
+              _t('Something went wrong', 'کچھ غلط ہو گیا'),
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -786,7 +801,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ),
               onPressed: _load,
               icon: const Icon(Icons.refresh_rounded, size: 18),
-              label: const Text('Retry'),
+              label: Text(_t('Retry', 'دوبارہ کوشش')),
             ),
           ],
         ),

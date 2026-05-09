@@ -14,6 +14,10 @@ class _AdminRatesScreenState extends State<AdminRatesScreen> {
   final _api = AdminApiService();
   Future<List<CropRateDto>>? _future;
 
+  String _t(BuildContext context, String en, String ur) {
+    return Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -30,7 +34,9 @@ class _AdminRatesScreenState extends State<AdminRatesScreen> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const AsyncLoadingWidget(message: 'Loading rates...');
+          return AsyncLoadingWidget(
+            message: _t(context, 'Loading rates...', 'ریٹس لوڈ ہو رہے ہیں...'),
+          );
         }
         if (snapshot.hasError) {
           return AsyncErrorWidget(
@@ -39,7 +45,11 @@ class _AdminRatesScreenState extends State<AdminRatesScreen> {
           );
         }
         final rows = snapshot.data ?? const <CropRateDto>[];
-        if (rows.isEmpty) return const AsyncEmptyWidget(message: 'No rates found');
+        if (rows.isEmpty) {
+          return AsyncEmptyWidget(
+            message: _t(context, 'No rates found', 'کوئی ریٹ نہیں ملا'),
+          );
+        }
         return RefreshIndicator(
           onRefresh: () async => _reload(),
           child: ListView.separated(

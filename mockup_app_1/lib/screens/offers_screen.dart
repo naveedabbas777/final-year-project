@@ -19,6 +19,8 @@ class _OffersScreenState extends State<OffersScreen>
   String? _error;
   List<OfferDto> _myOffers = const [];
   List<OfferDto> _incoming = const [];
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   @override
   void initState() {
@@ -64,7 +66,9 @@ class _OffersScreenState extends State<OffersScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Offer accepted and order created'),
+          content: Text(
+            _t('Offer accepted and order created', 'آفر قبول ہوگئی اور آرڈر بن گیا'),
+          ),
           backgroundColor: Colors.green.shade700,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -86,7 +90,7 @@ class _OffersScreenState extends State<OffersScreen>
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(
-        content: const Text('Offer rejected'),
+        content: Text(_t('Offer rejected', 'آفر مسترد کر دی گئی')),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ));
@@ -106,7 +110,7 @@ class _OffersScreenState extends State<OffersScreen>
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(
-        content: const Text('Offer cancelled'),
+        content: Text(_t('Offer cancelled', 'آفر منسوخ کر دی گئی')),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ));
@@ -153,13 +157,13 @@ class _OffersScreenState extends State<OffersScreen>
   String _statusLabel(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return 'Pending';
+        return _t('Pending', 'زیر التوا');
       case 'accepted':
-        return 'Accepted';
+        return _t('Accepted', 'قبول شدہ');
       case 'rejected':
-        return 'Declined';
+        return _t('Declined', 'مسترد');
       case 'cancelled':
-        return 'Cancelled';
+        return _t('Cancelled', 'منسوخ');
       default:
         return status;
     }
@@ -169,10 +173,22 @@ class _OffersScreenState extends State<OffersScreen>
     if (date == null) return '';
     final now = DateTime.now();
     final diff = now.difference(date);
-    if (diff.inMinutes < 1) return 'just now';
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return '${diff.inHours}h ago';
-    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    if (diff.inMinutes < 1) return _t('just now', 'ابھی');
+    if (diff.inMinutes < 60) {
+      return Localizations.localeOf(context).languageCode == 'ur'
+          ? '${diff.inMinutes} منٹ پہلے'
+          : '${diff.inMinutes}m ago';
+    }
+    if (diff.inHours < 24) {
+      return Localizations.localeOf(context).languageCode == 'ur'
+          ? '${diff.inHours} گھنٹے پہلے'
+          : '${diff.inHours}h ago';
+    }
+    if (diff.inDays < 7) {
+      return Localizations.localeOf(context).languageCode == 'ur'
+          ? '${diff.inDays} دن پہلے'
+          : '${diff.inDays}d ago';
+    }
     final dd = date.day.toString().padLeft(2, '0');
     final mm = date.month.toString().padLeft(2, '0');
     // Include year for dates old enough to cause year-ambiguity
@@ -250,7 +266,9 @@ class _OffersScreenState extends State<OffersScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        listing != null ? listing.cropName : 'Listing ${offer.listingId.substring(0, offer.listingId.length > 8 ? 8 : offer.listingId.length)}',
+                        listing != null
+                            ? listing.cropName
+                            : '${_t('Listing', 'لسٹنگ')} ${offer.listingId.substring(0, offer.listingId.length > 8 ? 8 : offer.listingId.length)}',
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
                       ),
                       if (listing != null)
@@ -274,7 +292,7 @@ class _OffersScreenState extends State<OffersScreen>
                                     border: Border.all(color: Colors.amber.shade200, width: 0.5),
                                   ),
                                   child: Text(
-                                    'Grade ${listing.qualityGrade}',
+                                    '${_t('Grade', 'گریڈ')} ${listing.qualityGrade}',
                                     style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.amber.shade800),
                                   ),
                                 ),
@@ -286,7 +304,7 @@ class _OffersScreenState extends State<OffersScreen>
                       Row(
                         children: [
                           Text(
-                            'PKR ',
+                            _t('PKR ', 'روپے '),
                             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                           ),
                           Text(
@@ -323,7 +341,7 @@ class _OffersScreenState extends State<OffersScreen>
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     _buildActionButton(
-                      label: 'Reject',
+                      label: _t('Reject', 'مسترد'),
                       icon: Icons.close_rounded,
                       color: Colors.red.shade600,
                       isOutlined: true,
@@ -331,7 +349,7 @@ class _OffersScreenState extends State<OffersScreen>
                     ),
                     const SizedBox(width: 10),
                     _buildActionButton(
-                      label: 'Accept',
+                      label: _t('Accept', 'قبول'),
                       icon: Icons.check_rounded,
                       color: Colors.green.shade700,
                       isOutlined: false,
@@ -344,7 +362,7 @@ class _OffersScreenState extends State<OffersScreen>
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     _buildActionButton(
-                      label: 'Cancel Offer',
+                      label: _t('Cancel Offer', 'آفر منسوخ کریں'),
                       icon: Icons.close_rounded,
                       color: Colors.grey.shade600,
                       isOutlined: true,
@@ -454,8 +472,8 @@ class _OffersScreenState extends State<OffersScreen>
               child: const Icon(Icons.local_offer_rounded, size: 18),
             ),
             const SizedBox(width: 10),
-            const Text(
-              'Offers',
+            Text(
+              _t('Offers', 'آفرز'),
               style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20, letterSpacing: -0.3),
             ),
           ],
@@ -490,7 +508,7 @@ class _OffersScreenState extends State<OffersScreen>
                 children: [
                   const Icon(Icons.arrow_upward_rounded, size: 15),
                   const SizedBox(width: 6),
-                  const Text('Sent'),
+                  Text(_t('Sent', 'بھیجی گئی')),
                   if (pendingMyCount > 0) ...[
                     const SizedBox(width: 6),
                     Container(
@@ -514,7 +532,7 @@ class _OffersScreenState extends State<OffersScreen>
                 children: [
                   const Icon(Icons.arrow_downward_rounded, size: 15),
                   const SizedBox(width: 6),
-                  const Text('Received'),
+                  Text(_t('Received', 'موصول شدہ')),
                   if (pendingInCount > 0) ...[
                     const SizedBox(width: 6),
                     Container(
@@ -555,7 +573,7 @@ class _OffersScreenState extends State<OffersScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Something went wrong',
+                        _t('Something went wrong', 'کچھ غلط ہو گیا'),
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey.shade800),
                       ),
                       const SizedBox(height: 8),
@@ -573,7 +591,7 @@ class _OffersScreenState extends State<OffersScreen>
                         ),
                         onPressed: _load,
                         icon: const Icon(Icons.refresh_rounded, size: 18),
-                        label: const Text('Retry'),
+                        label: Text(_t('Retry', 'دوبارہ کوشش')),
                       ),
                     ],
                   ),
@@ -586,7 +604,14 @@ class _OffersScreenState extends State<OffersScreen>
                     color: Colors.green.shade700,
                     onRefresh: _load,
                     child: _myOffers.isEmpty
-                        ? _buildEmptyState('No offers sent yet', 'Start making offers on\nlisting you\'re interested in.', Icons.send_rounded)
+                        ? _buildEmptyState(
+                            _t('No offers sent yet', 'ابھی تک کوئی آفر نہیں بھیجی'),
+                            _t(
+                              'Start making offers on\nlisting you\'re interested in.',
+                              'دلچسپی والی لسٹنگز پر\nآفر دینا شروع کریں۔',
+                            ),
+                            Icons.send_rounded,
+                          )
                         : ListView.separated(
                             padding: const EdgeInsets.all(14),
                             itemCount: _myOffers.length,
@@ -598,7 +623,14 @@ class _OffersScreenState extends State<OffersScreen>
                     color: Colors.green.shade700,
                     onRefresh: _load,
                     child: _incoming.isEmpty
-                        ? _buildEmptyState('No offers received', 'When buyers make offers on\nyour listings, they\'ll appear here.', Icons.inbox_rounded)
+                        ? _buildEmptyState(
+                            _t('No offers received', 'کوئی آفر موصول نہیں ہوئی'),
+                            _t(
+                              'When buyers make offers on\nyour listings, they\'ll appear here.',
+                              'جب خریدار آپ کی لسٹنگز پر آفر کریں گے،\nوہ یہاں نظر آئیں گی۔',
+                            ),
+                            Icons.inbox_rounded,
+                          )
                         : ListView.separated(
                             padding: const EdgeInsets.all(14),
                             itemCount: _incoming.length,

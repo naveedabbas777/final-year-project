@@ -326,6 +326,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
 
   @override
   Widget build(BuildContext context) {
+    final isUrdu = Localizations.localeOf(context).languageCode == 'ur';
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _screens),
       bottomNavigationBar: NavigationBar(
@@ -340,13 +341,13 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             icon: const Icon(Icons.home_outlined),
             selectedIcon: const Icon(Icons.home),
             label: AppLocalizations.of(context)!.home,
-            tooltip: 'Home dashboard',
+            tooltip: isUrdu ? 'ہوم ڈیش بورڈ' : 'Home dashboard',
           ),
           NavigationDestination(
             icon: const Icon(Icons.calendar_today_outlined),
             selectedIcon: const Icon(Icons.calendar_today),
             label: AppLocalizations.of(context)!.forecast,
-            tooltip: 'Weather forecast',
+            tooltip: isUrdu ? 'موسمی پیشن گوئی' : 'Weather forecast',
           ),
           // Alerts tab with live unread badge
           Consumer<AlertService>(
@@ -370,21 +371,23 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                   child: const Icon(Icons.notifications),
                 ),
                 label: AppLocalizations.of(context)!.alerts,
-                tooltip: count > 0 ? '$count unread alerts' : 'Weather alerts',
+                tooltip: count > 0
+                    ? (isUrdu ? '$count غیر پڑھے الرٹس' : '$count unread alerts')
+                    : (isUrdu ? 'موسمی الرٹس' : 'Weather alerts'),
               );
             },
           ),
           NavigationDestination(
             icon: const Icon(Icons.storefront_outlined),
             selectedIcon: const Icon(Icons.storefront),
-            label: 'Market',
-            tooltip: 'Marketplace',
+            label: isUrdu ? 'مارکیٹ' : 'Market',
+            tooltip: isUrdu ? 'مارکیٹ پلیس' : 'Marketplace',
           ),
           NavigationDestination(
             icon: const Icon(Icons.settings_outlined),
             selectedIcon: const Icon(Icons.settings),
             label: AppLocalizations.of(context)!.settings,
-            tooltip: 'App settings',
+            tooltip: isUrdu ? 'ایپ ترتیبات' : 'App settings',
           ),
         ],
       ),

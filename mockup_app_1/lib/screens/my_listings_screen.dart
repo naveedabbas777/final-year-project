@@ -50,6 +50,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   final Map<String, List<OfferDto>> _offersByListingId =
       <String, List<OfferDto>>{};
   final Map<String, int> _unreadCounts = <String, int>{};
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   static const List<String> _statusFilters = <String>[
     'all',
@@ -86,11 +88,13 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   Widget _buildImageSummary() {
     if (_selectedImages.isNotEmpty) {
       final count = _selectedImages.length;
-      return Text('$count new image${count == 1 ? '' : 's'} selected');
+      return Text('${_t('New images selected', 'نئی تصاویر منتخب')} ($count)');
     }
-    if (_editingListingId == null) return const Text('No images selected');
+    if (_editingListingId == null) {
+      return Text(_t('No images selected', 'کوئی تصویر منتخب نہیں'));
+    }
     final existing = _editingImageUrls.length;
-    return Text('$existing existing image${existing == 1 ? '' : 's'}');
+    return Text('${_t('Existing images', 'موجودہ تصاویر')} ($existing)');
   }
 
   @override
@@ -235,8 +239,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     _selectedLatitude = null;
     _selectedLongitude = null;
     await _openListingFormSheet(
-      title: 'Product Listing',
-      buttonLabel: 'Create Listing',
+      title: _t('Product Listing', 'پروڈکٹ لسٹنگ'),
+      buttonLabel: _t('Create Listing', 'لسٹنگ بنائیں'),
       allowImages: true,
     );
   }
@@ -257,8 +261,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     _selectedLatitude = row.latitude;
     _selectedLongitude = row.longitude;
     await _openListingFormSheet(
-      title: 'Edit Listing',
-      buttonLabel: 'Save Changes',
+      title: _t('Edit Listing', 'لسٹنگ ترمیم کریں'),
+      buttonLabel: _t('Save Changes', 'تبدیلیاں محفوظ کریں'),
       allowImages: true,
     );
   }
@@ -316,8 +320,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       controller: _cropController,
                       style: const TextStyle(color: AppColors.textPrimary),
                       cursorColor: AppColors.primaryMid,
-                      decoration: const InputDecoration(
-                        labelText: 'Crop Name',
+                      decoration: InputDecoration(
+                        labelText: _t('Crop Name', 'فصل کا نام'),
                         border: OutlineInputBorder(),
                       ),
                       validator:
@@ -329,8 +333,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       controller: _districtController,
                       style: const TextStyle(color: AppColors.textPrimary),
                       cursorColor: AppColors.primaryMid,
-                      decoration: const InputDecoration(
-                        labelText: 'District',
+                      decoration: InputDecoration(
+                        labelText: _t('District', 'ضلع'),
                         border: OutlineInputBorder(),
                       ),
                       validator:
@@ -343,15 +347,15 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       style: const TextStyle(color: AppColors.textPrimary),
                       cursorColor: AppColors.primaryMid,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Quantity',
+                      decoration: InputDecoration(
+                        labelText: _t('Quantity', 'مقدار'),
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) {
                         final val = v?.trim() ?? '';
                         final parsed = double.tryParse(val);
                         if (parsed == null)
-                          return 'Please enter a valid quantity';
+                          return _t('Please enter a valid quantity', 'براہ کرم درست مقدار درج کریں');
                         return FormValidators.validateQuantity(val);
                       },
                     ),
@@ -361,14 +365,14 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       style: const TextStyle(color: AppColors.textPrimary),
                       cursorColor: AppColors.primaryMid,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Asking Price',
+                      decoration: InputDecoration(
+                        labelText: _t('Asking Price', 'مانگی گئی قیمت'),
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) {
                         final val = v?.trim() ?? '';
                         final parsed = double.tryParse(val);
-                        if (parsed == null) return 'Please enter a valid price';
+                        if (parsed == null) return _t('Please enter a valid price', 'براہ کرم درست قیمت درج کریں');
                         return FormValidators.validatePrice(val);
                       },
                     ),
@@ -377,8 +381,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       controller: _unitController,
                       style: const TextStyle(color: AppColors.textPrimary),
                       cursorColor: AppColors.primaryMid,
-                      decoration: const InputDecoration(
-                        labelText: 'Unit',
+                      decoration: InputDecoration(
+                        labelText: _t('Unit', 'یونٹ'),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -388,8 +392,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       style: const TextStyle(color: AppColors.textPrimary),
                       cursorColor: AppColors.primaryMid,
                       maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
+                      decoration: InputDecoration(
+                        labelText: _t('Description', 'تفصیل'),
                         border: OutlineInputBorder(),
                       ),
                       validator: (v) => null,
@@ -399,8 +403,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       value: _gradeController.text,
                       style: const TextStyle(color: AppColors.textPrimary),
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Quality Grade',
+                      decoration: InputDecoration(
+                        labelText: _t('Quality Grade', 'معیار گریڈ'),
                         border: OutlineInputBorder(),
                       ),
                       items: const [
@@ -436,7 +440,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                               }
                             },
                             icon: const Icon(Icons.location_on),
-                            label: const Text('Pin Location'),
+                            label: Text(_t('Pin Location', 'مقام پن کریں')),
                           ),
                         ),
                         if (_selectedLatitude != null &&
@@ -444,7 +448,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              '📍 Pinned',
+                              '📍 ${_t('Pinned', 'پن ہو گیا')}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.green.shade700,
@@ -465,8 +469,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                             icon: const Icon(Icons.photo_library_outlined),
                             label: Text(
                               _editingListingId == null
-                                  ? 'Attach Images'
-                                  : 'Replace Images',
+                                  ? _t('Attach Images', 'تصاویر منسلک کریں')
+                                  : _t('Replace Images', 'تصاویر تبدیل کریں'),
                             ),
                           ),
                           if (_editingListingId != null) ...[
@@ -478,7 +482,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                       : () => setState(
                                         () => _editingImageUrls.clear(),
                                       ),
-                              child: const Text('Clear Existing'),
+                              child: Text(_t('Clear Existing', 'موجودہ صاف کریں')),
                             ),
                           ],
                           const SizedBox(width: 10),
@@ -528,7 +532,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
-                            'Saving will replace existing images with selected images.',
+                            _t('Saving will replace existing images with selected images.', 'محفوظ کرنے سے موجودہ تصاویر منتخب تصاویر سے بدل جائیں گی۔'),
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade700,
@@ -644,10 +648,10 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     if (cropError != null) return _showError(cropError);
     final districtError = FormValidators.validateDistrict(district);
     if (districtError != null) return _showError(districtError);
-    if (qty == null) return _showError('Please enter a valid quantity');
+    if (qty == null) return _showError(_t('Please enter a valid quantity', 'براہ کرم درست مقدار درج کریں'));
     final qtyError = FormValidators.validateQuantity(qty.toString());
     if (qtyError != null) return _showError(qtyError);
-    if (price == null) return _showError('Please enter a valid price');
+    if (price == null) return _showError(_t('Please enter a valid price', 'براہ کرم درست قیمت درج کریں'));
     final priceError = FormValidators.validatePrice(price.toString());
     if (priceError != null) return _showError(priceError);
 
@@ -676,7 +680,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Listing created')));
+        ).showSnackBar(SnackBar(content: Text(_t('Listing created', 'لسٹنگ بن گئی'))));
       } else {
         List<String>? updatedImageUrls;
         if (_selectedImages.isNotEmpty) {
@@ -707,7 +711,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Listing updated')));
+        ).showSnackBar(SnackBar(content: Text(_t('Listing updated', 'لسٹنگ اپڈیٹ ہو گئی'))));
       }
 
       _cropController.clear();
@@ -736,14 +740,14 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       context: context,
       builder:
           (dialogContext) => AlertDialog(
-            title: const Text('Delete listing?'),
+            title: Text(_t('Delete listing?', 'لسٹنگ حذف کریں؟')),
             content: Text(
-              'Delete ${row.cropName} from your listings? This cannot be undone.',
+              '${_t('Delete', 'حذف کریں')} ${row.cropName} ${_t('from your listings? This cannot be undone.', 'کو اپنی لسٹنگز سے حذف کریں؟ یہ عمل واپس نہیں ہو سکتا۔')}',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Cancel'),
+                child: Text(_t('Cancel', 'منسوخ')),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -751,7 +755,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   foregroundColor: Colors.white,
                 ),
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Delete'),
+                child: Text(_t('Delete', 'حذف کریں')),
               ),
             ],
           ),
@@ -763,7 +767,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('Listing deleted')));
+      ).showSnackBar(SnackBar(content: Text(_t('Listing deleted', 'لسٹنگ حذف ہو گئی'))));
       await _load();
     } catch (e) {
       if (!mounted) return;
@@ -800,7 +804,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Messages for ${row.cropName}',
+                        '${_t('Messages for', 'پیغامات برائے')} ${row.cropName}',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -819,7 +823,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   future: previewsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Padding(
+                      return Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
                         child: Center(child: CompactLoadingIndicator(size: 18)),
                       );
@@ -835,7 +839,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 8),
-                            const Text('Close and reopen to retry.'),
+                            Text(_t('Close and reopen to retry.', 'دوبارہ کوشش کے لیے بند کر کے دوبارہ کھولیں۔')),
                           ],
                         ),
                       );
@@ -844,9 +848,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     final previews =
                         snapshot.data ?? const <_ConversationPreview>[];
                     if (previews.isEmpty) {
-                      return const Padding(
+                      return Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Text('No messages yet for this listing.'),
+                        child: Text(_t('No messages yet for this listing.', 'اس لسٹنگ کے لیے ابھی کوئی پیغام نہیں۔')),
                       );
                     }
 
@@ -981,7 +985,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           peerUid: peerUid,
           buyerName: peerUid,
           lastMessage:
-              text.isEmpty ? 'Attachment or unsupported message' : text,
+              text.isEmpty ? _t('Attachment or unsupported message', 'اٹیچمنٹ یا غیر معاون پیغام') : text,
           createdAt: createdAt,
           isUnread: isUnreadForMe,
         );
@@ -1042,7 +1046,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Offers for ${row.cropName}',
+                        '${_t('Offers for', 'آفرز برائے')} ${row.cropName}',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
@@ -1060,9 +1064,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                 if (_loadingOffers)
                   const Center(child: CompactLoadingIndicator(size: 18))
                 else if (offers.isEmpty)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Text('No offers yet for this listing.'),
+                    child: Text(_t('No offers yet for this listing.', 'اس لسٹنگ کے لیے ابھی کوئی آفر نہیں۔')),
                   )
                 else
                   SizedBox(
@@ -1117,7 +1121,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Status: ${offer.status}',
+                            '${_t('Status', 'حالت')}: ${offer.status}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade700,
@@ -1137,7 +1141,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Quantity: ${offer.quantity.toStringAsFixed(0)} ${_unitForOffer(offer)}',
+                  '${_t('Quantity', 'مقدار')}: ${offer.quantity.toStringAsFixed(0)} ${_unitForOffer(offer)}',
                 ),
                 const SizedBox(height: 10),
                 if (offer.status == 'pending')
@@ -1156,8 +1160,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text(
-                                  'Offer accepted — order created!',
+                                content: Text(
+                                  _t('Offer accepted — order created!', 'آفر قبول — آرڈر بن گیا!'),
                                 ),
                                 backgroundColor: Colors.green.shade700,
                               ),
@@ -1169,7 +1173,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'Failed to accept: ${e.toString().replaceAll('Exception: ', '')}',
+                                  '${_t('Failed to accept', 'قبول کرنے میں ناکامی')}: ${e.toString().replaceAll('Exception: ', '')}',
                                 ),
                                 backgroundColor: Colors.red.shade700,
                               ),
@@ -1177,7 +1181,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           }
                         },
                         icon: const Icon(Icons.check),
-                        label: const Text('Accept'),
+                        label: Text(_t('Accept', 'قبول')),
                       ),
                       OutlinedButton.icon(
                         onPressed: () async {
@@ -1185,7 +1189,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                             await _service.rejectOffer(offer.id);
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Offer rejected')),
+                              SnackBar(content: Text(_t('Offer rejected', 'آفر مسترد کر دی گئی'))),
                             );
                             Navigator.pop(context);
                             await _load();
@@ -1194,7 +1198,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'Failed to reject: ${e.toString().replaceAll('Exception: ', '')}',
+                                  '${_t('Failed to reject', 'مسترد کرنے میں ناکامی')}: ${e.toString().replaceAll('Exception: ', '')}',
                                 ),
                                 backgroundColor: Colors.red.shade700,
                               ),
@@ -1202,7 +1206,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           }
                         },
                         icon: const Icon(Icons.close),
-                        label: const Text('Reject'),
+                        label: Text(_t('Reject', 'مسترد')),
                       ),
                     ],
                   ),
@@ -1345,7 +1349,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${row.cropName} • Grade ${row.qualityGrade}',
+                            '${row.cropName} • ${_t('Grade', 'گریڈ')} ${row.qualityGrade}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
@@ -1404,7 +1408,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           ],
                           const SizedBox(height: 4),
                           Text(
-                            'Posted $createdLabel',
+                            '${_t('Posted', 'پوسٹ کیا گیا')} $createdLabel',
                             style: TextStyle(
                               color: Colors.grey.shade600,
                               fontSize: 10,
@@ -1433,7 +1437,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '${offers.length} offer${offers.length == 1 ? '' : 's'}',
+                              '${offers.length} ${_t(offers.length == 1 ? 'offer' : 'offers', offers.length == 1 ? 'آفر' : 'آفرز')}',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
@@ -1443,7 +1447,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           )
                         else
                           Text(
-                            'No offers yet',
+                            _t('No offers yet', 'ابھی کوئی آفر نہیں'),
                             style: TextStyle(
                               fontSize: 10,
                               color: Colors.grey.shade600,
@@ -1460,7 +1464,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '$unreadCount new message${unreadCount == 1 ? '' : 's'}',
+                              '$unreadCount ${_t(unreadCount == 1 ? 'new message' : 'new messages', unreadCount == 1 ? 'نیا پیغام' : 'نئے پیغامات')}',
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600,
@@ -1477,31 +1481,31 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       alignment: WrapAlignment.end,
                       children: [
                         _buildCardActionIcon(
-                          tooltip: 'Offers',
+                          tooltip: _t('Offers', 'آفرز'),
                           icon: Icons.receipt_long_outlined,
                           color: Colors.orange.shade700,
                           onPressed: () => _openOffersSheet(row),
                         ),
                         _buildCardActionIcon(
-                          tooltip: 'Messages',
+                          tooltip: _t('Messages', 'پیغامات'),
                           icon: Icons.mark_chat_read_outlined,
                           color: Colors.blue.shade700,
                           onPressed: () => _openMessagesSheet(row),
                         ),
                         _buildCardActionIcon(
-                          tooltip: 'Chat',
+                          tooltip: _t('Chat', 'چیٹ'),
                           icon: Icons.chat_bubble_outline,
                           color: Colors.green.shade700,
                           onPressed: () => _openChat(row),
                         ),
                         _buildCardActionIcon(
-                          tooltip: 'Edit',
+                          tooltip: _t('Edit', 'ترمیم'),
                           icon: Icons.edit_outlined,
                           color: Colors.grey.shade800,
                           onPressed: () => _openEditListingSheet(row),
                         ),
                         _buildCardActionIcon(
-                          tooltip: 'Delete',
+                          tooltip: _t('Delete', 'حذف'),
                           icon: Icons.delete_outline,
                           color: Colors.red.shade700,
                           onPressed: () => _deleteListing(row),
@@ -1526,7 +1530,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         onPressed: _openCreateListingSheet,
         backgroundColor: Colors.green.shade700,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('New Listing', style: TextStyle(color: Colors.white)),
+        label: Text(_t('New Listing', 'نئی لسٹنگ'), style: const TextStyle(color: Colors.white)),
       ),
       body: RefreshIndicator(
         onRefresh: _load,
@@ -1543,9 +1547,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     TextField(
                       controller: _searchController,
                       onChanged: (_) => setState(() {}),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         prefixIcon: Icon(Icons.search),
-                        hintText: 'Search your listings',
+                        hintText: _t('Search your listings', 'اپنی لسٹنگز تلاش کریں'),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -1560,7 +1564,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                               child: ChoiceChip(
                                 label: Text(
                                   status == 'all'
-                                      ? 'All'
+                                      ? _t('All', 'سب')
                                       : status[0].toUpperCase() +
                                           status.substring(1),
                                 ),
@@ -1579,7 +1583,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       children: [
                         Expanded(
                           child: _buildSummaryChip(
-                            'Open',
+                            _t('Open', 'اوپن'),
                             _statusCount('open'),
                             Colors.blue.shade700,
                           ),
@@ -1587,7 +1591,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: _buildSummaryChip(
-                            'Reserved',
+                            _t('Reserved', 'ریزرو'),
                             _statusCount('reserved'),
                             Colors.orange.shade700,
                           ),
@@ -1595,7 +1599,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: _buildSummaryChip(
-                            'Sold',
+                            _t('Sold', 'فروخت شدہ'),
                             _statusCount('sold'),
                             Colors.green.shade700,
                           ),
@@ -1603,7 +1607,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: _buildSummaryChip(
-                            'Cancelled',
+                            _t('Cancelled', 'منسوخ'),
                             _statusCount('cancelled'),
                             Colors.red.shade700,
                           ),
@@ -1615,7 +1619,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            '${_rows.length} listing${_rows.length == 1 ? '' : 's'}',
+                            '${_rows.length} ${_t(_rows.length == 1 ? 'listing' : 'listings', _rows.length == 1 ? 'لسٹنگ' : 'لسٹنگز')}',
                             style: TextStyle(
                               color: Colors.grey.shade700,
                               fontSize: 11,
@@ -1626,7 +1630,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           const CompactLoadingIndicator(size: 16)
                         else
                           Text(
-                            'Offers: $_totalOffersCount  Messages: $_totalUnreadCount',
+                            '${_t('Offers', 'آفرز')}: $_totalOffersCount  ${_t('Messages', 'پیغامات')}: $_totalUnreadCount',
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.green.shade700,
@@ -1659,7 +1663,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       ElevatedButton.icon(
                         onPressed: _load,
                         icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
+                        label: Text(_t('Retry', 'دوبارہ کوشش')),
                       ),
                     ],
                   ),
@@ -1686,7 +1690,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'No listings found.',
+                        _t('No listings found.', 'کوئی لسٹنگ نہیں ملی۔'),
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade700,
@@ -1711,8 +1715,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                             : const Icon(Icons.expand_more),
                     label: Text(
                       _loadingMoreListings
-                          ? 'Loading more...'
-                          : 'Load more listings',
+                          ? _t('Loading more...', 'مزید لوڈ ہو رہا ہے...')
+                          : _t('Load more listings', 'مزید لسٹنگز لوڈ کریں'),
                     ),
                   ),
                 ),

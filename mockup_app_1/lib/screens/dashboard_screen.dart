@@ -17,55 +17,6 @@ import 'package:provider/provider.dart';
 import 'package:mockup_app/services/firebase_service.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
-Icon _buildWeatherIcon(String iconUrl, {int? cloudCover}) {
-  final match = RegExp(r"/(\d{2}[dn])@").firstMatch(iconUrl);
-  final code = match != null ? match.group(1) ?? '' : '';
-  final isNight = code.endsWith('n');
-
-  Color pickColor(Color light, Color mid, Color heavy) {
-    final cc = cloudCover ?? 0;
-    if (cc > 70) return heavy;
-    if (cc > 30) return mid;
-    return light;
-  }
-
-  switch (code.substring(0, 2)) {
-    case '01':
-      return Icon(
-        isNight ? Icons.nightlight_round : Icons.wb_sunny,
-        size: 50,
-        color: isNight ? Colors.indigo.shade200 : Colors.amber.shade600,
-      );
-    case '02':
-    case '03':
-    case '04':
-      return Icon(
-        isNight ? Icons.cloudy_snowing : Icons.cloud_queue,
-        size: 50,
-        color: pickColor(
-          Colors.blueGrey.shade300,
-          Colors.blueGrey.shade500,
-          Colors.blueGrey.shade700,
-        ),
-      );
-    case '09':
-    case '10':
-      return Icon(Icons.grain, size: 50, color: Colors.blue.shade500);
-    case '11':
-      return Icon(
-        Icons.thunderstorm,
-        size: 50,
-        color: Colors.deepPurple.shade400,
-      );
-    case '13':
-      return Icon(Icons.ac_unit, size: 50, color: Colors.lightBlue.shade200);
-    case '50':
-      return Icon(Icons.foggy, size: 50, color: Colors.grey.shade500);
-    default:
-      return Icon(Icons.cloud, size: 50, color: Colors.blueGrey.shade400);
-  }
-}
-
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({Key? key}) : super(key: key);
 
@@ -96,6 +47,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'delayFertilizer',
     'harvestEarly',
   ];
+  String _t(String en, String ur) =>
+      Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
 
   Widget _buildAlertIcon(String? type) {
     switch (type) {
@@ -185,7 +138,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (user == null) {
       if (mounted) {
         setState(() {
-          _locationName = 'No location set';
+          _locationName = _t('No location set', 'مقام مقرر نہیں');
           _currentWeatherFuture = Future.value(null);
           _todayForecastFuture = Future.value(<DailyForecast>[]);
           _backendUnreachable = false;
@@ -211,9 +164,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           _latitude = lat;
           _longitude = lng;
-          _locationName = address ?? 'No location set';
+          _locationName = address ?? _t('No location set', 'مقام مقرر نہیں');
         } catch (_) {
-          _locationName = 'No location set';
+          _locationName = _t('No location set', 'مقام مقرر نہیں');
           _latitude = null;
           _longitude = null;
         }
@@ -252,7 +205,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _locationName =
           address?.trim().isNotEmpty == true
               ? address!.trim()
-              : 'No location set';
+              : _t('No location set', 'مقام مقرر نہیں');
 
       // If backend profile has no location yet, fall back to last local selection.
       if (_latitude == null || _longitude == null) {
@@ -260,7 +213,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _latitude ??= prefs.getDouble('last_latitude');
         _longitude ??= prefs.getDouble('last_longitude');
         final cachedAddress = prefs.getString('last_address');
-        if ((_locationName == 'No location set' ||
+        if ((_locationName == _t('No location set', 'مقام مقرر نہیں') ||
                 _locationName.trim().isEmpty) &&
             cachedAddress != null &&
             cachedAddress.trim().isNotEmpty) {
@@ -333,7 +286,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ? effectiveName![0]
                 : (effectiveEmail?.isNotEmpty == true
                     ? effectiveEmail![0]
-                    : 'U'))
+                    : _t('U', 'ص')))
             .toUpperCase();
 
     return Scaffold(
@@ -404,15 +357,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         children: [
                           _InfoChip(
                             icon: Icons.wb_sunny_outlined,
-                            label: 'Sunrise',
-                            value: cw.sunrise.isNotEmpty ? cw.sunrise : '—',
+                            label: _t('Sunrise', 'طلوع آفتاب'),
+                            value: cw.sunrise.isNotEmpty ? cw.sunrise : _t('—', '—'),
                             color: Colors.amber.shade600,
                           ),
                           const SizedBox(width: 8),
                           _InfoChip(
                             icon: Icons.nightlight_round,
-                            label: 'Sunset',
-                            value: cw.sunset.isNotEmpty ? cw.sunset : '—',
+                            label: _t('Sunset', 'غروب آفتاب'),
+                            value: cw.sunset.isNotEmpty ? cw.sunset : _t('—', '—'),
                             color: Colors.indigo.shade300,
                           ),
                         ],
@@ -518,7 +471,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Backend Unreachable',
+                                _t('Backend Unreachable', 'بیک اینڈ دستیاب نہیں'),
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -527,7 +480,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Unable to connect to the server. Please check your internet connection and try again.',
+                                _t('Unable to connect to the server. Please check your internet connection and try again.', 'سرور سے رابطہ نہیں ہو سکا۔ براہ کرم انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔'),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: Colors.red.shade600),
                               ),
@@ -537,7 +490,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   _loadDashboardData();
                                 },
                                 icon: const Icon(Icons.refresh),
-                                label: const Text('Retry'),
+                                label: Text(_t('Retry', 'دوبارہ کوشش')),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red.shade500,
                                 ),
@@ -575,7 +528,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   _loadDashboardData();
                                 },
                                 icon: const Icon(Icons.refresh),
-                                label: const Text('Retry'),
+                                label: Text(_t('Retry', 'دوبارہ کوشش')),
                               ),
                             ],
                           ),
@@ -663,12 +616,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: ListTile(
                           leading: _buildAlertIcon(latestToday?.type),
                           title: Text(
-                            latestToday?.title ?? 'Today weather is normal',
+                            latestToday?.title ?? _t('Today weather is normal', 'آج موسم معمول کے مطابق ہے'),
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
                             latestToday?.body ??
-                                'No alerts for your location today. Tap to view all alerts.',
+                                _t('No alerts for your location today. Tap to view all alerts.', 'آج آپ کے مقام کے لیے کوئی الرٹ نہیں۔ تمام الرٹس دیکھنے کے لیے ٹیپ کریں۔'),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -740,7 +693,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   alignment: Alignment.centerRight,
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.health_and_safety_outlined),
-                    label: const Text('Open Plant Disease Detector'),
+                    label: Text(_t('Open Plant Disease Detector', 'پودے کی بیماری کا ڈیٹیکٹر کھولیں')),
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -812,6 +765,8 @@ class _WeatherSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String t(String en, String ur) =>
+        Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
     final rainChance =
         todayForecast != null ? (todayForecast!.pop * 100).round() : 0;
     final cloudCoverage = currentWeather.cloudCover;
@@ -819,7 +774,7 @@ class _WeatherSummaryCard extends StatelessWidget {
     final isDaytime = DateTime.now().hour >= 6 && DateTime.now().hour < 18;
     final skyLabel =
         currentWeather.description.toLowerCase().contains('clear')
-            ? 'Clear sky'
+            ? t('Clear sky', 'صاف آسمان')
             : currentWeather.description;
 
     Color temperatureColor() {
@@ -933,7 +888,7 @@ class _WeatherSummaryCard extends StatelessWidget {
                         Icon(Icons.cloud, size: 16, color: cloudColor()),
                         const SizedBox(width: 5),
                         Text(
-                          'Cloud cover',
+                          t('Cloud cover', 'بادلوں کی مقدار'),
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.grey.shade700,
@@ -957,7 +912,7 @@ class _WeatherSummaryCard extends StatelessWidget {
                         Icon(Icons.water_drop, size: 16, color: rainColor()),
                         const SizedBox(width: 5),
                         Text(
-                          'Rain chance',
+                          t('Rain chance', 'بارش کا امکان'),
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.blue.shade700,
@@ -981,7 +936,7 @@ class _WeatherSummaryCard extends StatelessWidget {
               if (canOpenForecast) ...[
                 const SizedBox(height: 8),
                 Text(
-                  'Tap for detailed forecast',
+                  t('Tap for detailed forecast', 'تفصیلی پیشگوئی کے لیے ٹیپ کریں'),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,

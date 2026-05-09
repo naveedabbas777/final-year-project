@@ -205,6 +205,7 @@ adminRouter.post('/weather/refresh', requireAuth, attachDbUser, requireRole('adm
 
 adminRouter.post('/notifications/send', requireAuth, attachDbUser, requireRole('admin'), asyncHandler(async (req, res) => {
   const mode = String(req.body?.mode || '').trim();
+  const audience = String(req.body?.audience || 'farmers').trim();
   const title = String(req.body?.title || '').trim();
   const body = String(req.body?.body || '').trim();
   const targetUserIds = Array.isArray(req.body?.targetUserIds)
@@ -213,6 +214,10 @@ adminRouter.post('/notifications/send', requireAuth, attachDbUser, requireRole('
 
   if (!['all', 'some', 'single'].includes(mode)) {
     res.status(400).json({ message: 'mode must be one of: all, some, single' });
+    return;
+  }
+  if (!['farmers', 'admins', 'all_users'].includes(audience)) {
+    res.status(400).json({ message: 'audience must be one of: farmers, admins, all_users' });
     return;
   }
   if (!title || !body) {
@@ -224,7 +229,12 @@ adminRouter.post('/notifications/send', requireAuth, attachDbUser, requireRole('
     return;
   }
 
-  let query = admin.firestore().collection('users').where('role', '==', 'farmer');
+  let query = admin.firestore().collection('users');
+  if (audience === 'farmers') {
+    query = query.where('role', '==', 'farmer');
+  } else if (audience === 'admins') {
+    query = query.where('role', '==', 'admin');
+  }
   if (mode === 'single') {
     query = query.where('firebaseUid', '==', targetUserIds[0]);
   }
@@ -273,6 +283,7 @@ adminRouter.post('/notifications/send', requireAuth, attachDbUser, requireRole('
         type: 'admin_notice',
         userId: uid,
         mode,
+        audience,
       },
     });
     pushSent += resp.successCount;
@@ -290,6 +301,7 @@ adminRouter.post('/notifications/send', requireAuth, attachDbUser, requireRole('
     senderUid: req.user?.uid || '',
     senderName: req.dbUser?.displayName || req.dbUser?.name || '',
     mode,
+    audience,
     title,
     body,
     targetUserIds: targetUserIds,
@@ -302,6 +314,7 @@ adminRouter.post('/notifications/send', requireAuth, attachDbUser, requireRole('
   res.json({
     message: 'Notifications processed',
     mode,
+    audience,
     recipients: recipients.length,
     alertCreated,
     pushSent,
