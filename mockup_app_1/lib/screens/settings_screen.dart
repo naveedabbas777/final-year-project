@@ -35,8 +35,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSaved();
-    _loadNotificationSetting();
+    // Delay calls that rely on InheritedWidgets/localizations until after
+    // the first frame so `Localizations.of(context)` is available.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSaved();
+      _loadNotificationSetting();
+    });
   }
 
   /// Loads the user's saved location from the market API (same source as profile screen).

@@ -11,6 +11,7 @@ import '../utils/form_validators.dart';
 import 'chat_screen.dart';
 import 'listing_detail_screen.dart';
 import 'listing_location_picker.dart';
+import 'product_listing_details_screen.dart';
 
 class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key});
@@ -226,23 +227,12 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   }
 
   Future<void> _openCreateListingSheet() async {
-    _editingListingId = null;
-    _cropController.clear();
-    _districtController.clear();
-    _qtyController.clear();
-    _priceController.clear();
-    _unitController.text = '40kg';
-    _gradeController.text = 'A';
-    _descriptionController.clear();
-    _selectedImages.clear();
-    _editingImageUrls.clear();
-    _selectedLatitude = null;
-    _selectedLongitude = null;
-    await _openListingFormSheet(
-      title: _t('Product Listing', 'پروڈکٹ لسٹنگ'),
-      buttonLabel: _t('Create Listing', 'لسٹنگ بنائیں'),
-      allowImages: true,
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const ProductListingDetailsScreen(),
+      ),
     );
+    _load();
   }
 
   Future<void> _openEditListingSheet(ListingDto row) async {

@@ -17,6 +17,10 @@ export const env = {
   grokApiKey: process.env.GROK_API_KEY || '',
   grokModel: process.env.GROK_MODEL || 'grok-4.3',
   grokMaxTokens: Number(process.env.GROK_MAX_TOKENS || 2048),
+  // Optional OpenAI fallback (set OPENAI_API_KEY in .env to enable)
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
+  openaiModel: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+  openaiMaxTokens: Number(process.env.OPENAI_MAX_TOKENS || 1024),
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
     apiKey: process.env.CLOUDINARY_API_KEY || '',

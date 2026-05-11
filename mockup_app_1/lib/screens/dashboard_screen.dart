@@ -15,7 +15,7 @@ import 'package:mockup_app/screens/location_screen.dart';
 import 'package:mockup_app/screens/detailed_forecast_screen.dart';
 import 'package:mockup_app/screens/alerts_screen.dart';
 import 'package:mockup_app/services/alert_service.dart';
-import 'package:mockup_app/screens/plant_disease_screen.dart';
+
 import 'package:provider/provider.dart';
 import 'package:mockup_app/services/firebase_service.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
@@ -781,26 +781,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.health_and_safety_outlined),
-                    label: Text(
-                      _t(
-                        'Open Plant Disease Detector',
-                        'پودے کی بیماری کا ڈیٹیکٹر کھولیں',
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const PlantDiseaseScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+
                 const SizedBox(height: 24),
               ],
             ),
