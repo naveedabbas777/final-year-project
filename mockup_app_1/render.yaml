@@ -1,0 +1,18 @@
+services:
+  - type: web_service
+    name: digital-kissan-backend
+    env: node
+    plan: starter
+    region: oregon
+    branch: main
+    root: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: HOST
+        value: "0.0.0.0"
+      - key: PORT
+        value: "5000"
+    # Secrets must be configured in Render dashboard or using `render.yaml` secrets support.
+    # The backend supports either a local service account file path via GOOGLE_APPLICATION_CREDENTIALS
+    # or a direct JSON secret via FIREBASE_SERVICE_ACCOUNT_JSON.

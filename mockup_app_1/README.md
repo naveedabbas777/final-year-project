@@ -166,3 +166,39 @@ New app area
 - UI is implemented in `lib/screens/market_screen.dart`.
 - Client API services are implemented in `lib/services/api_client.dart` and `lib/services/market_api_service.dart`.
 
+## Deployment
+
+This repo includes a backend service suitable for deployment on Render.
+The backend service definition is available in `render.yaml` at the repository root.
+
+### Render deployment steps
+1. Push this repo to your Git branch.
+2. Create a new Render Web Service using the `backend` folder as the root.
+3. Set the service build command to:
+   ```bash
+   npm install
+   ```
+4. Set the start command to:
+   ```bash
+   npm start
+   ```
+5. Configure required environment variables in Render:
+   - `MONGO_URI`
+   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_SERVICE_ACCOUNT_JSON` (preferred) or `GOOGLE_APPLICATION_CREDENTIALS`
+   - `MAPBOX_ACCESS_TOKEN`
+   - `GROK_API_KEY`
+   - `CLOUDINARY_CLOUD_NAME`
+   - `CLOUDINARY_API_KEY`
+   - `CLOUDINARY_API_SECRET`
+6. Optional environment variables:
+   - `OPENWEATHER_KEY`
+   - `OPENAI_API_KEY`
+   - `OPENAI_MODEL`
+   - `OPENAI_MAX_TOKENS`
+
+### Notes
+- Do not commit `serviceAccountKey.json` or other secret files.
+- The backend reads the API port from `process.env.PORT`, so Render's runtime port configuration is supported automatically.
+- For Flutter local development with Render-hosted API, point `API_BASE_URL` to the deployed service URL.
+

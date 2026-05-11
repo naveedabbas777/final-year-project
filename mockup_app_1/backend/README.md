@@ -11,6 +11,7 @@ This backend uses:
    - `cp .env.example .env` (or create `.env` manually on Windows)
 2. Add Firebase service account credentials path in `.env`:
    - `GOOGLE_APPLICATION_CREDENTIALS=./serviceAccountKey.json`
+   - Or for hosted deployments, set `FIREBASE_SERVICE_ACCOUNT_JSON` to the service account JSON object.
 3. Ensure MongoDB is running locally:
    - `mongodb://127.0.0.1:27017/digital_kissan`
 4. Add the Mapbox access token in `.env` so the Flutter app can load it from the backend:
@@ -44,6 +45,28 @@ npm run seed
 # 3) run API
 npm run start
 ```
+
+### Hosted deployment guidance
+
+When deploying on Render or any secret-managed host, avoid committing `serviceAccountKey.json`.
+Use the `FIREBASE_SERVICE_ACCOUNT_JSON` environment variable to provide the Firebase service account JSON directly.
+
+Required runtime environment variables for hosting:
+- `PORT` (Render provides this automatically; the app already reads `process.env.PORT`)
+- `MONGO_URI`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS`
+- `MAPBOX_ACCESS_TOKEN`
+- `GROK_API_KEY`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+Optional variables:
+- `OPENWEATHER_KEY`
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `OPENAI_MAX_TOKENS`
 
 API base URL:
 - `http://localhost:5000`
