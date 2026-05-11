@@ -1,6 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http;
+
+import '../services/api_client.dart';
 
 class ListingLocationPicker extends StatefulWidget {
   final double? initialLatitude;
@@ -25,6 +30,7 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
   String? _selectedLocationName;
   String? _selectedDistrict;
   bool _loadingLocationName = false;
+  String? _mapboxAccessToken;
 
   String _t(String en, String ur) =>
       Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
@@ -61,18 +67,35 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
   /// Reverse geocode coordinates to get location name/address
   Future<void> _fetchLocationName(double lat, double lng) async {
     if (!mounted) return;
+    final locale = Localizations.localeOf(context).languageCode;
     setState(() => _loadingLocationName = true);
 
     try {
+      final mapboxLocation = await _fetchLocationDetailsFromMapbox(
+        lat,
+        lng,
+        locale,
+      );
+      if (mapboxLocation != null && mounted) {
+        setState(() {
+          _selectedLocationName = mapboxLocation['locationName'];
+          _selectedDistrict = mapboxLocation['district'];
+        });
+        return;
+      }
+
       final List<Placemark> placemarks =
           await placemarkFromCoordinates(lat, lng);
       if (placemarks.isNotEmpty && mounted) {
         final pm = placemarks.first;
         final addressParts = <String>[];
         if (pm.name?.isNotEmpty ?? false) addressParts.add(pm.name!);
-        if (pm.administrativeArea?.isNotEmpty ?? false)
+        if (pm.administrativeArea?.isNotEmpty ?? false) {
           addressParts.add(pm.administrativeArea!);
-        if (pm.country?.isNotEmpty ?? false) addressParts.add(pm.country!);
+        }
+        if (pm.country?.isNotEmpty ?? false) {
+          addressParts.add(pm.country!);
+        }
 
         final locationName = addressParts.join(', ');
         setState(() {
@@ -84,6 +107,98 @@ class _ListingLocationPickerState extends State<ListingLocationPicker> {
       debugPrint('[LocationPicker] Error fetching location name: $e');
     } finally {
       if (mounted) setState(() => _loadingLocationName = false);
+    }
+  }
+
+  Future<String?> _getMapboxAccessToken() async {
+    if (_mapboxAccessToken != null) return _mapboxAccessToken;
+
+    try {
+      final config = await ApiClient().get('/api/config/public');
+      final token =
+          config is Map<String, dynamic>
+              ? config['mapboxAccessToken'] as String? ?? ''
+              : '';
+      _mapboxAccessToken = token.trim().isEmpty ? null : token.trim();
+    } catch (e) {
+      debugPrint('[LocationPicker] Error loading Mapbox token: $e');
+      _mapboxAccessToken = null;
+    }
+
+    return _mapboxAccessToken;
+  }
+
+  Future<Map<String, String?>?> _fetchLocationDetailsFromMapbox(
+    double lat,
+    double lng,
+    String locale,
+  ) async {
+    final token = await _getMapboxAccessToken();
+    if (token == null || token.isEmpty) return Future.value(null);
+
+    try {
+      final uri = Uri.https(
+        'api.mapbox.com',
+        '/geocoding/v5/mapbox.places/$lng,$lat.json',
+        {
+          'access_token': token,
+          'types': 'address,place,locality,district,region',
+          'limit': '1',
+          'language': locale,
+        },
+      );
+
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return Future.value(null);
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) return Future.value(null);
+
+      final features = decoded['features'];
+      if (features is! List || features.isEmpty) return Future.value(null);
+
+      final feature = features.first;
+      if (feature is! Map<String, dynamic>) return Future.value(null);
+
+      String? district;
+      final context = feature['context'];
+      if (context is List) {
+        for (final item in context) {
+          if (item is! Map<String, dynamic>) continue;
+          final id = item['id']?.toString() ?? '';
+          final text = item['text']?.toString() ?? '';
+          if (id.startsWith('district') && text.isNotEmpty) {
+            district = text;
+            break;
+          }
+        }
+
+        if (district == null) {
+          for (final item in context) {
+            if (item is! Map<String, dynamic>) continue;
+            final id = item['id']?.toString() ?? '';
+            final text = item['text']?.toString() ?? '';
+            if ((id.startsWith('locality') || id.startsWith('place')) &&
+                text.isNotEmpty) {
+              district = text;
+              break;
+            }
+          }
+        }
+      }
+
+      final locationName = feature['place_name']?.toString() ?? '';
+      if (locationName.isEmpty && (district == null || district.isEmpty)) {
+        return Future.value(null);
+      }
+
+      return {
+        'locationName': locationName.isEmpty ? null : locationName,
+        'district': district,
+      };
+    } catch (e) {
+      debugPrint('[LocationPicker] Error fetching Mapbox location: $e');
+      return Future.value(null);
     }
   }
 

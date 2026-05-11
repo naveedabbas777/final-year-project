@@ -79,6 +79,7 @@ listingsRouter.post('/', requireAuth, attachDbUser, asyncHandler(async (req, res
     unit: payload.unit || '40kg',
     askingPrice: Number(payload.askingPrice),
     district: payload.district,
+    locationName: typeof payload.locationName === 'string' ? payload.locationName.trim() : '',
     latitude: payload.latitude != null ? Number(payload.latitude) : null,
     longitude: payload.longitude != null ? Number(payload.longitude) : null,
     description: payload.description || '',
@@ -109,7 +110,7 @@ listingsRouter.patch('/:id', requireAuth, attachDbUser, asyncHandler(async (req,
 
   const payload = req.body || {};
   const updates = { updatedAt: serverTimestamp() };
-  const textFields = ['cropName', 'qualityGrade', 'unit', 'district', 'description'];
+  const textFields = ['cropName', 'qualityGrade', 'unit', 'district', 'locationName', 'description'];
 
   textFields.forEach((field) => {
     if (typeof payload[field] === 'string' && payload[field].trim()) {

@@ -765,14 +765,6 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
     }
   }
 
-  Future<void> _openChat(ListingDto row) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChatScreen(listingId: row.id, toUid: row.sellerUid),
-      ),
-    );
-  }
-
   Future<void> _openMessagesSheet(ListingDto row) async {
     final previewsFuture = _fetchConversationPreviews(row.id);
 
@@ -1481,12 +1473,6 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           icon: Icons.mark_chat_read_outlined,
                           color: Colors.blue.shade700,
                           onPressed: () => _openMessagesSheet(row),
-                        ),
-                        _buildCardActionIcon(
-                          tooltip: _t('Chat', 'چیٹ'),
-                          icon: Icons.chat_bubble_outline,
-                          color: Colors.green.shade700,
-                          onPressed: () => _openChat(row),
                         ),
                         _buildCardActionIcon(
                           tooltip: _t('Edit', 'ترمیم'),

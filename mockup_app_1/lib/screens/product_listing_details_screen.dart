@@ -98,9 +98,9 @@ class _ProductListingDetailsScreenState
         _selectedLatitude = result['latitude'];
         _selectedLongitude = result['longitude'];
         _selectedLocationName = result['locationName'];
-        // Auto-populate district field if available
-        if (result['district'] != null && result['district'].isNotEmpty) {
-          _districtController.text = result['district'];
+        final district = result['district']?.toString() ?? '';
+        if (district.isNotEmpty) {
+          _districtController.text = district;
         }
       });
     }
@@ -132,6 +132,7 @@ class _ProductListingDetailsScreenState
       await _service.createListing(
         cropName: _cropController.text.trim(),
         district: _districtController.text.trim(),
+        locationName: _selectedLocationName,
         quantity: double.tryParse(_qtyController.text.trim()) ?? 0.0,
         askingPrice: double.tryParse(_priceController.text.trim()) ?? 0.0,
         qualityGrade:

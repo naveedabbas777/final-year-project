@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/market_api_service.dart';
+import '../widgets/photo_viewer.dart';
 import 'chat_screen.dart';
+import 'listing_detail_screen.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class SellerProfileScreen extends StatefulWidget {
@@ -91,6 +94,11 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChatScreen(listingId: id, toUid: widget.sellerUid)));
   }
 
+  bool get _showChatButton {
+    final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+    return currentUserUid == null || currentUserUid != widget.sellerUid;
+  }
+
   Future<void> _showRateDialog() async {
     int selectedStars = 0;
     bool submitting = false;
@@ -168,13 +176,8 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                   onPressed: submitting ? null : () => Navigator.pop(ctx),
                   child: Text(_t('Cancel', 'منسوخ')),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade700,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  onPressed: selectedStars == 0 || submitting
+                TextButton(
+                  onPressed: submitting || selectedStars == 0
                       ? null
                       : () async {
                           setLocal(() => submitting = true);
@@ -184,29 +187,18 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                               score: selectedStars,
                               comment: commentCtrl.text.trim(),
                             );
-                            if (ctx.mounted) Navigator.pop(ctx);
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('${_t('Thanks for your', 'آپ کی')} $selectedStars-${_t('star rating', 'اسٹار ریٹنگ')}!'),
-                                backgroundColor: Colors.green.shade700,
-                                behavior: SnackBarBehavior.floating,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            );
-                            // Refresh only the ratings section
-                            final updated = await _service.fetchUserRatings(widget.sellerUid);
-                            if (mounted) setState(() {
-                              _ratings = updated;
-                              _canRate = false;
-                              _rateBlockReason = 'already_rated';
-                            });
+                            if (!ctx.mounted) return;
+                            Navigator.pop(ctx);
+                            _loadAll();
                           } catch (e) {
-                            setLocal(() => submitting = false);
-                            if (!mounted) return;
+                            if (!ctx.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${_t('Failed to submit rating', 'ریٹنگ جمع کرنے میں ناکامی')}: $e'), backgroundColor: Colors.red.shade700),
+                              SnackBar(content: Text(e.toString())),
                             );
+                          } finally {
+                            if (ctx.mounted) {
+                              setLocal(() => submitting = false);
+                            }
                           }
                         },
                   child: Text(_t('Submit Rating', 'ریٹنگ جمع کریں')),
@@ -352,14 +344,20 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                         Stack(
                           alignment: Alignment.bottomRight,
                           children: [
-                            CircleAvatar(
-                              radius: 44,
-                              backgroundColor: Colors.white24,
-                              backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
-                              child: photo.isEmpty
-                                  ? Text(name.isNotEmpty ? name[0].toUpperCase() : _t('S', 'ف'),
-                                      style: const TextStyle(fontSize: 36, color: Colors.white, fontWeight: FontWeight.w700))
+                            InkWell(
+                              borderRadius: BorderRadius.circular(48),
+                              onTap: photo.isNotEmpty
+                                  ? () => PhotoViewer.show(context, url: photo, caption: name)
                                   : null,
+                              child: CircleAvatar(
+                                radius: 44,
+                                backgroundColor: Colors.white24,
+                                foregroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                                child: photo.isEmpty
+                                    ? Text(name.isNotEmpty ? name[0].toUpperCase() : _t('S', 'ف'),
+                                        style: const TextStyle(fontSize: 36, color: Colors.white, fontWeight: FontWeight.w700))
+                                    : null,
+                              ),
                             ),
                             Container(
                               width: 18, height: 18,
@@ -439,22 +437,23 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                       children: [
                         Row(
                           children: [
-                            Expanded(
-                              flex: 2,
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.green.shade700,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 13),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            if (_showChatButton)
+                              Expanded(
+                                flex: phone.isNotEmpty ? 2 : 1,
+                                child: ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green.shade700,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 13),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  onPressed: _openChat,
+                                  icon: const Icon(Icons.chat_bubble_outline),
+                                  label: Text(_t('Message Seller', 'فروخت کنندہ کو پیغام'), style: const TextStyle(fontWeight: FontWeight.w700)),
                                 ),
-                                onPressed: _openChat,
-                                icon: const Icon(Icons.chat_bubble_outline),
-                                label: Text(_t('Message Seller', 'فروخت کنندہ کو پیغام'), style: const TextStyle(fontWeight: FontWeight.w700)),
                               ),
-                            ),
-                            if (phone.isNotEmpty) ...[
-                              const SizedBox(width: 10),
+                            if (_showChatButton && phone.isNotEmpty) const SizedBox(width: 10),
+                            if (phone.isNotEmpty)
                               Expanded(
                                 child: OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
@@ -466,15 +465,18 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                                   onPressed: () {
                                     Clipboard.setData(ClipboardData(text: phone));
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(_t('Phone number copied', 'فون نمبر کاپی ہو گیا')), backgroundColor: Colors.green.shade700,
-                                        behavior: SnackBarBehavior.floating, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
+                                      SnackBar(
+                                        content: Text(_t('Phone number copied', 'فون نمبر کاپی ہو گیا')),
+                                        backgroundColor: Colors.green.shade700,
+                                        behavior: SnackBarBehavior.floating,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                      ),
                                     );
                                   },
                                   icon: const Icon(Icons.call),
                                   label: Text(_t('Copy No.', 'نمبر کاپی')),
                                 ),
                               ),
-                            ],
                           ],
                         ),
                         const SizedBox(height: 8),
@@ -695,31 +697,40 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
   }
 
   Widget _listingTile(ListingDto l) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.green.shade100),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: l.imageUrls.isNotEmpty
-              ? Image.network(l.imageUrls.first, width: 52, height: 52, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _cropPlaceholder())
-              : _cropPlaceholder(),
+        onTap: () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (_) => ListingDetailScreen(listing: l)));
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.green.shade100),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: l.imageUrls.isNotEmpty
+                  ? Image.network(l.imageUrls.first, width: 52, height: 52, fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _cropPlaceholder())
+                  : _cropPlaceholder(),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('${l.cropName} — Grade ${l.qualityGrade}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+              const SizedBox(height: 2),
+              Text('${l.quantity.toStringAsFixed(0)} ${l.unit} • ${l.district}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            ])),
+            Text('PKR ${l.askingPrice.toStringAsFixed(0)}',
+                style: TextStyle(fontWeight: FontWeight.w800, color: Colors.green.shade700, fontSize: 13)),
+          ]),
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('${l.cropName} — Grade ${l.qualityGrade}', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-          const SizedBox(height: 2),
-          Text('${l.quantity.toStringAsFixed(0)} ${l.unit} • ${l.district}',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-        ])),
-        Text('PKR ${l.askingPrice.toStringAsFixed(0)}',
-            style: TextStyle(fontWeight: FontWeight.w800, color: Colors.green.shade700, fontSize: 13)),
-      ]),
+      ),
     );
   }
 

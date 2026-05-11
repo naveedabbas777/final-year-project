@@ -53,7 +53,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // redact phone, email, address, lat/lon even for your own profile.
       final doc = await _svc.getUserMe();
       if (!mounted) return;
-      setState(() => _data = doc);
+      setState(() {
+        _data = doc;
+        _loadError = doc == null;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() {

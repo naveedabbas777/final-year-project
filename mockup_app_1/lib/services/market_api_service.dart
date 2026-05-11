@@ -194,6 +194,7 @@ class ListingDto {
     required this.description,
     required this.createdAt,
     required this.imageUrls,
+    required this.locationName,
     this.latitude,
     this.longitude,
   });
@@ -210,6 +211,7 @@ class ListingDto {
   final String description;
   final DateTime createdAt;
   final List<String> imageUrls;
+  final String locationName;
   final double? latitude;
   final double? longitude;
 
@@ -230,6 +232,7 @@ class ListingDto {
       description: toStringOrEmpty(json['description']),
       createdAt: toDateTimeOrNow(json['createdAt']),
       imageUrls: toStringListOrEmpty(json['imageUrls']),
+      locationName: toStringOrEmpty(json['locationName']),
       latitude: toDoubleOrNull(json['latitude']),
       longitude: toDoubleOrNull(json['longitude']),
     );
@@ -250,6 +253,7 @@ class ListingDto {
       'description': description,
       'createdAt': createdAt.toIso8601String(),
       'imageUrls': imageUrls,
+      'locationName': locationName,
       'latitude': latitude,
       'longitude': longitude,
     };
@@ -744,6 +748,7 @@ class MarketApiService {
   Future<void> createListing({
     required String cropName,
     required String district,
+    String? locationName,
     required double quantity,
     required double askingPrice,
     String qualityGrade = 'A',
@@ -765,6 +770,8 @@ class MarketApiService {
         'unit': unit,
         'description': description,
         'imageUrls': imageUrls,
+        if (locationName != null && locationName.trim().isNotEmpty)
+          'locationName': locationName.trim(),
         if (latitude != null) 'latitude': latitude,
         if (longitude != null) 'longitude': longitude,
       },
