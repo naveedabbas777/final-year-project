@@ -6,8 +6,11 @@ import 'package:mockup_app/config/app_theme.dart';
 import '../widgets/tip_card.dart';
 import 'package:mockup_app/l10n/app_localizations.dart';
 import 'package:mockup_app/screens/profile_screen.dart';
+import 'package:mockup_app/screens/assistant_screen.dart';
+import 'package:mockup_app/screens/conversations_screen.dart';
 import 'package:mockup_app/services/weather_service.dart'; // Import WeatherService
 import 'package:mockup_app/services/connectivity_service.dart';
+import 'package:mockup_app/services/market_api_service.dart';
 import 'package:mockup_app/screens/location_screen.dart';
 import 'package:mockup_app/screens/detailed_forecast_screen.dart';
 import 'package:mockup_app/screens/alerts_screen.dart';
@@ -33,6 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _backendUnreachable = false;
   String? _profilePhotoUrl;
   String? _profileDisplayName;
+  int _unreadMessageCount = 0;
   final PageController _tipsPageController = PageController(
     viewportFraction: 0.78,
   );
@@ -248,6 +252,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
         return <DailyForecast>[];
       });
+
+      // Fetch unread message count
+      try {
+        final apiService = MarketApiService();
+        final unreadCount = await apiService.getUnreadMessageCount();
+        if (mounted) {
+          setState(() {
+            _unreadMessageCount = unreadCount;
+          });
+        }
+      } catch (_) {
+        _unreadMessageCount = 0;
+      }
+
       if (mounted) {
         setState(() {});
       }
@@ -296,6 +314,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.14),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Stack(
+                children: [
+                  IconButton(
+                    tooltip: _t('Messages', 'پیغامات'),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ConversationsScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                  ),
+                  if (_unreadMessageCount > 0)
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade600,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                        child: Text(
+                          _unreadMessageCount > 99 ? '99+' : '${_unreadMessageCount}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              tooltip: _t('AI Assistant', 'AI اسسٹنٹ'),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AssistantScreen()),
+                );
+              },
+              icon: const Icon(Icons.smart_toy_outlined, size: 20),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: InkWell(
@@ -358,14 +434,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _InfoChip(
                             icon: Icons.wb_sunny_outlined,
                             label: _t('Sunrise', 'طلوع آفتاب'),
-                            value: cw.sunrise.isNotEmpty ? cw.sunrise : _t('—', '—'),
+                            value:
+                                cw.sunrise.isNotEmpty
+                                    ? cw.sunrise
+                                    : _t('—', '—'),
                             color: Colors.amber.shade600,
                           ),
                           const SizedBox(width: 8),
                           _InfoChip(
                             icon: Icons.nightlight_round,
                             label: _t('Sunset', 'غروب آفتاب'),
-                            value: cw.sunset.isNotEmpty ? cw.sunset : _t('—', '—'),
+                            value:
+                                cw.sunset.isNotEmpty ? cw.sunset : _t('—', '—'),
                             color: Colors.indigo.shade300,
                           ),
                         ],
@@ -471,7 +551,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                _t('Backend Unreachable', 'بیک اینڈ دستیاب نہیں'),
+                                _t(
+                                  'Backend Unreachable',
+                                  'بیک اینڈ دستیاب نہیں',
+                                ),
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -480,7 +563,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                _t('Unable to connect to the server. Please check your internet connection and try again.', 'سرور سے رابطہ نہیں ہو سکا۔ براہ کرم انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔'),
+                                _t(
+                                  'Unable to connect to the server. Please check your internet connection and try again.',
+                                  'سرور سے رابطہ نہیں ہو سکا۔ براہ کرم انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔',
+                                ),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: Colors.red.shade600),
                               ),
@@ -616,12 +702,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: ListTile(
                           leading: _buildAlertIcon(latestToday?.type),
                           title: Text(
-                            latestToday?.title ?? _t('Today weather is normal', 'آج موسم معمول کے مطابق ہے'),
+                            latestToday?.title ??
+                                _t(
+                                  'Today weather is normal',
+                                  'آج موسم معمول کے مطابق ہے',
+                                ),
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
                             latestToday?.body ??
-                                _t('No alerts for your location today. Tap to view all alerts.', 'آج آپ کے مقام کے لیے کوئی الرٹ نہیں۔ تمام الرٹس دیکھنے کے لیے ٹیپ کریں۔'),
+                                _t(
+                                  'No alerts for your location today. Tap to view all alerts.',
+                                  'آج آپ کے مقام کے لیے کوئی الرٹ نہیں۔ تمام الرٹس دیکھنے کے لیے ٹیپ کریں۔',
+                                ),
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -693,7 +786,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   alignment: Alignment.centerRight,
                   child: ElevatedButton.icon(
                     icon: const Icon(Icons.health_and_safety_outlined),
-                    label: Text(_t('Open Plant Disease Detector', 'پودے کی بیماری کا ڈیٹیکٹر کھولیں')),
+                    label: Text(
+                      _t(
+                        'Open Plant Disease Detector',
+                        'پودے کی بیماری کا ڈیٹیکٹر کھولیں',
+                      ),
+                    ),
                     onPressed: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -703,6 +801,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     },
                   ),
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -936,7 +1035,10 @@ class _WeatherSummaryCard extends StatelessWidget {
               if (canOpenForecast) ...[
                 const SizedBox(height: 8),
                 Text(
-                  t('Tap for detailed forecast', 'تفصیلی پیشگوئی کے لیے ٹیپ کریں'),
+                  t(
+                    'Tap for detailed forecast',
+                    'تفصیلی پیشگوئی کے لیے ٹیپ کریں',
+                  ),
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,

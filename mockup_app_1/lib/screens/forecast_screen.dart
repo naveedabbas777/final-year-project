@@ -233,13 +233,19 @@ class _ForecastScreenState extends State<ForecastScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _t('Unable to connect to the server. Please check your network and try again.', 'سرور سے رابطہ نہیں ہو سکا۔ براہ کرم نیٹ ورک چیک کریں اور دوبارہ کوشش کریں۔'),
+                      _t(
+                        'Unable to connect to the server. Please check your network and try again.',
+                        'سرور سے رابطہ نہیں ہو سکا۔ براہ کرم نیٹ ورک چیک کریں اور دوبارہ کوشش کریں۔',
+                      ),
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.red.shade600),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _t('USB-connected Android devices need adb reverse tcp:5000 tcp:5000, or launch with --dart-define=API_BASE_URL=http://<your-pc-ip>:5000.', 'USB سے منسلک اینڈرائیڈ ڈیوائسز کے لیے adb reverse tcp:5000 tcp:5000 چلائیں، یا --dart-define=API_BASE_URL=http://<your-pc-ip>:5000 کے ساتھ لانچ کریں۔'),
+                      _t(
+                        'USB-connected Android devices need adb reverse tcp:5000 tcp:5000, or launch with --dart-define=API_BASE_URL=http://<your-pc-ip>:5000.',
+                        'USB سے منسلک اینڈرائیڈ ڈیوائسز کے لیے adb reverse tcp:5000 tcp:5000 چلائیں، یا --dart-define=API_BASE_URL=http://<your-pc-ip>:5000 کے ساتھ لانچ کریں۔',
+                      ),
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.red.shade500,

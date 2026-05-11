@@ -15,7 +15,12 @@ This backend uses:
    - `mongodb://127.0.0.1:27017/digital_kissan`
 4. Add the Mapbox access token in `.env` so the Flutter app can load it from the backend:
    - `MAPBOX_ACCESS_TOKEN=your_mapbox_access_token`
-5. Add Cloudinary credentials to `.env` for server-side image uploads:
+5. Add a Grok API key for the AI assistant:
+   - Get your key from https://console.x.ai
+   - `GROK_API_KEY=sk_your_grok_api_key`
+   - `GROK_MODEL=grok-4.3` (optional override)
+   - `GROK_MAX_TOKENS=2048` (optional, default: 2048)
+6. Add Cloudinary credentials to `.env` for server-side image uploads:
    - `CLOUDINARY_CLOUD_NAME=your_cloud_name`
    - `CLOUDINARY_API_KEY=your_api_key`
    - `CLOUDINARY_API_SECRET=your_api_secret`
@@ -69,6 +74,7 @@ Backend verifies token using Firebase Admin SDK.
 - `POST /api/offers/:id/accept` (auth)
 - `GET /api/orders/me` (auth)
 - `PATCH /api/orders/:id/status` (auth)
+- `POST /api/assistant/chat` (auth)
 
 ## 5) Flutter connection
 

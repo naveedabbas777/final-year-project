@@ -10,6 +10,8 @@ import 'package:permission_handler/permission_handler.dart';
 import '../services/market_api_service.dart';
 import '../services/firebase_service.dart';
 import '../widgets/confirm_dialog.dart';
+import 'package:mockup_app/widgets/help_guide_dialog.dart';
+import 'package:mockup_app/widgets/comprehensive_help_dialog.dart';
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/notification_service.dart';
 
@@ -42,11 +44,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
     if (user == null) {
-      if (mounted) setState(() => _savedLocation = _t('No location set', 'مقام سیٹ نہیں ہے'));
+      if (mounted)
+        setState(
+          () => _savedLocation = _t('No location set', 'مقام سیٹ نہیں ہے'),
+        );
       return;
     }
     if (mounted) {
-      setState(() => _savedLocation = _t('Loading location...', 'مقام لوڈ ہو رہا ہے...'));
+      setState(
+        () =>
+            _savedLocation = _t('Loading location...', 'مقام لوڈ ہو رہا ہے...'),
+      );
     }
     try {
       final profile = await _marketApi.fetchMe();
@@ -67,7 +75,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) setState(() => _savedLocation = display);
     } catch (e) {
       if (kDebugMode) debugPrint('[Settings] Failed to load location: $e');
-      if (mounted) setState(() => _savedLocation = _t('No location set', 'مقام سیٹ نہیں ہے'));
+      if (mounted)
+        setState(
+          () => _savedLocation = _t('No location set', 'مقام سیٹ نہیں ہے'),
+        );
     }
   }
 
@@ -149,10 +160,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (granted) {
         await _updateNotificationSetting(true);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(
-          SnackBar(content: Text(_t('Notifications enabled.', 'اطلاعات فعال ہو گئیں۔'))),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _t('Notifications enabled.', 'اطلاعات فعال ہو گئیں۔'),
+            ),
+          ),
         );
       } else {
         // If denied, or restricted, check if permanently denied to guide to settings
@@ -203,7 +216,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await ConfirmDialog.show(
       context,
       title: 'Sign Out',
-      message: _t('Are you sure you want to sign out?', 'کیا آپ واقعی سائن آؤٹ کرنا چاہتے ہیں؟'),
+      message: _t(
+        'Are you sure you want to sign out?',
+        'کیا آپ واقعی سائن آؤٹ کرنا چاہتے ہیں؟',
+      ),
       confirmLabel: _t('Sign Out', 'سائن آؤٹ'),
       isDangerous: true,
       icon: Icons.logout_rounded,
@@ -254,6 +270,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.14),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: IconButton(
+              tooltip: _t('Help', 'مدد'),
+              onPressed: () => showHelpGuide(context, 'settings'),
+              icon: const Icon(Icons.help_outline, size: 20),
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -357,7 +387,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _t('Push notifications are off', 'پش اطلاعات بند ہیں'),
+                            _t(
+                              'Push notifications are off',
+                              'پش اطلاعات بند ہیں',
+                            ),
                             style: TextStyle(
                               color: Colors.orange.shade900,
                               fontWeight: FontWeight.w800,
@@ -441,7 +474,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       AppLocalizations.of(context)!.languageLabel,
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    subtitle: Text(_t('Choose app display language', 'ایپ کی زبان منتخب کریں')),
+                    subtitle: Text(
+                      _t(
+                        'Choose app display language',
+                        'ایپ کی زبان منتخب کریں',
+                      ),
+                    ),
                     trailing: DropdownButton<String>(
                       value: currentLanguageString,
                       underline: const SizedBox.shrink(),
@@ -547,17 +585,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Icons.support_agent,
+                        Icons.help_outline,
                         color: Colors.green.shade700,
                       ),
                     ),
                     title: Text(
-                      AppLocalizations.of(context)!.contactSupport,
+                      _t('Complete App Guide', 'مکمل ایپ گائیڈ'),
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
-                    subtitle: Text(_t('Get help with account or app issues', 'اکاؤنٹ یا ایپ مسائل میں مدد حاصل کریں')),
-                    onTap: () {},
+                    subtitle: Text(
+                      _t(
+                        'Learn how to use all app features',
+                        'ایپ کی تمام خصوصیات استعمال کرنا سیکھیں',
+                      ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => const ComprehensiveHelpDialog(),
+                      );
+                    },
                   ),
+                  const Divider(height: 1),
                 ],
               ),
             ),
@@ -582,7 +632,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   title: Text(
-                    _t('Save sample data to Firebase', 'نمونہ ڈیٹا فائر بیس میں محفوظ کریں'),
+                    _t(
+                      'Save sample data to Firebase',
+                      'نمونہ ڈیٹا فائر بیس میں محفوظ کریں',
+                    ),
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                   subtitle: Text(_t('DEV ONLY', 'صرف ڈویلپمنٹ')),
@@ -593,7 +646,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(_t('Saved sample message to Firebase', 'نمونہ پیغام فائر بیس میں محفوظ ہو گیا')),
+                            content: Text(
+                              _t(
+                                'Saved sample message to Firebase',
+                                'نمونہ پیغام فائر بیس میں محفوظ ہو گیا',
+                              ),
+                            ),
                           ),
                         );
                       }
@@ -601,7 +659,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('${_t('Failed to save to Firebase', 'فائر بیس میں محفوظ نہ ہو سکا')}: $e'),
+                            content: Text(
+                              '${_t('Failed to save to Firebase', 'فائر بیس میں محفوظ نہ ہو سکا')}: $e',
+                            ),
                           ),
                         );
                       }
@@ -632,7 +692,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _t('Show Test Notification', 'ٹیسٹ اطلاع دکھائیں'),
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text(_t('Send a local notification to verify the channel', 'چینل چیک کرنے کے لیے مقامی اطلاع بھیجیں')),
+                subtitle: Text(
+                  _t(
+                    'Send a local notification to verify the channel',
+                    'چینل چیک کرنے کے لیے مقامی اطلاع بھیجیں',
+                  ),
+                ),
                 onTap: () async {
                   final notificationService = Provider.of<NotificationService>(
                     context,
@@ -640,8 +705,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   );
                   final sent = await notificationService.showNotification(
                     title: _t('Test Notification', 'ٹیسٹ اطلاع'),
-                    body:
-                        _t('This is a test notification from Digital Kissan App.', 'یہ ڈیجیٹل کسان ایپ کی ٹیسٹ اطلاع ہے۔'),
+                    body: _t(
+                      'This is a test notification from Digital Kissan App.',
+                      'یہ ڈیجیٹل کسان ایپ کی ٹیسٹ اطلاع ہے۔',
+                    ),
                     payload: 'test_notification_payload',
                   );
                   if (mounted) {
@@ -649,11 +716,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       SnackBar(
                         content: Text(
                           sent
-                              ? _t('Test notification sent!', 'ٹیسٹ اطلاع بھیج دی گئی!')
+                              ? _t(
+                                'Test notification sent!',
+                                'ٹیسٹ اطلاع بھیج دی گئی!',
+                              )
                               : _t(
-                                  'Notifications are off. Enable them in settings to receive notifications.',
-                                  'اطلاعات بند ہیں۔ اطلاعات حاصل کرنے کے لیے انہیں ترتیبات میں فعال کریں۔',
-                                ),
+                                'Notifications are off. Enable them in settings to receive notifications.',
+                                'اطلاعات بند ہیں۔ اطلاعات حاصل کرنے کے لیے انہیں ترتیبات میں فعال کریں۔',
+                              ),
                         ),
                       ),
                     );
@@ -684,7 +754,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                subtitle: Text(_t('Sign out of your account', 'اپنے اکاؤنٹ سے سائن آؤٹ کریں')),
+                subtitle: Text(
+                  _t(
+                    'Sign out of your account',
+                    'اپنے اکاؤنٹ سے سائن آؤٹ کریں',
+                  ),
+                ),
                 trailing: Icon(
                   Icons.arrow_forward_ios,
                   size: 16,

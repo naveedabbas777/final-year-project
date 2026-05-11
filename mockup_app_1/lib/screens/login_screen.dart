@@ -82,12 +82,19 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (email.isEmpty || !_looksLikeEmail(email)) {
-      _showError(_t('Please enter a valid email address', 'براہ کرم درست ای میل درج کریں'));
+      _showError(
+        _t(
+          'Please enter a valid email address',
+          'براہ کرم درست ای میل درج کریں',
+        ),
+      );
       return;
     }
 
     if (pass.isEmpty) {
-      _showError(_t('Please enter your password', 'براہ کرم اپنا پاس ورڈ درج کریں'));
+      _showError(
+        _t('Please enter your password', 'براہ کرم اپنا پاس ورڈ درج کریں'),
+      );
       return;
     }
 
@@ -108,7 +115,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        _showError(_t('Login failed. Please try again.', 'لاگ اِن ناکام۔ دوبارہ کوشش کریں۔'));
+        _showError(
+          _t(
+            'Login failed. Please try again.',
+            'لاگ اِن ناکام۔ دوبارہ کوشش کریں۔',
+          ),
+        );
         return;
       }
 
@@ -164,7 +176,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final currentLocale = languageProvider.locale;
     final currentLanguageString =
-        currentLocale.languageCode == 'en' ? _t('English', 'انگریزی') : _t('Urdu', 'اردو');
+        currentLocale.languageCode == 'en'
+            ? _t('English', 'انگریزی')
+            : _t('Urdu', 'اردو');
 
     return Scaffold(
       body: Container(
@@ -274,7 +288,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     const SizedBox(height: 10),
                                     Text(
-                                      _t('Sign in to manage crops, alerts, and market activity.', 'فصلوں، الرٹس اور مارکیٹ سرگرمی کے لیے سائن اِن کریں۔'),
+                                      _t(
+                                        'Sign in to manage crops, alerts, and market activity.',
+                                        'فصلوں، الرٹس اور مارکیٹ سرگرمی کے لیے سائن اِن کریں۔',
+                                      ),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 14,
@@ -294,9 +311,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                       validator: (value) {
                                         final email = value?.trim() ?? '';
                                         if (email.isEmpty)
-                                          return _t('Email is required', 'ای میل لازمی ہے');
+                                          return _t(
+                                            'Email is required',
+                                            'ای میل لازمی ہے',
+                                          );
                                         if (!_looksLikeEmail(email))
-                                          return _t('Enter a valid email address', 'درست ای میل درج کریں');
+                                          return _t(
+                                            'Enter a valid email address',
+                                            'درست ای میل درج کریں',
+                                          );
                                         return null;
                                       },
                                       decoration: _fieldDecoration(
@@ -315,7 +338,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                       textInputAction: TextInputAction.done,
                                       validator: (value) {
                                         if ((value ?? '').isEmpty)
-                                          return _t('Password is required', 'پاس ورڈ لازمی ہے');
+                                          return _t(
+                                            'Password is required',
+                                            'پاس ورڈ لازمی ہے',
+                                          );
                                         return null;
                                       },
                                       onFieldSubmitted:
@@ -356,7 +382,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                                     ),
                                                   );
                                                 },
-                                        child: Text(_t('Forgot password?', 'پاس ورڈ بھول گئے؟')),
+                                        child: Text(
+                                          _t(
+                                            'Forgot password?',
+                                            'پاس ورڈ بھول گئے؟',
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -405,7 +436,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                               MainAxisAlignment.center,
                                           children: [
                                             Text(
-                                              _t("Don't have an account?", 'اکاؤنٹ نہیں ہے؟'),
+                                              _t(
+                                                "Don't have an account?",
+                                                'اکاؤنٹ نہیں ہے؟',
+                                              ),
                                               style: TextStyle(
                                                 color: Colors.grey.shade700,
                                               ),
@@ -435,13 +469,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                                   ).showSnackBar(
                                                     SnackBar(
                                                       content: Text(
-                                                        _t('Registration successful. Verify your email then login.', 'رجسٹریشن کامیاب۔ ای میل تصدیق کریں پھر لاگ اِن کریں۔'),
+                                                        _t(
+                                                          'Registration successful. Verify your email then login.',
+                                                          'رجسٹریشن کامیاب۔ ای میل تصدیق کریں پھر لاگ اِن کریں۔',
+                                                        ),
                                                       ),
                                                     ),
                                                   );
                                                 }
                                               },
-                                              child: Text(_t('Register', 'رجسٹر')),
+                                              child: Text(
+                                                _t('Register', 'رجسٹر'),
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -491,7 +530,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             ),
                                             items: [
                                               DropdownMenuItem(
-                                              value: _t('English', 'انگریزی'),
+                                                value: _t('English', 'انگریزی'),
                                                 child: Text(
                                                   _t('English', 'انگریزی'),
                                                   style: TextStyle(
@@ -501,7 +540,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 ),
                                               ),
                                               DropdownMenuItem(
-                                              value: _t('Urdu', 'اردو'),
+                                                value: _t('Urdu', 'اردو'),
                                                 child: Text(
                                                   _t('Urdu', 'اردو'),
                                                   style: TextStyle(
@@ -514,7 +553,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                             onChanged: (String? newValue) {
                                               if (newValue == null) return;
                                               languageProvider.setLocale(
-                                                newValue == _t('English', 'انگریزی')
+                                                newValue ==
+                                                        _t('English', 'انگریزی')
                                                     ? const Locale('en', '')
                                                     : const Locale('ur', ''),
                                               );
@@ -567,7 +607,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            _t('Signing in…', 'سائن اِن ہو رہا ہے…'),
+                                            _t(
+                                              'Signing in…',
+                                              'سائن اِن ہو رہا ہے…',
+                                            ),
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w700,

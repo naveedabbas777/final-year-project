@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "seed": "node src/scripts/seedDemoData.js"
+    "seed": "node src/scripts/seedDemoData.js",
+    "cleanup:conversations": "node src/scripts/cleanupConversationThreads.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

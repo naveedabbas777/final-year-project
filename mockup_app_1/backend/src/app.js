@@ -17,6 +17,7 @@ import { weatherRouter } from './routes/weather.routes.js';
 import { messagesRouter } from './routes/messages.routes.js';
 import { ratingsRouter } from './routes/ratings.routes.js';
 import { alertsRouter } from './routes/alerts.routes.js';
+import { assistantRouter } from './routes/assistant.routes.js';
 import { configRouter } from './routes/config.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 
@@ -67,6 +68,7 @@ export function createApp() {
   app.use('/api/messages', messagesRouter);
   app.use('/api/ratings', ratingsRouter);
   app.use('/api/alerts', alertsRouter);
+  app.use('/api/assistant', assistantRouter);
   app.use('/api/config', configRouter);
   app.use('/api/admin', adminRouter);
 
@@ -82,6 +84,7 @@ export function createApp() {
         weather: '/api/weather',
         messages: '/api/messages',
         alerts: '/api/alerts',
+        assistant: '/api/assistant',
         config: '/api/config',
         admin: '/api/admin',
         rates: '/api/rates',

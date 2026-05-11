@@ -49,7 +49,12 @@ class _LocationScreenState extends State<LocationScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _mapboxMap?.dispose();
+    try {
+      _mapboxMap?.dispose();
+    } catch (e) {
+      debugPrint('Mapbox dispose ignored: $e');
+    }
+    _mapboxMap = null;
     _textController.dispose();
     super.dispose();
   }
@@ -69,6 +74,7 @@ class _LocationScreenState extends State<LocationScreen>
 
   Future<void> _loadMarkerImage() async {
     final ByteData byteData = await rootBundle.load('assets/marker.png');
+    if (!mounted) return;
     setState(() {
       _markerImage = byteData.buffer.asUint8List();
     });
@@ -122,6 +128,7 @@ class _LocationScreenState extends State<LocationScreen>
   Future<void> _getCurrentPosition() async {
     final hasPermission = await _handleLocationPermission();
     if (!hasPermission) return;
+    if (!mounted) return;
 
     if (mounted) {
       setState(() => _isFetchingGps = true);
@@ -132,6 +139,7 @@ class _LocationScreenState extends State<LocationScreen>
           .Geolocator.getCurrentPosition(
         desiredAccuracy: geolocator.LocationAccuracy.high,
       );
+      if (!mounted) return;
       await _updateLocation(position.latitude, position.longitude);
     } catch (e) {
       debugPrint(e.toString());
@@ -218,6 +226,8 @@ class _LocationScreenState extends State<LocationScreen>
         address,
       );
 
+      if (!mounted) return;
+
       if (locations.isNotEmpty) {
         final location = locations.first;
         await _updateLocation(location.latitude, location.longitude);
@@ -251,6 +261,8 @@ class _LocationScreenState extends State<LocationScreen>
     try {
       List<geocoding.Placemark> placemarks = await geocoding
           .placemarkFromCoordinates(lat, lng);
+
+      if (!mounted) return;
 
       if (placemarks.isNotEmpty) {
         final placemark = placemarks.first;
@@ -324,6 +336,7 @@ class _LocationScreenState extends State<LocationScreen>
     // Always save locally first so user sees an immediate result.
     try {
       final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
       await prefs.setDouble('last_latitude', position.latitude);
       await prefs.setDouble('last_longitude', position.longitude);
       await prefs.setString('last_address', address);

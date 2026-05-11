@@ -197,6 +197,8 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
             (_) => ChatScreen(
               listingId: widget.listing.id,
               toUid: _canManage ? null : widget.listing.sellerUid,
+              productName: widget.listing.cropName,
+              productImageUrl: widget.listing.imageUrls.isNotEmpty ? widget.listing.imageUrls.first : null,
             ),
       ),
     );

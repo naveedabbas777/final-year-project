@@ -46,20 +46,22 @@ class _AlertsScreenState extends State<AlertsScreen> {
             },
           ),
           Consumer<AlertService>(
-            builder: (_, service, __) => IconButton(
-              tooltip: _t('Refresh', 'ریفریش'),
-              icon: service.isLoading
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Icon(Icons.refresh),
-              onPressed: service.isLoading ? null : service.loadAlerts,
-            ),
+            builder:
+                (_, service, __) => IconButton(
+                  tooltip: _t('Refresh', 'ریفریش'),
+                  icon:
+                      service.isLoading
+                          ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                          : const Icon(Icons.refresh),
+                  onPressed: service.isLoading ? null : service.loadAlerts,
+                ),
           ),
         ],
       ),
@@ -94,7 +96,10 @@ class _AlertsScreenState extends State<AlertsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _t('Alerts appear here when weather conditions\naffect your crops.', 'جب موسمی حالات آپ کی فصلوں پر اثر انداز ہوں گے تو الرٹس یہاں نظر آئیں گے۔'),
+                    _t(
+                      'Alerts appear here when weather conditions\naffect your crops.',
+                      'جب موسمی حالات آپ کی فصلوں پر اثر انداز ہوں گے تو الرٹس یہاں نظر آئیں گے۔',
+                    ),
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
@@ -149,9 +154,10 @@ class _AlertCard extends StatelessWidget {
           color: alert.isRead ? Colors.white : palette.bg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: alert.isRead
-                ? Colors.transparent
-                : palette.accent.withOpacity(0.4),
+            color:
+                alert.isRead
+                    ? Colors.transparent
+                    : palette.accent.withOpacity(0.4),
             width: 1.5,
           ),
           boxShadow: [
@@ -189,9 +195,10 @@ class _AlertCard extends StatelessWidget {
                           child: Text(
                             alert.title,
                             style: TextStyle(
-                              fontWeight: alert.isRead
-                                  ? FontWeight.w500
-                                  : FontWeight.w700,
+                              fontWeight:
+                                  alert.isRead
+                                      ? FontWeight.w500
+                                      : FontWeight.w700,
                               fontSize: 14,
                               color: Colors.grey.shade900,
                             ),
@@ -268,11 +275,7 @@ class _AlertCard extends StatelessWidget {
 // ──────────────────────────────────────────────────────────────────────────────
 
 class _Palette {
-  const _Palette({
-    required this.bg,
-    required this.accent,
-    required this.icon,
-  });
+  const _Palette({required this.bg, required this.accent, required this.icon});
 
   final Color bg;
   final Color accent;

@@ -59,9 +59,10 @@ class PushService {
   Future<void> init() async {
     // Create Android notification channels
     final androidPlugin =
-        _local.resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
+        _local
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >();
     if (androidPlugin != null) {
       await androidPlugin.createNotificationChannel(_offerChannel);
       await androidPlugin.createNotificationChannel(_messageChannel);
@@ -118,8 +119,7 @@ class PushService {
   /// Show a local notification when a foreground FCM message arrives.
   Future<void> _handleForegroundMessage(RemoteMessage msg) async {
     final prefs = await SharedPreferences.getInstance();
-    final notificationsEnabled =
-        prefs.getBool(_kNotificationsEnabled) ?? true;
+    final notificationsEnabled = prefs.getBool(_kNotificationsEnabled) ?? true;
     if (!notificationsEnabled) return;
 
     final nt = msg.notification;
@@ -147,13 +147,7 @@ class PushService {
     // Encode data payload for tap handling
     final payload = jsonEncode(msg.data);
 
-    await _local.show(
-      msg.hashCode,
-      title,
-      body,
-      details,
-      payload: payload,
-    );
+    await _local.show(msg.hashCode, title, body, details, payload: payload);
   }
 
   /// Called when user taps a local notification.

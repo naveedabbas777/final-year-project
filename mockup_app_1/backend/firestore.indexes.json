@@ -92,6 +92,73 @@
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
+    ,
+    {
+      "collectionGroup": "admin_notification_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "mode", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "listingId", "order": "ASCENDING" },
+        { "fieldPath": "toUid", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "listingId", "order": "ASCENDING" },
+        { "fieldPath": "fromUid", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "offers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "listingId", "order": "ASCENDING" },
+        { "fieldPath": "buyerUid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "buyerUid", "order": "ASCENDING" },
+        { "fieldPath": "sellerUid", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "buyerUid", "order": "ASCENDING" },
+        { "fieldPath": "sellerUid", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "role", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "weather_alerts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
   ],
   "fieldOverrides": []
 }

@@ -293,11 +293,12 @@ class _RatesTabState extends State<_RatesTab> {
             ? ErrorPresenter.present(_error!)
             : isRatesTab
             ? _t(
-                'No rates available yet.\nIngest official rates from the backend.',
-                'ابھی کوئی ریٹس دستیاب نہیں۔\nبیک اینڈ سے سرکاری ریٹس انجیست کریں۔',
-              )
+              'No rates available yet.\nIngest official rates from the backend.',
+              'ابھی کوئی ریٹس دستیاب نہیں۔\nبیک اینڈ سے سرکاری ریٹس انجیست کریں۔',
+            )
             : _t('No active listings found.', 'کوئی فعال لسٹنگ نہیں ملی۔');
-    final actionLabel = _error != null ? _t('Retry', 'دوبارہ کوشش') : _t('Refresh', 'ریفریش');
+    final actionLabel =
+        _error != null ? _t('Retry', 'دوبارہ کوشش') : _t('Refresh', 'ریفریش');
     final iconData =
         _error != null
             ? Icons.error_outline
@@ -420,7 +421,9 @@ class _RatesTabState extends State<_RatesTab> {
                           );
                         },
                         icon: const Icon(Icons.admin_panel_settings),
-                        label: Text(_t('Open Admin Console', 'ایڈمن کنسول کھولیں')),
+                        label: Text(
+                          _t('Open Admin Console', 'ایڈمن کنسول کھولیں'),
+                        ),
                       ),
                     ),
                   if (isAdmin) const SizedBox(height: 8),
@@ -446,7 +449,10 @@ class _RatesTabState extends State<_RatesTab> {
                                   _searchController.text.isEmpty
                                       ? null
                                       : IconButton(
-                                        tooltip: _t('Clear search', 'تلاش صاف کریں'),
+                                        tooltip: _t(
+                                          'Clear search',
+                                          'تلاش صاف کریں',
+                                        ),
                                         visualDensity: VisualDensity.compact,
                                         onPressed: () {
                                           _searchController.clear();
@@ -872,7 +878,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
         _error != null
             ? ErrorPresenter.present(_error!)
             : _t('No active listings found.', 'کوئی فعال لسٹنگ نہیں ملی۔');
-    final actionLabel = _error != null ? _t('Retry', 'دوبارہ کوشش') : _t('Refresh', 'ریفریش');
+    final actionLabel =
+        _error != null ? _t('Retry', 'دوبارہ کوشش') : _t('Refresh', 'ریفریش');
 
     return Center(
       child: Padding(
@@ -1001,7 +1008,8 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                         labelText: '${_t('Quantity', 'مقدار')} (${row.unit})',
                         prefixIcon: const Icon(Icons.scale_outlined),
                         border: const OutlineInputBorder(),
-                        hintText: '${_t('Max', 'زیادہ سے زیادہ')}: ${row.quantity.toStringAsFixed(0)}',
+                        hintText:
+                            '${_t('Max', 'زیادہ سے زیادہ')}: ${row.quantity.toStringAsFixed(0)}',
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -1050,9 +1058,13 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
         quantity: qty,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_t('Offer sent successfully', 'آفر کامیابی سے بھیج دی گئی'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _t('Offer sent successfully', 'آفر کامیابی سے بھیج دی گئی'),
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -1186,9 +1198,9 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
         toUid: row.sellerUid,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_t('Message sent', 'پیغام بھیج دیا گیا'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_t('Message sent', 'پیغام بھیج دیا گیا'))),
+      );
     } catch (e) {
       if (!mounted) return;
       _showError(ErrorPresenter.present(e));
@@ -1467,7 +1479,9 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                 items: [
                                   DropdownMenuItem<String?>(
                                     value: null,
-                                    child: Text(_t('All districts', 'تمام اضلاع')),
+                                    child: Text(
+                                      _t('All districts', 'تمام اضلاع'),
+                                    ),
                                   ),
                                   ..._districtOptions.map(
                                     (value) => DropdownMenuItem<String?>(
@@ -1554,8 +1568,14 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                         : const Icon(Icons.expand_more),
                                 label: Text(
                                   _loadingMoreListings
-                                      ? _t('Loading more...', 'مزید لوڈ ہو رہا ہے...')
-                                      : _t('Load more listings', 'مزید لسٹنگز لوڈ کریں'),
+                                      ? _t(
+                                        'Loading more...',
+                                        'مزید لوڈ ہو رہا ہے...',
+                                      )
+                                      : _t(
+                                        'Load more listings',
+                                        'مزید لسٹنگز لوڈ کریں',
+                                      ),
                                 ),
                               ),
                             ),

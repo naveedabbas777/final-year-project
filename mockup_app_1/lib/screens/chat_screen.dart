@@ -12,10 +12,18 @@ import '../config/app_config.dart';
 import '../services/market_api_service.dart';
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key, required this.listingId, this.toUid});
+  const ChatScreen({
+    super.key,
+    required this.listingId,
+    this.toUid,
+    this.productName,
+    this.productImageUrl,
+  });
 
   final String listingId;
   final String? toUid;
+  final String? productName;
+  final String? productImageUrl;
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -43,6 +51,8 @@ class _ChatScreenState extends State<ChatScreen> {
   DateTime? _sellerLastSeen;
   UserProfileDto? _peerProfile;
   bool _loadingPeer = false;
+  bool _threadReady = false;
+  String? _threadError;
 
   String get _peerName {
     final profileName = _peerProfile?.primaryName.trim() ?? '';
@@ -58,6 +68,12 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     return 'Chat';
+  }
+
+  String get _chatTitle {
+    final product = widget.productName?.trim() ?? '';
+    if (product.isNotEmpty) return product;
+    return _peerName;
   }
 
   String get _presenceText {
@@ -91,16 +107,38 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _myUid = FirebaseAuth.instance.currentUser?.uid;
-    _loadInitialMessages();
-    _connectRealtime();
-    if (widget.toUid != null) {
-      _loadPeerProfile();
-      _fetchPresence();
+    _initializeChat();
+  }
+
+  Future<void> _initializeChat() async {
+    try {
+      final thread = await _service.ensureListingThread(widget.listingId);
+      if (!mounted) return;
+      setState(() {
+        _threadReady = true;
+        _threadError = null;
+        if ((widget.productName ?? '').trim().isEmpty && thread.productName.trim().isNotEmpty) {
+          // The screen title falls back to the thread's product name via the widget getter.
+        }
+      });
+      if (widget.toUid != null) {
+        _loadPeerProfile();
+        _fetchPresence();
+      }
+      // Fire-and-forget presence update; don't let network/token failures crash the UI
+      _service.setPresence(isOnline: true).catchError((e) {
+        if (kDebugMode) debugPrint('[Chat] setPresence failed: $e');
+      });
+      await _loadInitialMessages();
+      await _connectRealtime();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _threadError = e.toString();
+        _threadReady = false;
+        _connecting = false;
+      });
     }
-    // Fire-and-forget presence update; don't let network/token failures crash the UI
-    _service.setPresence(isOnline: true).catchError((e) {
-      if (kDebugMode) debugPrint('[Chat] setPresence failed: $e');
-    });
   }
 
   @override
@@ -133,6 +171,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _connectRealtime() async {
+    if (!_threadReady) return;
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
@@ -213,6 +252,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _loadInitialMessages() async {
+    if (!_threadReady) return;
     try {
       final rows = await _service.fetchMessagesForListingWithCache(
         widget.listingId,
@@ -246,6 +286,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _loadMoreMessages() async {
+    if (!_threadReady) return;
     if (_loadingMoreMessages || !_hasMoreMessages || _messages.isEmpty) return;
     final cursor = _messages.first.timestamp;
     setState(() => _loadingMoreMessages = true);
@@ -457,42 +498,42 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final photoUrl = _peerPhotoUrl.trim();
+    final productImageUrl = (widget.productImageUrl ?? '').trim();
     return Scaffold(
       backgroundColor: Colors.green.shade50,
       appBar: AppBar(
-        leading:
-            widget.toUid == null
-                ? null
-                : Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.white,
-                    child: CircleAvatar(
-                      radius: 16,
-                      backgroundColor: Colors.green.shade100,
-                      backgroundImage:
-                          photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                      child:
-                          photoUrl.isEmpty
-                              ? Text(
-                                _peerName.trim().isNotEmpty
-                                    ? _peerName.trim()[0].toUpperCase()
-                                    : 'U',
-                                style: TextStyle(
-                                  color: Colors.green.shade800,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 12,
-                                ),
-                              )
-                              : null,
-                    ),
-                  ),
-                ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: CircleAvatar(
+            radius: 18,
+            backgroundColor: Colors.white,
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.green.shade100,
+              backgroundImage:
+                  productImageUrl.isNotEmpty
+                      ? NetworkImage(productImageUrl)
+                      : (photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null),
+              child:
+                  productImageUrl.isEmpty && photoUrl.isEmpty
+                      ? Text(
+                          _chatTitle.trim().isNotEmpty
+                              ? _chatTitle.trim()[0].toUpperCase()
+                              : 'P',
+                          style: TextStyle(
+                            color: Colors.green.shade800,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        )
+                      : null,
+            ),
+          ),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_peerName, maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(_chatTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
             const SizedBox(height: 2),
             if (widget.toUid == null)
               const Text(
@@ -534,6 +575,18 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
+          if (_threadError != null)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              color: Colors.red.shade50,
+              child: Text(
+                _threadError!.contains('must start')
+                    ? 'This product chat has not been started by a buyer yet.'
+                    : 'Unable to open this product chat right now.',
+                style: TextStyle(color: Colors.red.shade800, fontSize: 12),
+              ),
+            ),
           if (_typingUids.isNotEmpty)
             Container(
               width: double.infinity,

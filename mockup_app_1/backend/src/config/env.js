@@ -14,6 +14,9 @@ export const env = {
   openWeatherKey: process.env.OPENWEATHER_KEY || '',
   weatherRainNext3hThreshold: Number(process.env.WEATHER_RAIN_NEXT_3H_THRESHOLD || 0.6),
   mapboxAccessToken: process.env.MAPBOX_ACCESS_TOKEN || '',
+  grokApiKey: process.env.GROK_API_KEY || '',
+  grokModel: process.env.GROK_MODEL || 'grok-4.3',
+  grokMaxTokens: Number(process.env.GROK_MAX_TOKENS || 2048),
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
     apiKey: process.env.CLOUDINARY_API_KEY || '',

@@ -11,6 +11,7 @@ import 'screens/forecast_screen.dart';
 import 'screens/alerts_screen.dart';
 import 'screens/market_screen.dart';
 import 'screens/settings_screen.dart';
+import 'screens/assistant_screen.dart';
 import 'screens/offers_screen.dart';
 import 'screens/orders_screen.dart';
 import 'screens/my_listings_screen.dart';
@@ -129,6 +130,7 @@ class DigitalKissanApp extends StatelessWidget {
         '/my-listings': (_) => const MyListingsScreen(),
         '/market': (_) => MarketScreen(),
         '/alerts': (_) => AlertsScreen(),
+        '/assistant': (_) => const AssistantScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/chat') {
@@ -138,6 +140,8 @@ class DigitalKissanApp extends StatelessWidget {
                 (_) => ChatScreen(
                   listingId: args['listingId'] ?? '',
                   toUid: args['toUid'] as String?,
+                  productName: args['productName'] as String?,
+                  productImageUrl: args['productImageUrl'] as String?,
                 ),
           );
         }
@@ -216,9 +220,9 @@ class _AppRouterState extends State<AppRouter> {
       );
 
       if (shouldOpenSettings == true && mounted) {
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SettingsScreen()),
-        );
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
       }
     });
   }
@@ -371,9 +375,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                   child: const Icon(Icons.notifications),
                 ),
                 label: AppLocalizations.of(context)!.alerts,
-                tooltip: count > 0
-                    ? (isUrdu ? '$count غیر پڑھے الرٹس' : '$count unread alerts')
-                    : (isUrdu ? 'موسمی الرٹس' : 'Weather alerts'),
+                tooltip:
+                    count > 0
+                        ? (isUrdu
+                            ? '$count غیر پڑھے الرٹس'
+                            : '$count unread alerts')
+                        : (isUrdu ? 'موسمی الرٹس' : 'Weather alerts'),
               );
             },
           ),

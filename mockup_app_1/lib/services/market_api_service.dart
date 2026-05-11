@@ -411,6 +411,50 @@ class ChatMessageDto {
   }
 }
 
+class ConversationSummaryDto {
+  ConversationSummaryDto({
+    required this.threadId,
+    required this.listingId,
+    required this.productName,
+    required this.productImageUrl,
+    required this.lastMessage,
+    required this.lastTimestamp,
+    required this.peerUid,
+    required this.buyerUid,
+    required this.sellerUid,
+    required this.unreadCount,
+  });
+
+  final String threadId;
+  final String listingId;
+  final String productName;
+  final String productImageUrl;
+  final String lastMessage;
+  final DateTime lastTimestamp;
+  final String? peerUid;
+  final String? buyerUid;
+  final String? sellerUid;
+  final int unreadCount;
+
+  factory ConversationSummaryDto.fromJson(Map<String, dynamic> json) {
+    return ConversationSummaryDto(
+      threadId: toStringOrEmpty(json['threadId']).trim().isEmpty ? toStringOrEmpty(json['listingId']) : toStringOrEmpty(json['threadId']),
+      listingId: toStringOrEmpty(json['listingId']),
+      productName:
+          toStringOrEmpty(json['productName']).trim().isEmpty
+              ? 'Product'
+              : toStringOrEmpty(json['productName']),
+      productImageUrl: toStringOrEmpty(json['productImageUrl']),
+      lastMessage: toStringOrEmpty(json['lastMessage']),
+      lastTimestamp: toDateTimeOrNow(json['lastTimestamp']),
+      peerUid: toStringOrEmpty(json['peerUid']).trim().isEmpty ? null : toStringOrEmpty(json['peerUid']),
+      buyerUid: toStringOrEmpty(json['buyerUid']).trim().isEmpty ? null : toStringOrEmpty(json['buyerUid']),
+      sellerUid: toStringOrEmpty(json['sellerUid']).trim().isEmpty ? null : toStringOrEmpty(json['sellerUid']),
+      unreadCount: json['unreadCount'] is num ? (json['unreadCount'] as num).toInt() : 0,
+    );
+  }
+}
+
 class MarketApiService {
   MarketApiService({ApiClient? client}) : _client = client ?? ApiClient();
 
@@ -934,6 +978,64 @@ class MarketApiService {
     } catch (_) {
       if (cached.isNotEmpty) return cached;
       rethrow;
+    }
+  }
+
+  /// Fetch recent messages across the app (most recent first).
+  /// Uses the backend `/api/messages` endpoint which returns recent messages
+  /// ordered by timestamp desc. Returns an empty list on unexpected response.
+  Future<List<ChatMessageDto>> fetchRecentMessages({int limit = 100}) async {
+    try {
+      final query = <String, String>{'limit': limit.toString()};
+      final data = await _client.get('/api/messages', query: query, auth: true);
+      if (data is! List<dynamic>) return const [];
+      return asMapList(data).map(ChatMessageDto.fromJson).toList();
+    } catch (e) {
+      if (kDebugMode) debugPrint('[MarketApi] fetchRecentMessages failed: $e');
+      return const [];
+    }
+  }
+
+  Future<List<ConversationSummaryDto>> fetchConversationSummaries({
+    int limit = 50,
+  }) async {
+    try {
+      final query = <String, String>{'limit': limit.toString()};
+      final data = await _client.get(
+        '/api/messages/conversations',
+        query: query,
+        auth: true,
+      );
+      if (data is! List<dynamic>) return const [];
+      return asMapList(data).map(ConversationSummaryDto.fromJson).toList();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[MarketApi] fetchConversationSummaries failed: $e');
+      }
+      return const [];
+    }
+  }
+
+  Future<ConversationSummaryDto> ensureListingThread(String listingId) async {
+    final data = await _client.post(
+      '/api/messages/listing/$listingId/thread',
+      auth: true,
+    );
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid thread response');
+    }
+    return ConversationSummaryDto.fromJson(data);
+  }
+
+  Future<int> getUnreadMessageCount() async {
+    try {
+      final summaries = await fetchConversationSummaries(limit: 1000);
+      return summaries.fold<int>(0, (sum, convo) => sum + convo.unreadCount);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[MarketApi] getUnreadMessageCount failed: $e');
+      }
+      return 0;
     }
   }
 
