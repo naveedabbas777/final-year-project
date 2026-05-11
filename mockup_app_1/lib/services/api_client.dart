@@ -38,9 +38,21 @@ class ApiClient {
     if (auth) {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
+        if (kDebugMode) {
+          debugPrint('[ApiClient] Auth request blocked: no Firebase user');
+        }
         throw Exception('You must sign in first to perform this action.');
       }
       final token = await user.getIdToken();
+      if (kDebugMode) {
+        final prefix = token == null
+            ? 'null'
+            : (token.length > 12 ? token.substring(0, 12) : token);
+        debugPrint('[ApiClient] Auth request for ${user.uid} token=$prefix...');
+      }
+      if (token == null || token.isEmpty) {
+        throw Exception('Unable to acquire Firebase ID token.');
+      }
       headers['Authorization'] = 'Bearer $token';
     }
 

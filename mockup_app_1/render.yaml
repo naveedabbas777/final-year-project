@@ -16,3 +16,4 @@ services:
     # Secrets must be configured in Render dashboard or using `render.yaml` secrets support.
     # The backend supports either a local service account file path via GOOGLE_APPLICATION_CREDENTIALS
     # or a direct JSON secret via FIREBASE_SERVICE_ACCOUNT_JSON.
+    # Firestore is used for data storage, so no MONGO_URI needed.

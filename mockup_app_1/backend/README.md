@@ -1,9 +1,9 @@
-# Digital Kissan Backend (REST + MongoDB)
+# Digital Kissan Backend (REST + Firestore)
 
 This backend uses:
 - Firebase Auth token verification (authentication only)
 - Express REST API
-- MongoDB for all app domain data (rates, listings, offers, orders)
+- Firestore for all app domain data (rates, listings, offers, orders)
 
 ## 1) Setup
 
@@ -12,15 +12,14 @@ This backend uses:
 2. Add Firebase service account credentials path in `.env`:
    - `GOOGLE_APPLICATION_CREDENTIALS=./serviceAccountKey.json`
    - Or for hosted deployments, set `FIREBASE_SERVICE_ACCOUNT_JSON` to the service account JSON object.
-3. Ensure MongoDB is running locally:
-   - `mongodb://127.0.0.1:27017/digital_kissan`
+3. Ensure your Firebase project has Firestore enabled and configured.
 4. Add the Mapbox access token in `.env` so the Flutter app can load it from the backend:
    - `MAPBOX_ACCESS_TOKEN=your_mapbox_access_token`
 5. Add a Grok API key for the AI assistant:
    - Get your key from https://console.x.ai
    - `GROK_API_KEY=sk_your_grok_api_key`
    - `GROK_MODEL=grok-4.3` (optional override)
-   - `GROK_MAX_TOKENS=2048` (optional, default: 2048)
+   - `GROK_MAX_TOKENS=65536` (optional, default: 65536)
 6. Add Cloudinary credentials to `.env` for server-side image uploads:
    - `CLOUDINARY_CLOUD_NAME=your_cloud_name`
    - `CLOUDINARY_API_KEY=your_api_key`
@@ -53,7 +52,7 @@ Use the `FIREBASE_SERVICE_ACCOUNT_JSON` environment variable to provide the Fire
 
 Required runtime environment variables for hosting:
 - `PORT` (Render provides this automatically; the app already reads `process.env.PORT`)
-- `MONGO_URI`
+
 - `FIREBASE_PROJECT_ID`
 - `FIREBASE_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS`
 - `MAPBOX_ACCESS_TOKEN`
@@ -117,3 +116,13 @@ For this machine currently, your detected LAN IP is `10.192.10.221`, so for a ph
 ```bash
 flutter run --dart-define=API_BASE_URL=http://10.192.10.221:5000
 ```
+
+### Flutter with hosted backend
+
+After deploying the backend on Render or another host, use the deployed service URL:
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://<your-deployed-service>.onrender.com
+```
+
+This allows the Flutter app to connect to the hosted backend instead of a local instance.

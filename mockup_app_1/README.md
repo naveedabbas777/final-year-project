@@ -119,7 +119,7 @@ Next actions I can take (select one or more):
 If you'd like me to run a repo-wide search for other secrets now, say
 "Search for tokens" and I'll scan the workspace and report matches.
 
-Backend strategy (Firebase Auth + custom REST API + MongoDB)
+Backend strategy (Firebase Auth + custom REST API + Firestore)
 - Firebase is used for authentication tokens only.
 - Domain features (rates, buy/sell listings, offers, orders) are served by the local REST backend in `backend/`.
 - See `backend/README.md` for complete setup.
@@ -183,7 +183,6 @@ The backend service definition is available in `render.yaml` at the repository r
    npm start
    ```
 5. Configure required environment variables in Render:
-   - `MONGO_URI`
    - `FIREBASE_PROJECT_ID`
    - `FIREBASE_SERVICE_ACCOUNT_JSON` (preferred) or `GOOGLE_APPLICATION_CREDENTIALS`
    - `MAPBOX_ACCESS_TOKEN`
@@ -201,4 +200,13 @@ The backend service definition is available in `render.yaml` at the repository r
 - Do not commit `serviceAccountKey.json` or other secret files.
 - The backend reads the API port from `process.env.PORT`, so Render's runtime port configuration is supported automatically.
 - For Flutter local development with Render-hosted API, point `API_BASE_URL` to the deployed service URL.
+
+### Flutter with deployed backend
+After Render deploys the backend, use the deployed service URL in Flutter:
+
+```powershell
+flutter run --dart-define=API_BASE_URL=https://<your-render-service>.onrender.com
+```
+
+If you want to test the mobile app against the hosted backend from a local device, use the same `API_BASE_URL` value and ensure the desktop app is not required locally.
 
