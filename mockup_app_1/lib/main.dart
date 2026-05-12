@@ -24,9 +24,7 @@ import 'package:mockup_app/services/notification_service.dart';
 import 'package:mockup_app/services/push_service.dart';
 import 'package:mockup_app/services/alert_service.dart';
 import 'package:mockup_app/services/api_client.dart';
-import 'package:mockup_app/services/firebase_service.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:mockup_app/providers/plant_disease_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -275,34 +273,16 @@ class RoleBasedHomeScreen extends StatefulWidget {
 }
 
 class _RoleBasedHomeScreenState extends State<RoleBasedHomeScreen> {
-  late final Future<String> _roleFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _roleFuture = _fetchRole();
-  }
-
-  Future<String> _fetchRole() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return 'farmer';
-    final profile = await FirebaseService().getUserByUid(user.uid);
-    final role = (profile?['role'] ?? '').toString().trim().toLowerCase();
-    return role.isEmpty ? 'farmer' : role;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: _roleFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+    return Consumer<app_auth.AuthProvider>(
+      builder: (context, auth, _) {
+        if (!auth.isRoleResolved) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        final role = snapshot.data ?? 'farmer';
-        if (role == 'admin') {
+        if (auth.isAdmin) {
           return const AdminConsoleShell();
         }
         return const MainNavigationShell();

@@ -18,6 +18,8 @@ class AuthProvider extends ChangeNotifier {
   final FirebaseService _firestoreService = FirebaseService();
 
   User? _user;
+  String _role = 'farmer';
+  bool _roleResolved = false;
   AuthBootstrapState _bootstrapState = AuthBootstrapState.unknown;
   StreamSubscription<User?>? _sub;
   Timer? _bootstrapFallbackTimer;
@@ -81,6 +83,22 @@ class AuthProvider extends ChangeNotifier {
         print('Failed creating user doc: $e');
       }
 
+      // Fetch full profile (including role) from backend and cache locally.
+      try {
+        final profile = await _firestoreService.getUserMe();
+        if (profile != null && profile['role'] is String) {
+          _role = (profile['role'] as String).trim();
+        } else {
+          _role = 'farmer';
+        }
+        _roleResolved = true;
+        notifyListeners();
+      } catch (e) {
+        // ignore and keep default 'farmer'
+        _role = 'farmer';
+        _roleResolved = true;
+      }
+
       // Capture the current FCM token for this user so backend can push alerts.
       try {
         final token = await NotificationService().getFcmToken();
@@ -110,10 +128,21 @@ class AuthProvider extends ChangeNotifier {
     // without flashing the SplashScreen during the brief gap before Firebase
     // authStateChanges() fires.
     _user = null;
+    _role = 'farmer';
+    _roleResolved = false;
     _bootstrapState = AuthBootstrapState.unauthenticated;
     notifyListeners();
     await _auth.signOut();
   }
+
+  /// Returns the current user's role as reported by the backend (eg 'farmer' or 'admin').
+  String get role => _role;
+
+  /// Convenience: true when the user is an admin.
+  bool get isAdmin => _role == 'admin';
+
+  /// True after the backend role has been fetched at least once for this session.
+  bool get isRoleResolved => _roleResolved;
 
   @override
   void dispose() {

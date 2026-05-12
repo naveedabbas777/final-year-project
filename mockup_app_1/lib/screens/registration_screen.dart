@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mockup_app/config/app_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mockup_app/services/auth_service.dart';
 import 'package:mockup_app/services/firebase_service.dart';
 import 'package:mockup_app/utils/form_validators.dart';
@@ -132,13 +133,26 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
       // Step 3: Update user profile in Firestore (non-critical)
       try {
-        await _firebaseService
-            .createUserIfNotExists(
-              user,
-              displayName: name,
-              phoneNumber: fullPhone,
-            )
-            .timeout(const Duration(seconds: 15));
+        // Ensure a Firestore user document exists with a default role of "farmer".
+        // Some environments may not create this immediately via the backend,
+        // so write the minimal document here (merge=true so backend fields stay intact).
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
+          {
+            'firebaseUid': user.uid,
+            'email': user.email ?? null,
+            'displayName': name.isNotEmpty ? name : (user.displayName ?? null),
+            'phoneNumber': fullPhone.isNotEmpty ? fullPhone : (user.phoneNumber ?? null),
+            'role': 'farmer',
+            'createdAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        ).timeout(const Duration(seconds: 15));
+        // Also call backend-friendly update to ensure consistency.
+        await _firebaseService.createUserIfNotExists(
+          user,
+          displayName: name,
+          phoneNumber: fullPhone,
+        ).timeout(const Duration(seconds: 15));
         debugPrint('Step 3: User profile saved to Firestore');
       } catch (e) {
         debugPrint('Warning: Could not save to Firestore: $e');
