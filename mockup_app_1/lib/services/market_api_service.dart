@@ -1073,6 +1073,32 @@ class MarketApiService {
     }
   }
 
+  // Delete message (user's side only)
+  Future<void> deleteMessage(String messageId) async {
+    try {
+      await _client.delete(
+        '/api/messages/$messageId',
+        auth: true,
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[MarketApi] deleteMessage failed: $e');
+      rethrow;
+    }
+  }
+
+  // Delete conversation (user's side only)
+  Future<void> deleteConversation(String threadId) async {
+    try {
+      await _client.delete(
+        '/api/messages/conversations/$threadId',
+        auth: true,
+      );
+    } catch (e) {
+      if (kDebugMode) debugPrint('[MarketApi] deleteConversation failed: $e');
+      rethrow;
+    }
+  }
+
   // User profiles and ratings
   Future<UserProfileDto> fetchUserProfileByUid(String uid) async {
     final data = await _client.get('/api/users/$uid', auth: true);

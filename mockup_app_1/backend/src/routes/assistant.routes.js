@@ -38,6 +38,63 @@ async function callOpenAI(messages) {
   }
 }
 
+function buildGeminiPrompt(messages) {
+  return messages
+    .map((entry) => {
+      const content = String(entry?.content || '').trim();
+      if (!content) return null;
+      if (entry.role === 'system') return `System: ${content}`;
+      if (entry.role === 'assistant' || entry.role === 'model') return `Assistant: ${content}`;
+      return `User: ${content}`;
+    })
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+async function callGemini(messages) {
+  if (!env.geminiApiKey) return null;
+
+  try {
+    const promptText = buildGeminiPrompt(messages);
+    const url = `https://generativelanguage.googleapis.com/${env.geminiApiVersion}/models/${encodeURIComponent(env.geminiModel)}:generateContent?key=${encodeURIComponent(env.geminiApiKey)}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: promptText }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: Number(env.geminiMaxTokens) || 1024,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      console.error('[Gemini API Error]', response.status, detail);
+      return null;
+    }
+
+    const data = await response.json();
+    return (
+      data?.candidates?.[0]?.content?.parts?.map((part) => part?.text || '').join('').trim() ||
+      data?.candidates?.[0]?.output?.trim() ||
+      data?.candidates?.[0]?.content?.[0]?.text?.trim() ||
+      null
+    );
+  } catch (e) {
+    console.error('[Gemini Request Error]', e.message || e);
+    return null;
+  }
+}
+
 function clampText(value, maxLength) {
   return String(value || '').trim().slice(0, maxLength);
 }
@@ -93,9 +150,9 @@ function buildSystemInstruction(mode, latestText) {
 }
 
 assistantRouter.post('/chat', requireAuth, asyncHandler(async (req, res) => {
-  if (!env.grokApiKey) {
+  if (!env.geminiApiKey && !env.openaiApiKey) {
     res.status(503).json({
-      message: 'AI assistant is not configured on the backend. Set GROK_API_KEY to enable it.',
+      message: 'AI assistant is not configured on the backend. Set GEMINI_API_KEY in backend/.env to enable Gemini, or OPENAI_API_KEY for fallback.',
     });
     return;
   }
@@ -135,74 +192,21 @@ assistantRouter.post('/chat', requireAuth, asyncHandler(async (req, res) => {
     // Add current user message
     messages.push({ role: 'user', content: message });
 
-    const url = 'https://api.groq.com/openai/v1/chat/completions';
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.grokApiKey}`,
-      },
-      body: JSON.stringify({
-        model: env.grokModel,
-        messages,
-        temperature: 0.7,
-        max_tokens: Number(env.grokMaxTokens) || 1024,
-      }),
-    });
+    let reply = null;
 
-    if (!response.ok) {
-      const detail = await response.text();
-      console.error('[Grok API Error]', response.status, detail);
-
-      // Invalid API key -> explicit guidance
-      if (response.status === 401 || /Incorrect API key/i.test(detail)) {
-        res.status(503).json({
-          message: 'Grok API key invalid or unauthorized. Update GROK_API_KEY in backend/.env',
-          detail: detail.slice(0, 500),
-        });
-        return;
-      }
-
-      // Credits / permissions -> try OpenAI fallback if configured
-      if (response.status === 403 || /credits|license/i.test(detail)) {
-        if (env.openaiApiKey) {
-          console.log('[Assistant] Grok unavailable, attempting OpenAI fallback');
-          const openaiReply = await callOpenAI(messages);
-          if (openaiReply) {
-            res.json({ reply: openaiReply, language: normalizeMode(language, message) });
-            return;
-          }
-          // fallback failed; continue to return Grok failure message below
-        }
-
-        res.status(503).json({
-          message: 'Grok account lacks credits or permission. Add credits or set OPENAI_API_KEY for fallback.',
-          detail: detail.slice(0, 500),
-        });
-        return;
-      }
-
-      if (response.status === 404) {
-        res.status(502).json({
-          message: 'Grok API endpoint not found (404). Verify API path and model name.',
-          detail: detail.slice(0, 500),
-        });
-        return;
-      }
-
-      res.status(502).json({ 
-        message: 'Grok API request failed',
-        detail: detail.slice(0, 500),
-      });
-      return;
+    if (env.geminiApiKey) {
+      reply = await callGemini(messages);
     }
 
-    const data = await response.json();
-    const reply = data?.choices?.[0]?.message?.content?.trim();
+    if (!reply && env.openaiApiKey) {
+      const openaiReply = await callOpenAI(messages);
+      if (openaiReply) {
+        reply = openaiReply;
+      }
+    }
 
     if (!reply) {
-      res.status(502).json({ message: 'Grok returned an empty response' });
+      res.status(502).json({ message: 'Gemini did not return a response' });
       return;
     }
 

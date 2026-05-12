@@ -436,6 +436,7 @@ class _RatesTabState extends State<_RatesTab> {
                           child: TextField(
                             controller: _searchController,
                             onChanged: (_) => setState(() {}),
+                            style: const TextStyle(color: AppColors.textPrimary),
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 10,
@@ -481,12 +482,18 @@ class _RatesTabState extends State<_RatesTab> {
                             items: [
                               DropdownMenuItem<String?>(
                                 value: null,
-                                child: Text(_t('All crops', 'تمام فصلیں')),
+                                child: Text(
+                                  _t('All crops', 'تمام فصلیں'),
+                                  style: const TextStyle(color: AppColors.textPrimary),
+                                ),
                               ),
                               ..._cropOptions.map(
                                 (value) => DropdownMenuItem<String?>(
                                   value: value,
-                                  child: Text(value),
+                                  child: Text(
+                                    value,
+                                    style: const TextStyle(color: AppColors.textPrimary),
+                                  ),
                                 ),
                               ),
                             ],
@@ -513,12 +520,18 @@ class _RatesTabState extends State<_RatesTab> {
                             items: [
                               DropdownMenuItem<String?>(
                                 value: null,
-                                child: Text(_t('All districts', 'تمام اضلاع')),
+                                child: Text(
+                                  _t('All districts', 'تمام اضلاع'),
+                                  style: const TextStyle(color: AppColors.textPrimary),
+                                ),
                               ),
                               ..._districtOptions.map(
                                 (value) => DropdownMenuItem<String?>(
                                   value: value,
-                                  child: Text(value),
+                                  child: Text(
+                                    value,
+                                    style: const TextStyle(color: AppColors.textPrimary),
+                                  ),
                                 ),
                               ),
                             ],
@@ -994,6 +1007,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                     TextField(
                       controller: offerPriceController,
                       keyboardType: TextInputType.number,
+                      style: const TextStyle(color: AppColors.textPrimary),
                       decoration: InputDecoration(
                         labelText: _t('Offer Price (PKR)', 'آفر قیمت (PKR)'),
                         prefixIcon: Icon(Icons.payments_outlined),
@@ -1004,6 +1018,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                     TextField(
                       controller: quantityController,
                       keyboardType: TextInputType.number,
+                      style: const TextStyle(color: AppColors.textPrimary),
                       decoration: InputDecoration(
                         labelText: '${_t('Quantity', 'مقدار')} (${row.unit})',
                         prefixIcon: const Icon(Icons.scale_outlined),
@@ -1153,6 +1168,7 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                     TextField(
                       controller: messageController,
                       maxLines: 3,
+                      style: const TextStyle(color: AppColors.textPrimary),
                       decoration: InputDecoration(
                         labelText: _t('Message', 'پیغام'),
                         border: OutlineInputBorder(),
@@ -1211,10 +1227,18 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
     final unreadCount = _unreadCounts[row.id] ?? 0;
 
     return InkWell(
-      onTap:
-          () => Navigator.of(
-            context,
-          ).push(AppRoutes.slideRight(ListingDetailScreen(listing: row))),
+      onTap: () async {
+        await Navigator.of(
+          context,
+        ).push(AppRoutes.slideRight(ListingDetailScreen(listing: row)));
+        // Refresh unread count after returning from detail screen
+        if (mounted) {
+          try {
+            final count = await _service.getUnreadCount(row.id);
+            setState(() => _unreadCounts[row.id] = count);
+          } catch (_) {}
+        }
+      },
       borderRadius: BorderRadius.circular(16),
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1259,9 +1283,10 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                   children: [
                     Text(
                       '${row.cropName} • ${_t('Grade', 'گریڈ')} ${row.qualityGrade}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -1451,12 +1476,18 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                 items: [
                                   DropdownMenuItem<String?>(
                                     value: null,
-                                    child: Text(_t('All crops', 'تمام فصلیں')),
+                                    child: Text(
+                                      _t('All crops', 'تمام فصلیں'),
+                                      style: const TextStyle(color: AppColors.textPrimary),
+                                    ),
                                   ),
                                   ..._cropOptions.map(
                                     (value) => DropdownMenuItem<String?>(
                                       value: value,
-                                      child: Text(value),
+                                      child: Text(
+                                        value,
+                                        style: const TextStyle(color: AppColors.textPrimary),
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1481,12 +1512,16 @@ class _MarketplaceTabState extends State<_MarketplaceTab> {
                                     value: null,
                                     child: Text(
                                       _t('All districts', 'تمام اضلاع'),
+                                      style: const TextStyle(color: AppColors.textPrimary),
                                     ),
                                   ),
                                   ..._districtOptions.map(
                                     (value) => DropdownMenuItem<String?>(
                                       value: value,
-                                      child: Text(value),
+                                      child: Text(
+                                        value,
+                                        style: const TextStyle(color: AppColors.textPrimary),
+                                      ),
                                     ),
                                   ),
                                 ],

@@ -4,6 +4,7 @@ import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 import 'package:flutter/services.dart';
 
+import '../config/app_theme.dart';
 import '../services/market_api_service.dart';
 import 'chat_screen.dart';
 import 'seller_profile_screen.dart';
@@ -447,6 +448,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: cropController,
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: _t('Crop Name', 'فصل کا نام'),
                     border: OutlineInputBorder(),
@@ -455,6 +457,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 const SizedBox(height: 10),
                 TextField(
                   controller: districtController,
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: _t('District', 'ضلع'),
                     border: OutlineInputBorder(),
@@ -464,6 +467,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 TextField(
                   controller: qtyController,
                   keyboardType: TextInputType.number,
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: _t('Quantity', 'مقدار'),
                     border: OutlineInputBorder(),
@@ -473,6 +477,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 TextField(
                   controller: priceController,
                   keyboardType: TextInputType.number,
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: _t('Asking Price', 'مانگی گئی قیمت'),
                     border: OutlineInputBorder(),
@@ -481,6 +486,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 const SizedBox(height: 10),
                 TextField(
                   controller: unitController,
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: _t('Unit', 'یونٹ'),
                     border: OutlineInputBorder(),
@@ -495,9 +501,18 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     border: OutlineInputBorder(),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'A', child: Text('A')),
-                    DropdownMenuItem(value: 'B', child: Text('B')),
-                    DropdownMenuItem(value: 'C', child: Text('C')),
+                    DropdownMenuItem(
+                      value: 'A',
+                      child: Text('A', style: const TextStyle(color: AppColors.textPrimary)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'B',
+                      child: Text('B', style: const TextStyle(color: AppColors.textPrimary)),
+                    ),
+                    DropdownMenuItem(
+                      value: 'C',
+                      child: Text('C', style: const TextStyle(color: AppColors.textPrimary)),
+                    ),
                   ],
                   onChanged: (value) => grade = value ?? 'A',
                 ),
@@ -510,15 +525,21 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                     border: OutlineInputBorder(),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'open', child: Text(_t('Open', 'اوپن'))),
+                    DropdownMenuItem(
+                      value: 'open',
+                      child: Text(_t('Open', 'اوپن'), style: const TextStyle(color: AppColors.textPrimary)),
+                    ),
                     DropdownMenuItem(
                       value: 'reserved',
-                      child: Text(_t('Reserved', 'ریزرو')),
+                      child: Text(_t('Reserved', 'ریزرو'), style: const TextStyle(color: AppColors.textPrimary)),
                     ),
-                    DropdownMenuItem(value: 'sold', child: Text(_t('Sold', 'فروخت شدہ'))),
+                    DropdownMenuItem(
+                      value: 'sold',
+                      child: Text(_t('Sold', 'فروخت شدہ'), style: const TextStyle(color: AppColors.textPrimary)),
+                    ),
                     DropdownMenuItem(
                       value: 'cancelled',
-                      child: Text(_t('Cancelled', 'منسوخ')),
+                      child: Text(_t('Cancelled', 'منسوخ'), style: const TextStyle(color: AppColors.textPrimary)),
                     ),
                   ],
                   onChanged: (value) => status = value ?? 'open',
@@ -527,6 +548,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 TextField(
                   controller: descriptionController,
                   maxLines: 3,
+                  style: const TextStyle(color: AppColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: _t('Description', 'تفصیل'),
                     border: OutlineInputBorder(),
@@ -750,10 +772,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       Expanded(
                         child: Text(
                           '${l.cropName} • ${_t('Grade', 'گریڈ')} ${l.qualityGrade}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,
                             height: 1.2,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -880,7 +903,11 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   // ── Description ─────────────────────────────────────────
                   Text(
                     _t('Description', 'تفصیل'),
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Builder(
@@ -902,7 +929,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                             shown,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.grey.shade800,
+                              color: AppColors.textPrimary,
                               height: 1.55,
                             ),
                           ),

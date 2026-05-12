@@ -254,5 +254,22 @@ class AppTheme {
       indicatorColor: AppColors.white,
       labelStyle: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
     ),
+    textTheme: const TextTheme(
+      bodyLarge: TextStyle(color: AppColors.textPrimary),
+      bodyMedium: TextStyle(color: AppColors.textPrimary),
+      bodySmall: TextStyle(color: AppColors.textSecondary),
+      titleLarge: TextStyle(color: AppColors.textPrimary),
+      titleMedium: TextStyle(color: AppColors.textPrimary),
+      titleSmall: TextStyle(color: AppColors.textPrimary),
+    ),
+    primaryTextTheme: const TextTheme(
+      bodyLarge: TextStyle(color: AppColors.white),
+      bodyMedium: TextStyle(color: AppColors.white),
+      bodySmall: TextStyle(color: AppColors.white),
+      titleLarge: TextStyle(color: AppColors.white),
+      titleMedium: TextStyle(color: AppColors.white),
+      titleSmall: TextStyle(color: AppColors.white),
+    ),
+    iconTheme: const IconThemeData(color: AppColors.textSecondary),
   );
 }

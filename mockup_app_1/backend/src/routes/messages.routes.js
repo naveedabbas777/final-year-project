@@ -761,3 +761,87 @@ messagesRouter.post('/listing/:listingId/thread', requireAuth, asyncHandler(asyn
     ...result.thread,
   });
 }));
+
+// Delete a message (user's side only)
+messagesRouter.delete('/:messageId', requireAuth, asyncHandler(async (req, res) => {
+  if (!firestoreReady()) {
+    res.status(503).json({ message: 'Firestore is not available on the backend' });
+    return;
+  }
+
+  const messageId = req.params.messageId;
+  const userId = req.user.uid;
+
+  const messageSnap = await admin.firestore()
+    .collection('messages')
+    .doc(messageId)
+    .get();
+
+  if (!messageSnap.exists) {
+    res.status(404).json({ message: 'Message not found' });
+    return;
+  }
+
+  const messageData = messageSnap.data() || {};
+  const fromUid = String(messageData.fromUid || '').trim();
+  const toUid = String(messageData.toUid || '').trim();
+
+  // User can only delete their own messages
+  if (fromUid !== userId) {
+    res.status(403).json({ message: 'Unauthorized: cannot delete other users\' messages' });
+    return;
+  }
+
+  // Delete the message
+  await admin.firestore()
+    .collection('messages')
+    .doc(messageId)
+    .delete();
+
+  res.json({ ok: true, message: 'Message deleted' });
+}));
+
+// Delete a conversation (user's side only) - removes thread participation
+messagesRouter.delete('/conversations/:threadId', requireAuth, asyncHandler(async (req, res) => {
+  if (!firestoreReady()) {
+    res.status(503).json({ message: 'Firestore is not available on the backend' });
+    return;
+  }
+
+  const threadId = req.params.threadId;
+  const userId = req.user.uid;
+
+  const threadSnap = await listingThreadsCol()
+    .doc(threadId)
+    .get();
+
+  if (!threadSnap.exists) {
+    res.status(404).json({ message: 'Conversation not found' });
+    return;
+  }
+
+  const threadData = threadSnap.data() || {};
+  const participantUids = toStringList(threadData.participantUids);
+
+  // User can only delete conversations they're a participant of
+  if (!participantUids.includes(userId)) {
+    res.status(403).json({ message: 'Unauthorized: not a participant in this conversation' });
+    return;
+  }
+
+  // Soft delete: remove user from participant list
+  const updatedParticipants = participantUids.filter(uid => uid !== userId);
+
+  if (updatedParticipants.length === 0) {
+    // If no participants left, delete the thread entirely
+    await listingThreadsCol().doc(threadId).delete();
+  } else {
+    // Otherwise, just remove this user from participants
+    await listingThreadsCol().doc(threadId).set({
+      participantUids: updatedParticipants,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    }, { merge: true });
+  }
+
+  res.json({ ok: true, message: 'Conversation deleted' });
+}));

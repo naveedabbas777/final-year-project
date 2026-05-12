@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/services/market_api_service.dart';
 import 'chat_screen.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
@@ -36,6 +37,44 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
     }
   }
 
+  Future<void> _deleteConversation(ConversationSummaryDto convo) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Conversation?'),
+        content: const Text('This will remove the conversation from your side only.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _service.deleteConversation(convo.threadId);
+        if (!mounted) return;
+        setState(() {
+          _conversations.removeWhere((c) => c.threadId == convo.threadId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Conversation deleted')),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -67,8 +106,8 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                       return Material(
                         color: Colors.white,
                         child: InkWell(
-                          onTap: () {
-                            Navigator.of(context).push(
+                          onTap: () async {
+                            await Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => ChatScreen(
                                   listingId: listingId,
@@ -77,7 +116,12 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                                 ),
                               ),
                             );
+                            // Refresh conversations after returning from chat
+                            if (mounted) {
+                              _loadConversations();
+                            }
                           },
+                          onLongPress: () => _deleteConversation(convo),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             child: Row(
@@ -109,9 +153,10 @@ class _ConversationsScreenState extends State<ConversationsScreen> {
                                               convo.productName,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontWeight: FontWeight.w600,
                                                 fontSize: 15,
+                                                color: AppColors.textPrimary,
                                               ),
                                             ),
                                           ),

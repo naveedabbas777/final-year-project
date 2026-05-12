@@ -393,7 +393,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     _typingDebounce?.cancel();
-    _typingDebounce = Timer(const Duration(milliseconds: 1200), () {
+    _typingDebounce = Timer(const Duration(milliseconds: 800), () {
       if (_isTypingSent) {
         _isTypingSent = false;
         _service.setTyping(listingId: widget.listingId, isTyping: false);
@@ -471,6 +471,44 @@ class _ChatScreenState extends State<ChatScreen> {
     } finally {
       if (mounted) {
         setState(() => _sending = false);
+      }
+    }
+  }
+
+  Future<void> _deleteMessage(ChatMessageDto msg) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Message?'),
+        content: const Text('This will remove the message from your side only.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _service.deleteMessage(msg.id);
+        if (!mounted) return;
+        setState(() {
+          _messages.removeWhere((m) => m.id == msg.id);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Message deleted')),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete: ${e.toString()}')),
+        );
       }
     }
   }
@@ -668,87 +706,102 @@ class _ChatScreenState extends State<ChatScreen> {
                             !fromMe &&
                             msg.toUid == (_myUid ?? '') &&
                             !msg.readBy.contains(_myUid ?? '');
-                        return Align(
-                          alignment:
-                              fromMe
-                                  ? Alignment.centerRight
-                                  : Alignment.centerLeft,
-                          child: Container(
-                            constraints: const BoxConstraints(maxWidth: 300),
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 10,
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color:
-                                  fromMe ? Colors.green.shade700 : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  msg.previewText,
-                                  style: TextStyle(
+                        return GestureDetector(
+                          onLongPress: () => _deleteMessage(msg),
+                          child: Align(
+                            alignment:
+                                fromMe
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                            child: AnimatedOpacity(
+                              opacity: 1.0,
+                              duration: const Duration(milliseconds: 300),
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0.1, 0),
+                                  end: Offset.zero,
+                                ).animate(
+                                  AlwaysStoppedAnimation(0.0),
+                                ),
+                                child: Container(
+                                  constraints: const BoxConstraints(maxWidth: 300),
+                                  margin: const EdgeInsets.symmetric(vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                    horizontal: 12,
+                                  ),
+                                  decoration: BoxDecoration(
                                     color:
-                                        fromMe ? Colors.white : Colors.black87,
+                                        fromMe ? Colors.green.shade700 : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        msg.previewText,
+                                        style: TextStyle(
+                                          color:
+                                              fromMe ? Colors.white : Colors.black87,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _formatTs(msg.timestamp),
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color:
+                                                  fromMe
+                                                      ? Colors.white70
+                                                      : Colors.grey.shade600,
+                                            ),
+                                          ),
+                                          if (fromMe) ...[
+                                            const SizedBox(width: 8),
+                                            Icon(
+                                              isRead ? Icons.done_all : Icons.check,
+                                              size: 13,
+                                              color:
+                                                  isRead
+                                                      ? Colors
+                                                          .lightGreenAccent
+                                                          .shade100
+                                                      : Colors.white70,
+                                            ),
+                                          ],
+                                          if (isIncomingUnread) ...[
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.shade100,
+                                                borderRadius: BorderRadius.circular(
+                                                  10,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                'Unread',
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  color: Colors.green.shade900,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      _formatTs(msg.timestamp),
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color:
-                                            fromMe
-                                                ? Colors.white70
-                                                : Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    if (fromMe) ...[
-                                      const SizedBox(width: 8),
-                                      Icon(
-                                        isRead ? Icons.done_all : Icons.check,
-                                        size: 13,
-                                        color:
-                                            isRead
-                                                ? Colors
-                                                    .lightGreenAccent
-                                                    .shade100
-                                                : Colors.white70,
-                                      ),
-                                    ],
-                                    if (isIncomingUnread) ...[
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green.shade100,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Unread',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            color: Colors.green.shade900,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         );
@@ -798,9 +851,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   const SizedBox(width: 8),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green.shade700,
+                      backgroundColor: _sending ? Colors.green.shade600 : Colors.green.shade700,
                       shape: const CircleBorder(),
                       padding: const EdgeInsets.all(12),
+                      elevation: _sending ? 2 : 4,
                     ),
                     onPressed: _sending ? null : _send,
                     child:
@@ -809,7 +863,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               size: 16,
                               color: Colors.white,
                             )
-                            : const Icon(Icons.send, color: Colors.white),
+                            : const Icon(Icons.send, color: Colors.white, size: 20),
                   ),
                 ],
               ),
