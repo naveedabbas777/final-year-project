@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/admin_api_service.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class AdminUsersScreen extends StatefulWidget {
@@ -75,16 +76,29 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                           : Colors.green.shade700,
                     ),
                   ),
-                  title: Text(user.name.isEmpty ? user.firebaseUid : user.name),
+                  title: Text(
+                    user.name.isEmpty ? user.firebaseUid : user.name,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
                   subtitle: Text(
                     '${user.role} • ${user.district.isEmpty ? _t(context, 'No district', 'ضلع نہیں') : user.district}',
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                   trailing: DropdownButton<String>(
                     value: user.role,
                     items: const [
-                      DropdownMenuItem(value: 'farmer', child: Text('farmer')),
-                      DropdownMenuItem(value: 'buyer', child: Text('buyer')),
-                      DropdownMenuItem(value: 'admin', child: Text('admin')),
+                      DropdownMenuItem(
+                        value: 'farmer',
+                        child: Text('farmer', style: TextStyle(color: AppColors.textPrimary)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'buyer',
+                        child: Text('buyer', style: TextStyle(color: AppColors.textPrimary)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'admin',
+                        child: Text('admin', style: TextStyle(color: AppColors.textPrimary)),
+                      ),
                     ],
                     onChanged: (value) async {
                       if (value == null || value == user.role) return;
@@ -97,6 +111,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                           SnackBar(
                             content: Text(
                               _t(context, 'Role update failed: $e', 'رول اپڈیٹ ناکام: $e'),
+                              style: const TextStyle(color: AppColors.white),
                             ),
                           ),
                         );

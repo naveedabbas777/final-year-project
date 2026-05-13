@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/admin_api_service.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class AdminNotificationsScreen extends StatefulWidget {
@@ -161,7 +162,7 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
               children: [
                 Text(
                   _t(context, 'Send Farmer Notifications', 'کسانوں کو اطلاعات بھیجیں'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
@@ -171,9 +172,27 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                     border: OutlineInputBorder(),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'farmers', child: Text(_t(context, 'Farmers', 'کسان'))),
-                    DropdownMenuItem(value: 'admins', child: Text(_t(context, 'Admins', 'ایڈمنز'))),
-                    DropdownMenuItem(value: 'all_users', child: Text(_t(context, 'All users', 'تمام صارفین'))),
+                    DropdownMenuItem(
+                      value: 'farmers',
+                      child: Text(
+                        _t(context, 'Farmers', 'کسان'),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'admins',
+                      child: Text(
+                        _t(context, 'Admins', 'ایڈمنز'),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: 'all_users',
+                      child: Text(
+                        _t(context, 'All users', 'تمام صارفین'),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                    ),
                   ],
                   onChanged: (value) {
                     if (value == null) return;
@@ -196,11 +215,29 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                     border: OutlineInputBorder(),
                   ),
                   items: [
-                    DropdownMenuItem(value: 'all', child: Text(_t(context, 'All in selected audience', 'منتخب سامعین میں سب'))),
+                    DropdownMenuItem(
+                      value: 'all',
+                      child: Text(
+                        _t(context, 'All in selected audience', 'منتخب سامعین میں سب'),
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                    ),
                     if (_audience != 'all_users')
-                      DropdownMenuItem(value: 'some', child: Text(_t(context, 'Selected users', 'منتخب صارفین'))),
+                      DropdownMenuItem(
+                        value: 'some',
+                        child: Text(
+                          _t(context, 'Selected users', 'منتخب صارفین'),
+                          style: const TextStyle(color: AppColors.textPrimary),
+                        ),
+                      ),
                     if (_audience != 'all_users')
-                      DropdownMenuItem(value: 'single', child: Text(_t(context, 'Single user', 'ایک صارف'))),
+                      DropdownMenuItem(
+                        value: 'single',
+                        child: Text(
+                          _t(context, 'Single user', 'ایک صارف'),
+                          style: const TextStyle(color: AppColors.textPrimary),
+                        ),
+                      ),
                   ],
                   onChanged: (value) {
                     if (value == null) return;
@@ -247,7 +284,10 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                       }
                       final farmers = snapshot.data ?? const <AdminUserDto>[];
                       if (farmers.isEmpty) {
-                        return Text(_t(context, 'No users found for selected audience', 'منتخب سامعین کے لیے کوئی صارف نہیں ملا'));
+                        return Text(
+                          _t(context, 'No users found for selected audience', 'منتخب سامعین کے لیے کوئی صارف نہیں ملا'),
+                          style: const TextStyle(color: AppColors.textSecondary),
+                        );
                       }
 
                       if (_mode == 'single') {
@@ -262,9 +302,10 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                                 (farmer) => DropdownMenuItem(
                                   value: farmer.firebaseUid,
                                   child: Text(
-                                farmer.name.isEmpty
+                                    farmer.name.isEmpty
                                         ? farmer.firebaseUid
                                         : '${farmer.name} (${farmer.district})',
+                                    style: const TextStyle(color: AppColors.textPrimary),
                                   ),
                                 ),
                               )
@@ -297,11 +338,13 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                                 farmer.name.isEmpty ? uid : farmer.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: AppColors.textPrimary),
                               ),
                               subtitle: Text(
                                 farmer.district.isEmpty
                                     ? _t(context, 'No district', 'ضلع نہیں')
                                     : farmer.district,
+                                style: const TextStyle(color: AppColors.textSecondary),
                               ),
                             );
                           },
@@ -406,9 +449,10 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                       child: ListTile(
                         isThreeLine: true,
                         leading: const Icon(Icons.notifications_active),
-                        title: Text(row.title),
+                        title: Text(row.title, style: const TextStyle(color: AppColors.textPrimary)),
                         subtitle: Text(
                           '${row.createdAt ?? _t(context, 'Unknown time', 'نامعلوم وقت')}\n${_t(context, 'mode', 'موڈ')}: ${row.mode} • ${_t(context, 'audience', 'سامعین')}: ${row.audience.isEmpty ? _t(context, 'farmers', 'کسان') : row.audience} • ${_t(context, 'recipients', 'وصول کنندگان')}: ${row.recipients} • ${_t(context, 'pushes', 'پشز')}: ${row.pushSent}',
+                          style: const TextStyle(color: AppColors.textSecondary),
                         ),
                         onTap: () => _showHistoryDetailDialog(row),
                       ),
@@ -446,10 +490,10 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                   isDense: true,
                 ),
                 items: [
-                  DropdownMenuItem(value: 'all_modes', child: Text(_t(context, 'All modes', 'تمام موڈز'))),
-                  DropdownMenuItem(value: 'all', child: Text(_t(context, 'All farmers', 'تمام کسان'))),
-                  DropdownMenuItem(value: 'some', child: Text(_t(context, 'Selected farmers', 'منتخب کسان'))),
-                  DropdownMenuItem(value: 'single', child: Text(_t(context, 'Single farmer', 'ایک کسان'))),
+                  DropdownMenuItem(value: 'all_modes', child: Text(_t(context, 'All modes', 'تمام موڈز'), style: const TextStyle(color: AppColors.textPrimary))),
+                  DropdownMenuItem(value: 'all', child: Text(_t(context, 'All farmers', 'تمام کسان'), style: const TextStyle(color: AppColors.textPrimary))),
+                  DropdownMenuItem(value: 'some', child: Text(_t(context, 'Selected farmers', 'منتخب کسان'), style: const TextStyle(color: AppColors.textPrimary))),
+                  DropdownMenuItem(value: 'single', child: Text(_t(context, 'Single farmer', 'ایک کسان'), style: const TextStyle(color: AppColors.textPrimary))),
                 ],
                 onChanged: (value) =>
                     setState(() => _historyMode = value ?? 'all_modes'),
@@ -460,14 +504,14 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => pickDate(isFrom: true),
-                      child: Text('${_t(context, 'From', 'سے')}: ${formatDate(_historyFrom)}'),
+                      child: Text('${_t(context, 'From', 'سے')}: ${formatDate(_historyFrom)}', style: const TextStyle(color: AppColors.textPrimary)),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => pickDate(isFrom: false),
-                      child: Text('${_t(context, 'To', 'تک')}: ${formatDate(_historyTo)}'),
+                      child: Text('${_t(context, 'To', 'تک')}: ${formatDate(_historyTo)}', style: const TextStyle(color: AppColors.textPrimary)),
                     ),
                   ),
                 ],
@@ -523,32 +567,32 @@ class _AdminNotificationsScreenState extends State<AdminNotificationsScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(row.title),
+          title: Text(row.title, style: const TextStyle(color: AppColors.textPrimary)),
           content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('${_t(context, 'Sent at', 'بھیجا گیا وقت')}: ${row.createdAt ?? _t(context, 'Unknown', 'نامعلوم')}'),
+                Text('${_t(context, 'Sent at', 'بھیجا گیا وقت')}: ${row.createdAt ?? _t(context, 'Unknown', 'نامعلوم')}', style: const TextStyle(color: AppColors.textSecondary)),
                 const SizedBox(height: 8),
-                Text('${_t(context, 'Mode', 'موڈ')}: ${row.mode}'),
-                Text('${_t(context, 'Recipients', 'وصول کنندگان')}: ${row.recipients}'),
-                Text('${_t(context, 'Push sent', 'پش بھیجے گئے')}: ${row.pushSent}'),
-                Text('${_t(context, 'Alerts created', 'بنائے گئے الرٹس')}: ${row.alertCreated}'),
+                Text('${_t(context, 'Mode', 'موڈ')}: ${row.mode}', style: const TextStyle(color: AppColors.textSecondary)),
+                Text('${_t(context, 'Recipients', 'وصول کنندگان')}: ${row.recipients}', style: const TextStyle(color: AppColors.textSecondary)),
+                Text('${_t(context, 'Push sent', 'پش بھیجے گئے')}: ${row.pushSent}', style: const TextStyle(color: AppColors.textSecondary)),
+                Text('${_t(context, 'Alerts created', 'بنائے گئے الرٹس')}: ${row.alertCreated}', style: const TextStyle(color: AppColors.textSecondary)),
                 const SizedBox(height: 12),
                 Text(
                   _t(context, 'Message', 'پیغام'),
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: 6),
-                Text(row.body),
+                Text(row.body, style: const TextStyle(color: AppColors.textSecondary)),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(_t(context, 'Close', 'بند کریں')),
+              child: Text(_t(context, 'Close', 'بند کریں'), style: const TextStyle(color: AppColors.textPrimary)),
             ),
           ],
         );

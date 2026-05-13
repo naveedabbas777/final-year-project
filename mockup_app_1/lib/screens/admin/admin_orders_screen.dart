@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/admin_api_service.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class AdminOrdersScreen extends StatefulWidget {
@@ -67,19 +68,21 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                   isThreeLine: true,
                   title: Text(
                     '${_t(context, 'Order', 'آرڈر')} ${row.id.substring(0, row.id.length > 12 ? 12 : row.id.length)}',
+                    style: const TextStyle(color: AppColors.textPrimary),
                   ),
                   subtitle: Text(
                     '${_t(context, 'Buyer', 'خریدار')}: ${row.buyerUid}\n${_t(context, 'Seller', 'فروخت کنندہ')}: ${row.sellerUid}\nPKR ${row.finalPrice.toStringAsFixed(0)}',
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                   trailing: DropdownButton<String>(
                     value: row.status,
                     items: const [
-                      DropdownMenuItem(value: 'created', child: Text('created')),
-                      DropdownMenuItem(value: 'in_transit', child: Text('in_transit')),
-                      DropdownMenuItem(value: 'delivered', child: Text('delivered')),
-                      DropdownMenuItem(value: 'completed', child: Text('completed')),
-                      DropdownMenuItem(value: 'cancelled', child: Text('cancelled')),
-                      DropdownMenuItem(value: 'disputed', child: Text('disputed')),
+                      DropdownMenuItem(value: 'created', child: Text('created', style: TextStyle(color: AppColors.textPrimary))),
+                      DropdownMenuItem(value: 'in_transit', child: Text('in_transit', style: TextStyle(color: AppColors.textPrimary))),
+                      DropdownMenuItem(value: 'delivered', child: Text('delivered', style: TextStyle(color: AppColors.textPrimary))),
+                      DropdownMenuItem(value: 'completed', child: Text('completed', style: TextStyle(color: AppColors.textPrimary))),
+                      DropdownMenuItem(value: 'cancelled', child: Text('cancelled', style: TextStyle(color: AppColors.textPrimary))),
+                      DropdownMenuItem(value: 'disputed', child: Text('disputed', style: TextStyle(color: AppColors.textPrimary))),
                     ],
                     onChanged: (value) async {
                       if (value == null || value == row.status) return;

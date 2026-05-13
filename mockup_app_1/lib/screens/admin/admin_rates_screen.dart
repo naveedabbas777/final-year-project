@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/admin_api_service.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/services/market_api_service.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
@@ -60,8 +61,14 @@ class _AdminRatesScreenState extends State<AdminRatesScreen> {
               final row = rows[index];
               return Card(
                 child: ListTile(
-                  title: Text('${row.cropName} • ${row.marketName}'),
-                  subtitle: Text('${row.district} • ${row.sourceName}'),
+                  title: Text(
+                    '${row.cropName} • ${row.marketName}',
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
+                  subtitle: Text(
+                    '${row.district} • ${row.sourceName}',
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
                   trailing: Text(
                     '${row.minPrice.toStringAsFixed(0)}-${row.maxPrice.toStringAsFixed(0)}',
                     style: TextStyle(

@@ -17,6 +17,8 @@ import 'screens/orders_screen.dart';
 import 'screens/my_listings_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/admin/admin_console_shell.dart';
+import 'screens/profile_screen.dart';
+import 'screens/admin/admin_profile_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:mockup_app/providers/language_provider.dart';
 import 'package:mockup_app/providers/auth_provider.dart' as app_auth;
@@ -300,16 +302,20 @@ class MainNavigationShell extends StatefulWidget {
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
   int _selectedIndex = 0;
-  final List<Widget> _screens = [
-    DashboardScreen(),
-    ForecastScreen(),
-    AlertsScreen(),
-    MarketScreen(),
-    SettingsScreen(),
-  ];
-
+  
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<app_auth.AuthProvider>(context);
+    final Widget profileTab = auth.isAdmin ? const AdminProfileScreen() : const ProfileScreen();
+    final List<Widget> _screens = [
+      DashboardScreen(),
+      ForecastScreen(),
+      AlertsScreen(),
+      MarketScreen(),
+      SettingsScreen(),
+      profileTab,
+    ];
+
     final isUrdu = Localizations.localeOf(context).languageCode == 'ur';
     return Scaffold(
       body: IndexedStack(index: _selectedIndex, children: _screens),
@@ -375,6 +381,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
             selectedIcon: const Icon(Icons.settings),
             label: AppLocalizations.of(context)!.settings,
             tooltip: isUrdu ? 'ایپ ترتیبات' : 'App settings',
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: isUrdu ? 'پروفائل' : 'Profile',
+            tooltip: isUrdu ? 'پروفائل' : 'Profile',
           ),
         ],
       ),

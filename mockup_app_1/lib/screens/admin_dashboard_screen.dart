@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:mockup_app/services/admin_api_service.dart';
+import 'package:mockup_app/screens/admin/admin_profile_screen.dart';
+import 'package:mockup_app/config/app_theme.dart';
+import 'package:provider/provider.dart';
+import 'package:mockup_app/providers/auth_provider.dart' as app_auth;
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -79,7 +83,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
               const SizedBox(height: 4),
-              Text(label, style: const TextStyle(fontSize: 12)),
+              Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
             ],
           ),
         ),
@@ -98,16 +102,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             color: user.isAdmin ? Colors.red.shade700 : Colors.green.shade700,
           ),
         ),
-        title: Text(user.name.isNotEmpty ? user.name : user.firebaseUid),
+        title: Text(user.name.isNotEmpty ? user.name : user.firebaseUid, style: const TextStyle(color: AppColors.textPrimary)),
         subtitle: Text(
           '${user.role} • ${user.district.isNotEmpty ? user.district : _t('No district', 'ضلع نہیں')}${user.isOnline ? ' • ${_t('online', 'آن لائن')}' : ''}',
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         trailing: DropdownButton<String>(
           value: user.role,
           items: const [
-            DropdownMenuItem(value: 'farmer', child: Text('farmer')),
-            DropdownMenuItem(value: 'buyer', child: Text('buyer')),
-            DropdownMenuItem(value: 'admin', child: Text('admin')),
+            DropdownMenuItem(value: 'farmer', child: Text('farmer', style: TextStyle(color: AppColors.textPrimary))),
+            DropdownMenuItem(value: 'buyer', child: Text('buyer', style: TextStyle(color: AppColors.textPrimary))),
+            DropdownMenuItem(value: 'admin', child: Text('admin', style: TextStyle(color: AppColors.textPrimary))),
           ],
           onChanged: (value) {
             if (value == null || value == user.role) return;
@@ -123,20 +128,22 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: ListTile(
         title: Text(
           '${_t('Order', 'آرڈر')} ${order.id.substring(0, order.id.length > 10 ? 10 : order.id.length)}',
+          style: const TextStyle(color: AppColors.textPrimary),
         ),
         subtitle: Text(
           '${_t('Buyer', 'خریدار')}: ${order.buyerUid}\n${_t('Seller', 'فروخت کنندہ')}: ${order.sellerUid}\n${order.quantity.toStringAsFixed(0)} ${order.unit} • PKR ${order.finalPrice.toStringAsFixed(0)}',
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         isThreeLine: true,
         trailing: DropdownButton<String>(
           value: order.status,
           items: const [
-            DropdownMenuItem(value: 'created', child: Text('created')),
-            DropdownMenuItem(value: 'in_transit', child: Text('in_transit')),
-            DropdownMenuItem(value: 'delivered', child: Text('delivered')),
-            DropdownMenuItem(value: 'completed', child: Text('completed')),
-            DropdownMenuItem(value: 'cancelled', child: Text('cancelled')),
-            DropdownMenuItem(value: 'disputed', child: Text('disputed')),
+            DropdownMenuItem(value: 'created', child: Text('created', style: TextStyle(color: AppColors.textPrimary))),
+            DropdownMenuItem(value: 'in_transit', child: Text('in_transit', style: TextStyle(color: AppColors.textPrimary))),
+            DropdownMenuItem(value: 'delivered', child: Text('delivered', style: TextStyle(color: AppColors.textPrimary))),
+            DropdownMenuItem(value: 'completed', child: Text('completed', style: TextStyle(color: AppColors.textPrimary))),
+            DropdownMenuItem(value: 'cancelled', child: Text('cancelled', style: TextStyle(color: AppColors.textPrimary))),
+            DropdownMenuItem(value: 'disputed', child: Text('disputed', style: TextStyle(color: AppColors.textPrimary))),
           ],
           onChanged: (value) async {
             if (value == null || value == order.status) return;
@@ -161,9 +168,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           alert.read ? Icons.mark_email_read : Icons.notifications_active,
           color: alert.read ? Colors.grey.shade600 : Colors.orange.shade700,
         ),
-        title: Text(alert.title),
+        title: Text(alert.title, style: const TextStyle(color: AppColors.textPrimary)),
         subtitle: Text(
           '${alert.type} • ${alert.address.isNotEmpty ? alert.address : alert.userId}\n${alert.body}',
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         isThreeLine: true,
       ),
@@ -181,6 +189,38 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           backgroundColor: Colors.green.shade800,
           foregroundColor: Colors.white,
           actions: [
+            IconButton(
+              tooltip: _t('Profile', 'پروفائل'),
+              icon: const Icon(Icons.person),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AdminProfileScreen()),
+              ),
+            ),
+            IconButton(
+              tooltip: _t('Sign out', 'سائن آؤٹ'),
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: Text(_t('Sign out', 'سائن آؤٹ')),
+                    content: Text(_t('Are you sure you want to sign out?', 'کیا آپ واقعی سائن آؤٹ کرنا چاہتے ہیں؟')),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(_t('Cancel', 'منسوخ'))),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600),
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: Text(_t('Sign out', 'سائن آؤٹ')),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  final auth = Provider.of<app_auth.AuthProvider>(context, listen: false);
+                  await auth.signOut();
+                }
+              },
+            ),
             IconButton(
               tooltip: _t('Refresh all', 'سب ریفریش کریں'),
               onPressed: _reloadAll,

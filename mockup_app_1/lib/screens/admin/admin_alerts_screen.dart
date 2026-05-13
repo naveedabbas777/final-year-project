@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/admin_api_service.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class AdminAlertsScreen extends StatefulWidget {
@@ -64,9 +65,13 @@ class _AdminAlertsScreenState extends State<AdminAlertsScreen> {
                     color: row.read ? Colors.grey.shade600 : Colors.orange.shade700,
                   ),
                   isThreeLine: true,
-                  title: Text(row.title),
+                  title: Text(
+                    row.title,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
                   subtitle: Text(
                     '${row.type} • ${row.address.isEmpty ? row.userId : row.address}\n${row.body}',
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               );

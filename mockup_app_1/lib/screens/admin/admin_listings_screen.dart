@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/admin_api_service.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/services/market_api_service.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
@@ -66,16 +67,20 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
               return Card(
                 child: ListTile(
                   isThreeLine: true,
-                  title: Text('${row.cropName} • ${row.qualityGrade}'),
+                  title: Text(
+                    '${row.cropName} • ${row.qualityGrade}',
+                    style: const TextStyle(color: AppColors.textPrimary),
+                  ),
                   subtitle: Text(
                     '${row.district}\n${row.quantity.toStringAsFixed(0)} ${row.unit} • PKR ${row.askingPrice.toStringAsFixed(0)}',
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                   trailing: DropdownButton<String>(
                     value: row.status,
                     items: const [
-                      DropdownMenuItem(value: 'open', child: Text('open')),
-                      DropdownMenuItem(value: 'sold', child: Text('sold')),
-                      DropdownMenuItem(value: 'closed', child: Text('closed')),
+                      DropdownMenuItem(value: 'open', child: Text('open', style: TextStyle(color: AppColors.textPrimary))),
+                      DropdownMenuItem(value: 'sold', child: Text('sold', style: TextStyle(color: AppColors.textPrimary))),
+                      DropdownMenuItem(value: 'closed', child: Text('closed', style: TextStyle(color: AppColors.textPrimary))),
                     ],
                     onChanged: (value) async {
                       if (value == null || value == row.status) return;

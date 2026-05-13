@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/admin_api_service.dart';
+import 'package:mockup_app/config/app_theme.dart';
 
 class AdminOpsScreen extends StatefulWidget {
   const AdminOpsScreen({super.key});
@@ -19,17 +20,18 @@ class _AdminOpsScreenState extends State<AdminOpsScreen> {
 
   Future<void> _runWeatherRefresh() async {
     setState(() => _weatherBusy = true);
-    final messenger = ScaffoldMessenger.of(context);
+      final messenger = ScaffoldMessenger.of(context);
     try {
       final message = await _api.refreshWeather();
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(message)));
+      messenger.showSnackBar(SnackBar(content: Text(message, style: const TextStyle(color: AppColors.white))));
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
           content: Text(
             _t(context, 'Weather refresh failed: $e', 'موسم ریفریش ناکام: $e'),
+            style: const TextStyle(color: AppColors.white),
           ),
         ),
       );
@@ -46,13 +48,14 @@ class _AdminOpsScreenState extends State<AdminOpsScreen> {
     try {
       final message = await _api.ingestOfficialRates();
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(message)));
+      messenger.showSnackBar(SnackBar(content: Text(message, style: const TextStyle(color: AppColors.white))));
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
         SnackBar(
           content: Text(
             _t(context, 'Rates ingestion failed: $e', 'ریٹس انجیژن ناکام: $e'),
+            style: const TextStyle(color: AppColors.white),
           ),
         ),
       );
@@ -71,14 +74,21 @@ class _AdminOpsScreenState extends State<AdminOpsScreen> {
         Card(
           child: ListTile(
             leading: const Icon(Icons.cloud_sync),
-            title: Text(_t(context, 'Refresh weather alerts', 'موسمی الرٹس ریفریش کریں')),
-            subtitle: Text(_t(context, 'Run weather sync pipeline now', 'ابھی موسمی سنک پائپ لائن چلائیں')),
+            title: Text(
+              _t(context, 'Refresh weather alerts', 'موسمی الرٹس ریفریش کریں'),
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
+            subtitle: Text(
+              _t(context, 'Run weather sync pipeline now', 'ابھی موسمی سنک پائپ لائن چلائیں'),
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
             trailing: ElevatedButton(
               onPressed: _weatherBusy ? null : _runWeatherRefresh,
               child: Text(
                 _weatherBusy
                     ? _t(context, 'Running...', 'چل رہا ہے...')
                     : _t(context, 'Run', 'چلائیں'),
+                style: const TextStyle(color: AppColors.white),
               ),
             ),
           ),
@@ -86,14 +96,21 @@ class _AdminOpsScreenState extends State<AdminOpsScreen> {
         Card(
           child: ListTile(
             leading: const Icon(Icons.agriculture),
-            title: Text(_t(context, 'Ingest official crop rates', 'سرکاری فصل ریٹس انجیست کریں')),
-            subtitle: Text(_t(context, 'Pull latest rates from configured source', 'کنفیگر سورس سے تازہ ریٹس لائیں')),
+            title: Text(
+              _t(context, 'Ingest official crop rates', 'سرکاری فصل ریٹس انجیست کریں'),
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
+            subtitle: Text(
+              _t(context, 'Pull latest rates from configured source', 'کنفیگر سورس سے تازہ ریٹس لائیں'),
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
             trailing: ElevatedButton(
               onPressed: _ratesBusy ? null : _runRatesIngestion,
               child: Text(
                 _ratesBusy
                     ? _t(context, 'Running...', 'چل رہا ہے...')
                     : _t(context, 'Run', 'چلائیں'),
+                style: const TextStyle(color: AppColors.white),
               ),
             ),
           ),

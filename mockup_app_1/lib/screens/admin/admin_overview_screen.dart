@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mockup_app/services/admin_api_service.dart';
+import 'package:mockup_app/config/app_theme.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class AdminOverviewScreen extends StatefulWidget {
@@ -34,7 +35,7 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
           backgroundColor: color.withValues(alpha: 0.15),
           child: Icon(icon, color: color),
         ),
-        title: Text(label),
+        title: Text(label, style: const TextStyle(color: AppColors.textPrimary)),
         trailing: Text(
           '$value',
           style: TextStyle(
