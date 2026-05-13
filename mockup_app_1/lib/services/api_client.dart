@@ -146,6 +146,9 @@ class ApiClient {
       initialDelayMs: 300,
     );
   }
+  
+  Future<dynamic> patch(String path, {bool auth = false, Map<String, dynamic>? body, Map<String, String>? query, Map<String, String>? headers}) async {
+  }
 
   Future<dynamic> delete(String path, {bool auth = false}) async {
     return await RetryHelper.retry(

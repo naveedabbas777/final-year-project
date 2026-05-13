@@ -304,6 +304,69 @@ class AdminApiService {
         : 'Official rates ingested';
   }
 
+  Future<Map<String, dynamic>> uploadRatesCsv(String filePath) async {
+    final data = await _client.uploadFile('/api/rates/bulk', fieldName: 'file', filePath: filePath, auth: true);
+    if (data is! Map<String, dynamic>) throw Exception('Invalid bulk upload response');
+    return data;
+  }
+
+  Future<CropRateDto> createRate({
+    required String cropName,
+    required String marketName,
+    required String district,
+    required double minPrice,
+    required double maxPrice,
+    String unit = '40kg',
+    String? sourceName,
+    String? sourceUrl,
+    DateTime? rateDate,
+  }) async {
+    final body = {
+      'cropName': cropName,
+      'marketName': marketName,
+      'district': district,
+      'minPrice': minPrice,
+      'maxPrice': maxPrice,
+      'unit': unit,
+      'sourceName': sourceName ?? 'manual',
+      'sourceUrl': sourceUrl ?? '',
+      'rateDate': rateDate?.toIso8601String(),
+    };
+    final data = await _client.post('/api/rates', auth: true, body: body);
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid create rate response');
+    }
+    return CropRateDto.fromJson(data);
+  }
+
+  Future<CropRateDto> updateRate({
+    required String id,
+    String? cropName,
+    String? marketName,
+    String? district,
+    double? minPrice,
+    double? maxPrice,
+    String? unit,
+    String? sourceName,
+    String? sourceUrl,
+    DateTime? rateDate,
+  }) async {
+    final body = <String, dynamic>{};
+    if (cropName != null) body['cropName'] = cropName;
+    if (marketName != null) body['marketName'] = marketName;
+    if (district != null) body['district'] = district;
+    if (minPrice != null) body['minPrice'] = minPrice;
+    if (maxPrice != null) body['maxPrice'] = maxPrice;
+    if (unit != null) body['unit'] = unit;
+    if (sourceName != null) body['sourceName'] = sourceName;
+    if (sourceUrl != null) body['sourceUrl'] = sourceUrl;
+    if (rateDate != null) body['rateDate'] = rateDate.toIso8601String();
+
+    final data = await _client.patch('/api/rates/$id', auth: true, body: body);
+    if (data is! Map<String, dynamic>) throw Exception('Invalid update rate response');
+    return CropRateDto.fromJson(data);
+  }
+
   Future<void> updateUserRole({
     required String userId,
     required String role,
