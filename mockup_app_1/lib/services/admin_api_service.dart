@@ -310,6 +310,17 @@ class AdminApiService {
     return data;
   }
 
+  Future<String> downloadRatesCsv({String? crop, String? district}) async {
+    final query = <String, String>{};
+    if (crop != null && crop.trim().isNotEmpty) query['crop'] = crop.trim();
+    if (district != null && district.trim().isNotEmpty) query['district'] = district.trim();
+    return _client.getText(
+      '/api/rates/export/csv',
+      auth: true,
+      query: query.isEmpty ? null : query,
+    );
+  }
+
   Future<CropRateDto> createRate({
     required String cropName,
     required String marketName,

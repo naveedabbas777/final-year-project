@@ -25,7 +25,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   void _reload() {
-    setState(() => _future = _api.fetchUsers(limit: 150));
+    setState(() {
+      _future = _api.fetchUsers(limit: 150);
+    });
   }
 
   Future<void> _changeRole(AdminUserDto user, String role) async {

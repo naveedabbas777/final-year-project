@@ -38,12 +38,32 @@ async function enrichUserFromFirebaseAuth(user) {
 
   try {
     const authUser = await admin.auth().getUser(uid);
+    // Ensure createdAt is a serializable timestamp (prefer Firestore Timestamp, then auth metadata)
+    let createdAt = null;
+    if (normalized.createdAt !== undefined && normalized.createdAt !== null) {
+      try {
+        if (typeof normalized.createdAt.toDate === 'function') {
+          createdAt = normalized.createdAt.toDate().toISOString();
+        } else if (typeof normalized.createdAt === 'object' && normalized.createdAt._seconds) {
+          createdAt = new Date(normalized.createdAt._seconds * 1000).toISOString();
+        } else if (typeof normalized.createdAt === 'string') {
+          createdAt = normalized.createdAt;
+        }
+      } catch (_e) {
+        createdAt = null;
+      }
+    }
+
+    if (!createdAt) {
+      createdAt = authUser.metadata?.creationTime || null;
+    }
+
     return {
       ...normalized,
       email: normalized.email || authUser.email || '',
       photoUrl: normalized.photoUrl || authUser.photoURL || '',
       displayName: normalized.displayName || authUser.displayName || normalized.name || '',
-      createdAt: normalized.createdAt || authUser.metadata?.creationTime || null,
+      createdAt,
     };
   } catch (_) {
     return normalized;

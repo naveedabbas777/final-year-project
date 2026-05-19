@@ -1,11 +1,9 @@
 class AppConfig {
-  // For physical Android devices over USB, run:
-  // adb reverse tcp:5000 tcp:5000
-  // This makes device localhost:5000 point to your computer backend.
-  // Override with --dart-define=API_BASE_URL=... when needed.
+  // Default to the deployed Render backend.
+  // Override with --dart-define=API_BASE_URL=... for local development.
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:5000',
+    defaultValue: 'https://digital-kissan-backend.onrender.com',
   );
 
   // Cloudinary configuration (use compile-time env or set defaults)

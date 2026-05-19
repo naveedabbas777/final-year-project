@@ -10,6 +10,68 @@ import { asyncHandler } from '../utils/errors.js';
 
 export const ratesRouter = Router();
 
+function normalizeKeyPart(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '') || 'na';
+}
+
+function rateDocId({ cropName, district, marketName }) {
+  return [
+    normalizeKeyPart(cropName),
+    normalizeKeyPart(district),
+    normalizeKeyPart(marketName),
+  ].join('__');
+}
+
+function rateFreshnessMs(row) {
+  const updated = row?.updatedAt ? new Date(row.updatedAt).getTime() : 0;
+  const rateDate = row?.rateDate ? new Date(row.rateDate).getTime() : 0;
+  return Math.max(updated || 0, rateDate || 0);
+}
+
+function csvEscape(value) {
+  const text = String(value ?? '');
+  const needsQuotes = /[",\r\n]/.test(text);
+  const escaped = text.replaceAll('"', '""');
+  return needsQuotes ? `"${escaped}"` : escaped;
+}
+
+function ratesToCsv(rows) {
+  const headers = ['cropName', 'marketName', 'district', 'minPrice', 'maxPrice', 'unit', 'sourceName', 'sourceUrl', 'rateDate'];
+  const lines = [headers.join(',')];
+  for (const row of rows) {
+    lines.push(
+      [
+        row.cropName,
+        row.marketName,
+        row.district,
+        row.minPrice,
+        row.maxPrice,
+        row.unit,
+        row.sourceName,
+        row.sourceUrl,
+        row.rateDate,
+      ].map(csvEscape).join(','),
+    );
+  }
+  return lines.join('\n');
+}
+
+function dedupeLatestRates(rows) {
+  const latestByKey = new Map();
+  for (const row of rows) {
+    const key = `${normalizeKeyPart(row.cropName)}__${normalizeKeyPart(row.district)}__${normalizeKeyPart(row.marketName)}`;
+    const prev = latestByKey.get(key);
+    if (!prev || rateFreshnessMs(row) > rateFreshnessMs(prev)) {
+      latestByKey.set(key, row);
+    }
+  }
+  return [...latestByKey.values()].sort((a, b) => rateFreshnessMs(b) - rateFreshnessMs(a));
+}
+
 ratesRouter.get('/latest', asyncHandler(async (req, res) => {
   const { crop, district, limit = 100 } = req.query;
 
@@ -22,9 +84,40 @@ ratesRouter.get('/latest', asyncHandler(async (req, res) => {
     query = query.where('district', '==', district.trim());
   }
 
-  query = query.orderBy('rateDate', 'desc').limit(Math.min(Number(limit) || 100, 300));
+  query = query.orderBy('rateDate', 'desc').limit(Math.min(Number(limit) || 100, 800));
   const snapshot = await query.get();
-  res.json(queryToJson(snapshot));
+  const rows = queryToJson(snapshot);
+  res.json(dedupeLatestRates(rows).slice(0, Math.min(Number(limit) || 100, 300)));
+}));
+
+ratesRouter.get('/export/csv', requireAuth, attachDbUser, requireRole('admin'), asyncHandler(async (req, res) => {
+  const { crop, district } = req.query;
+
+  let query = col('crop_rates');
+  if (typeof crop === 'string' && crop.trim()) {
+    query = query.where('cropName', '==', crop.trim());
+  }
+  if (typeof district === 'string' && district.trim()) {
+    query = query.where('district', '==', district.trim());
+  }
+
+  const snapshot = await query.orderBy('rateDate', 'desc').limit(2000).get();
+  const rows = dedupeLatestRates(queryToJson(snapshot));
+  const csv = ratesToCsv(rows.map((row) => ({
+    cropName: row.cropName ?? '',
+    marketName: row.marketName ?? '',
+    district: row.district ?? '',
+    minPrice: row.minPrice ?? '',
+    maxPrice: row.maxPrice ?? '',
+    unit: row.unit ?? '',
+    sourceName: row.sourceName ?? '',
+    sourceUrl: row.sourceUrl ?? '',
+    rateDate: row.rateDate ?? '',
+  })));
+
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="official_rates.csv"');
+  res.send(csv);
 }));
 
 ratesRouter.post('/', requireAuth, attachDbUser, requireRole('admin'), asyncHandler(async (req, res) => {
@@ -63,7 +156,12 @@ ratesRouter.patch('/:id', requireAuth, attachDbUser, requireRole('admin'), async
   if (typeof payload.unit === 'string') update.unit = payload.unit;
   if (typeof payload.sourceName === 'string') update.sourceName = payload.sourceName;
   if (typeof payload.sourceUrl === 'string') update.sourceUrl = payload.sourceUrl;
-  if (payload.rateDate) update.rateDate = new Date(payload.rateDate);
+  // Ensure edited rows become visible in latest feeds even when old records are updated.
+  if (payload.rateDate) {
+    update.rateDate = new Date(payload.rateDate);
+  } else {
+    update.rateDate = new Date();
+  }
   update.updatedAt = serverTimestamp();
 
   const ref = col('crop_rates').doc(id);
@@ -97,11 +195,16 @@ ratesRouter.post('/bulk', requireAuth, attachDbUser, requireRole('admin'), uploa
 
   const batch = admin.firestore().batch();
   for (const r of rows) {
-    const ref = col('crop_rates').doc();
+    const cropName = r.cropName || r.crop || '';
+    const marketName = r.marketName || '';
+    const district = r.district || '';
+    const ref = col('crop_rates').doc(
+      rateDocId({ cropName, marketName, district }),
+    );
     const data = {
-      cropName: r.cropName || r.crop || '',
-      marketName: r.marketName || '',
-      district: r.district || '',
+      cropName,
+      marketName,
+      district,
       minPrice: Number(r.minPrice) || 0,
       maxPrice: Number(r.maxPrice) || 0,
       unit: r.unit || '40kg',
@@ -112,7 +215,7 @@ ratesRouter.post('/bulk', requireAuth, attachDbUser, requireRole('admin'), uploa
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
-    batch.set(ref, data);
+    batch.set(ref, data, { merge: true });
   }
   await batch.commit();
   res.json({ message: 'Bulk upload complete', inserted: rows.length });

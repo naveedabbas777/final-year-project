@@ -25,7 +25,9 @@ class _AdminAlertsScreenState extends State<AdminAlertsScreen> {
   }
 
   void _reload() {
-    setState(() => _future = _api.fetchAlerts(limit: 200));
+    setState(() {
+      _future = _api.fetchAlerts(limit: 200);
+    });
   }
 
   @override

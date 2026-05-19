@@ -1,0 +1,22 @@
+cropName,marketName,district,minPrice,maxPrice,unit,sourceName,sourceUrl,rateDate
+Wheat,Lahore Market,Lahore,3000,3200,40kg,manual,,2026-05-19T00:00:00.000Z
+Rice,Multan Market,Multan,2800,3100,40kg,manual,,2026-05-19T00:00:00.000Z
+Maize,Faisalabad Market,Faisalabad,2400,2650,40kg,manual,,2026-05-19T00:00:00.000Z
+Cotton,Okara Market,Okara,7000,7600,40kg,manual,,2026-05-19T00:00:00.000Z
+Sugarcane,Sahiwal Market,Sahiwal,350,420,40kg,manual,,2026-05-19T00:00:00.000Z
+Potato,Kasur Market,Kasur,1800,2200,40kg,manual,,2026-05-19T00:00:00.000Z
+Onion,Chiniot Market,Chiniot,1600,2100,40kg,manual,,2026-05-19T00:00:00.000Z
+Tomato,Vehari Market,Vehari,2200,2800,40kg,manual,,2026-05-19T00:00:00.000Z
+Wheat,Multan Market,Multan,3050,3350,40kg,manual,,2026-05-19T00:00:00.000Z
+Rice,Lodhran Market,Lodhran,2750,2950,40kg,manual,,2026-05-19T00:00:00.000Z
+Maize,Okara Market,Okara,2350,2550,40kg,manual,,2026-05-19T00:00:00.000Z
+Cotton,Faisalabad Market,Faisalabad,6900,7450,40kg,manual,,2026-05-19T00:00:00.000Z
+Sugarcane,Arifwala Market,Arifwala,360,430,40kg,manual,,2026-05-19T00:00:00.000Z
+Potato,Lahore Market,Lahore,1900,2300,40kg,manual,,2026-05-19T00:00:00.000Z
+Onion,Multan Market,Multan,1650,2150,40kg,manual,,2026-05-19T00:00:00.000Z
+Tomato,Lahore Market,Lahore,2250,2750,40kg,manual,,2026-05-19T00:00:00.000Z
+Mango,Multan Market,Multan,4500,6200,40kg,manual,,2026-05-19T00:00:00.000Z
+Banana,Bahawalpur Market,Bahawalpur,1200,1600,40kg,manual,,2026-05-19T00:00:00.000Z
+Chickpea,DG Khan Market,DG Khan,5200,5800,40kg,manual,,2026-05-19T00:00:00.000Z
+Lentil,Sahiwal Market,Sahiwal,6400,7100,40kg,manual,,2026-05-19T00:00:00.000Z
+Garlic,Kasur Market,Kasur,4300,5200,40kg,manual,,2026-05-19T00:00:00.000Z

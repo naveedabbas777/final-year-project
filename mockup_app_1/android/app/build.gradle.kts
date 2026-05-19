@@ -46,8 +46,8 @@ dependencies {
     // 📦 Firebase BoM (Bill of Materials) - Compatible with Dart Firebase versions
     implementation(platform("com.google.firebase:firebase-bom:32.7.4"))
 
-    // Force Kotlin stdlib to 2.0.21 to avoid 2.1 metadata until R8 supports it
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.0.21"))
+    // Keep Kotlin libraries aligned with the Kotlin Gradle plugin.
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.1.0"))
 
     // Firebase dependencies (versions managed by BoM)
     implementation("com.google.firebase:firebase-auth")
@@ -66,9 +66,9 @@ configurations.all {
             useVersion("21.1.1")
             because("Explicitly set firebase-core version for BoM 32.7.4 compatibility")
         }
-        if (requested.group == "org.jetbrains.kotlin" && requested.version?.startsWith("2.1") == true) {
-            useVersion("2.0.21")
-            because("R8 in current AGP only supports Kotlin metadata up to 2.0")
+        if (requested.group == "org.jetbrains.kotlin" && requested.version?.startsWith("2.0") == true) {
+            useVersion("2.1.0")
+            because("Keep Kotlin artifacts aligned with the Kotlin 2.1.0 Gradle plugin")
         }
     }
 

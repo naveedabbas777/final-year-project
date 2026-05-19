@@ -268,6 +268,16 @@ class _RatesTabState extends State<_RatesTab> {
     return options;
   }
 
+  String _rateTitle(CropRateDto row) {
+    final parts = [row.cropName, row.marketName, row.district]
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return _t('Official rate', 'سرکاری ریٹ');
+    if (parts.length == 1) return parts.first;
+    return '${parts[0]} • ${parts[1]}';
+  }
+
   /// Apply all filters client-side: text search, crop dropdown, district dropdown
   List<CropRateDto> get _filteredRates {
     final query = _searchController.text.trim().toLowerCase();
@@ -626,18 +636,21 @@ class _RatesTabState extends State<_RatesTab> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '${row.cropName} - ${row.marketName}',
+                                        _rateTitle(row),
                                         style: const TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w600,
+                                          color: AppColors.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        row.district,
-                                        style: TextStyle(
+                                        [row.district, row.sourceName]
+                                            .where((value) => value.trim().isNotEmpty)
+                                            .join(' • '),
+                                        style: const TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey.shade600,
+                                          color: AppColors.textSecondary,
                                         ),
                                       ),
                                     ],
@@ -656,9 +669,9 @@ class _RatesTabState extends State<_RatesTab> {
                                   children: [
                                     Text(
                                       _t('Min Price', 'کم از کم قیمت'),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey.shade600,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -667,7 +680,7 @@ class _RatesTabState extends State<_RatesTab> {
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.green.shade700,
+                                        color: Colors.green.shade800,
                                       ),
                                     ),
                                   ],
@@ -677,9 +690,9 @@ class _RatesTabState extends State<_RatesTab> {
                                   children: [
                                     Text(
                                       _t('Max Price', 'زیادہ سے زیادہ قیمت'),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey.shade600,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -688,7 +701,7 @@ class _RatesTabState extends State<_RatesTab> {
                                       style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.green.shade700,
+                                        color: Colors.green.shade800,
                                       ),
                                     ),
                                   ],
@@ -698,9 +711,9 @@ class _RatesTabState extends State<_RatesTab> {
                                   children: [
                                     Text(
                                       _t('Unit', 'یونٹ'),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontSize: 11,
-                                        color: Colors.grey.shade600,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -709,6 +722,7 @@ class _RatesTabState extends State<_RatesTab> {
                                       style: const TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
+                                        color: AppColors.textPrimary,
                                       ),
                                     ),
                                   ],
@@ -718,9 +732,9 @@ class _RatesTabState extends State<_RatesTab> {
                             const SizedBox(height: 10),
                             Text(
                               row.sourceName,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade500,
+                                color: AppColors.textSecondary,
                               ),
                             ),
                           ],

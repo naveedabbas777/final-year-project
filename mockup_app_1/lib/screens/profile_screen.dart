@@ -14,6 +14,7 @@ import 'package:mockup_app/utils/error_presenter.dart';
 
 import 'package:mockup_app/providers/auth_provider.dart';
 import 'package:mockup_app/services/firebase_service.dart';
+import 'package:mockup_app/services/api_client.dart';
 import 'package:mockup_app/widgets/async_state_widgets.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -408,26 +409,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<String> _uploadProfileImage(String filePath) async {
-    final user = fb.FirebaseAuth.instance.currentUser;
-    String? idToken;
-    if (user != null) idToken = await user.getIdToken();
+    try {
+      final user = fb.FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Force-refresh token to avoid using an expired token during upload
+        await user.getIdToken(true);
+      }
 
-    final uri = Uri.parse('${AppConfig.apiBaseUrl}/api/uploads/profile-image');
-    final request = http.MultipartRequest('POST', uri);
-    if (idToken != null) {
-      request.headers['Authorization'] = 'Bearer $idToken';
+      final client = ApiClient();
+      final res = await client.uploadFile(
+        '/api/uploads/profile-image',
+        fieldName: 'image',
+        filePath: filePath,
+        auth: true,
+      );
+
+      if (res is Map<String, dynamic>) {
+        final url = res['imageUrl'] as String? ?? '';
+        if (url.isEmpty) throw Exception('Upload succeeded but server returned empty imageUrl');
+        return url;
+      }
+
+      throw Exception('Unexpected upload response');
+    } catch (e) {
+      rethrow;
     }
-    request.files.add(await http.MultipartFile.fromPath('image', filePath));
-
-    final streamed = await request.send();
-    final resp = await http.Response.fromStream(streamed);
-    if (resp.statusCode < 200 || resp.statusCode >= 300) {
-      throw Exception('Profile image upload failed (${resp.statusCode})');
-    }
-
-    final body = json.decode(resp.body) as Map<String, dynamic>;
-    final url = body['imageUrl'] as String? ?? '';
-    return url;
   }
 
   @override

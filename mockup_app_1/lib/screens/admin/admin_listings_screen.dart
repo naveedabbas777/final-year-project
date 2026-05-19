@@ -26,7 +26,9 @@ class _AdminListingsScreenState extends State<AdminListingsScreen> {
   }
 
   void _reload() {
-    setState(() => _future = _api.fetchListings(limit: 200));
+    setState(() {
+      _future = _api.fetchListings(limit: 200);
+    });
   }
 
   Future<void> _changeStatus(ListingDto listing, String status) async {

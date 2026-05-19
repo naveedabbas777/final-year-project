@@ -53,3 +53,39 @@ app.*.map.json
 /.env
 /.env.local
 /.env.*.local
+
+# Local build artifacts & large binaries (avoid committing caches, zips, native libs)
+# Gradle wrapper distributions and local gradle caches
+android/.gradle-home/
+.gradle-home/
+
+# Generated native libraries, heap dumps and java profiler files
+*.hprof
+java_pid*.hprof
+
+# Flutter / build outputs (already covered above, kept for clarity)
+build/
+**/build/
+
+# Android packaging artifacts
+*.apk
+*.aab
+
+# If you want to store big binaries, consider using Git LFS instead
+
+# Additional large files to ignore (gradle caches, wrapper dists, build artifacts)
+# Top-level and android-specific gradle home/cache directories
+.gradle-home/
+android/.gradle-home/
+.gradle/
+android/.gradle/
+
+# Gradle wrapper distributions and caches
+**/wrapper/dists/
+**/caches/
+
+# Archive and binary blobs produced by Gradle or profiling tools
+*.zip
+*.jar
+*.hprof
+

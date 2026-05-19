@@ -25,7 +25,9 @@ class _AdminOverviewScreenState extends State<AdminOverviewScreen> {
   }
 
   void _reload() {
-    setState(() => _future = _api.fetchOverview());
+    setState(() {
+      _future = _api.fetchOverview();
+    });
   }
 
   Widget _metric(String label, int value, IconData icon, Color color) {

@@ -25,7 +25,9 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
   }
 
   void _reload() {
-    setState(() => _future = _api.fetchOrders(limit: 200));
+    setState(() {
+      _future = _api.fetchOrders(limit: 200);
+    });
   }
 
   Future<void> _changeStatus(AdminOrderDto order, String status) async {

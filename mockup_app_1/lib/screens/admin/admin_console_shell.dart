@@ -9,9 +9,9 @@ import 'admin_notifications_screen.dart';
 import 'admin_ops_screen.dart';
 import 'admin_orders_screen.dart';
 import 'admin_overview_screen.dart';
-import 'admin_rates_screen.dart';
 import 'admin_users_screen.dart';
 import 'admin_profile_screen.dart';
+import 'admin_official_rates_screen.dart';
 
 class AdminConsoleShell extends StatefulWidget {
   const AdminConsoleShell({super.key});
@@ -34,7 +34,7 @@ class _AdminConsoleShellState extends State<AdminConsoleShell> {
     AdminOrdersScreen(),
     AdminAlertsScreen(),
     AdminNotificationsScreen(),
-    AdminRatesScreen(),
+    AdminOfficialRatesScreen(),
     AdminOpsScreen(),
   ];
 
@@ -111,7 +111,7 @@ class _AdminConsoleShellState extends State<AdminConsoleShell> {
           ),
           NavigationDestination(
             icon: const Icon(Icons.trending_up),
-            label: _t(context, 'Rates', 'ریٹس'),
+            label: _t(context, 'Official Rates', 'سرکاری ریٹس'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.tune),

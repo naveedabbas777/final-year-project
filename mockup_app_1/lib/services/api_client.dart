@@ -45,9 +45,10 @@ class ApiClient {
       }
       final token = await user.getIdToken();
       if (kDebugMode) {
-        final prefix = token == null
-            ? 'null'
-            : (token.length > 12 ? token.substring(0, 12) : token);
+        final prefix =
+            token == null
+                ? 'null'
+                : (token.length > 12 ? token.substring(0, 12) : token);
         debugPrint('[ApiClient] Auth request for ${user.uid} token=$prefix...');
       }
       if (token == null || token.isEmpty) {
@@ -93,6 +94,24 @@ class ApiClient {
     }
   }
 
+  Future<String> getText(
+    String path, {
+    Map<String, String>? query,
+    bool auth = false,
+  }) async {
+    try {
+      return await RetryHelper.retry(
+        () => _performGetText(path, query, auth),
+        maxAttempts: 3,
+        initialDelayMs: 500,
+      );
+    } on TimeoutException {
+      throw Exception('Request timed out. Please check your connection and try again.');
+    } on SocketException {
+      throw Exception('Network error. Please check your connection and try again.');
+    }
+  }
+
   Future<dynamic> _performGet(
     String path,
     Map<String, String>? query,
@@ -106,6 +125,31 @@ class ApiClient {
         .get(url, headers: await _headers(auth: auth))
         .timeout(_requestTimeout);
     return _decode(res);
+  }
+
+  Future<String> _performGetText(
+    String path,
+    Map<String, String>? query,
+    bool auth,
+  ) async {
+    final url = _uri(path, query);
+    if (kDebugMode) {
+      debugPrint('[ApiClient] GET TEXT $url (auth=$auth)');
+    }
+    final res = await _http
+        .get(url, headers: await _headers(auth: auth, includeContentType: false))
+        .timeout(_requestTimeout);
+
+    if (res.statusCode == 401) {
+      throw Exception('Your session has expired. Please sign in again.');
+    }
+    if (res.statusCode == 429) {
+      throw Exception('Too many requests. Please wait a moment and try again.');
+    }
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception('Request failed (${res.statusCode})');
+    }
+    return res.body;
   }
 
   Future<dynamic> post(
@@ -145,9 +189,6 @@ class ApiClient {
       maxAttempts: 2,
       initialDelayMs: 300,
     );
-  }
-  
-  Future<dynamic> patch(String path, {bool auth = false, Map<String, dynamic>? body, Map<String, String>? query, Map<String, String>? headers}) async {
   }
 
   Future<dynamic> delete(String path, {bool auth = false}) async {
