@@ -20,6 +20,7 @@ class ListingDetailScreen extends StatefulWidget {
 
 class _ListingDetailScreenState extends State<ListingDetailScreen> {
   final _service = MarketApiService();
+  late ListingDto _listing;
   UserProfileDto? _seller;
   Map<String, dynamic>? _sellerRatings;
   bool _savedSeller = false;
@@ -38,6 +39,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _listing = widget.listing;
     _imagePageController = PageController();
     _loadSeller();
     _loadSavedState();
@@ -390,22 +392,22 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
   }
 
   Future<void> _openEditSheet() async {
-    final cropController = TextEditingController(text: widget.listing.cropName);
+    final cropController = TextEditingController(text: _listing.cropName);
     final districtController = TextEditingController(
-      text: widget.listing.district,
+      text: _listing.district,
     );
     final qtyController = TextEditingController(
-      text: widget.listing.quantity.toStringAsFixed(0),
+      text: _listing.quantity.toStringAsFixed(0),
     );
     final priceController = TextEditingController(
-      text: widget.listing.askingPrice.toStringAsFixed(0),
+      text: _listing.askingPrice.toStringAsFixed(0),
     );
     final descriptionController = TextEditingController(
-      text: widget.listing.description,
+      text: _listing.description,
     );
-    final unitController = TextEditingController(text: widget.listing.unit);
-    String grade = widget.listing.qualityGrade;
-    String status = widget.listing.status;
+    final unitController = TextEditingController(text: _listing.unit);
+    String grade = _listing.qualityGrade;
+    String status = _listing.status;
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -575,7 +577,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                           price == null)
                         return;
                       await _service.updateListing(
-                        listingId: widget.listing.id,
+                        listingId: _listing.id,
                         cropName: crop,
                         district: district,
                         quantity: qty,
@@ -585,10 +587,14 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                         description: descriptionController.text.trim(),
                       );
                       await _service.updateListingStatus(
-                        listingId: widget.listing.id,
+                        listingId: _listing.id,
                         status: status,
                       );
+                      final refreshed = await _service.fetchListingById(_listing.id);
                       if (!sheetContext.mounted) return;
+                      if (mounted) {
+                        setState(() => _listing = refreshed);
+                      }
                       Navigator.pop(sheetContext, true);
                     },
                     icon: const Icon(Icons.save),
@@ -608,13 +614,12 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
       ).showSnackBar(SnackBar(content: Text(_t('Listing updated', 'لسٹنگ اپڈیٹ ہو گئی'))));
       await _loadSeller();
       await _loadMessages();
-      setState(() {});
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final l = widget.listing;
+    final l = _listing;
     final recentMessages = _messages.take(4).toList();
 
     return Scaffold(
@@ -894,7 +899,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                       Icon(Icons.access_time, size: 14, color: Colors.grey.shade500),
                       const SizedBox(width: 4),
                       Text(
-                        _formatRelativeTime(widget.listing.createdAt),
+                        _formatRelativeTime(l.createdAt),
                         style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
                       ),
                     ],

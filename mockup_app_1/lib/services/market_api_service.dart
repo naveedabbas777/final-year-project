@@ -778,6 +778,14 @@ class MarketApiService {
     );
   }
 
+  Future<ListingDto> fetchListingById(String listingId) async {
+    final data = await _client.get('/api/listings/$listingId');
+    if (data is! Map<String, dynamic>) {
+      throw Exception('Invalid listing response');
+    }
+    return ListingDto.fromJson(data);
+  }
+
   Future<void> updateListing({
     required String listingId,
     String? cropName,

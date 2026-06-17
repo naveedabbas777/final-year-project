@@ -94,6 +94,16 @@ listingsRouter.post('/', requireAuth, attachDbUser, asyncHandler(async (req, res
   res.status(201).json(docToJson(snap));
 }));
 
+listingsRouter.get('/:id', asyncHandler(async (req, res) => {
+  const snap = await col('listings').doc(req.params.id).get();
+  if (!snap.exists) {
+    res.status(404).json({ message: 'Listing not found' });
+    return;
+  }
+
+  res.json(docToJson(snap));
+}));
+
 listingsRouter.patch('/:id', requireAuth, attachDbUser, asyncHandler(async (req, res) => {
   const docRef = col('listings').doc(req.params.id);
   const snap = await docRef.get();

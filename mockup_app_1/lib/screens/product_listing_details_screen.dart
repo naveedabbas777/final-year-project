@@ -8,7 +8,9 @@ import '../utils/error_presenter.dart';
 import 'listing_location_picker.dart';
 
 class ProductListingDetailsScreen extends StatefulWidget {
-  const ProductListingDetailsScreen({Key? key}) : super(key: key);
+  const ProductListingDetailsScreen({Key? key, this.initialListing}) : super(key: key);
+
+  final ListingDto? initialListing;
 
   @override
   State<ProductListingDetailsScreen> createState() =>
@@ -29,10 +31,13 @@ class _ProductListingDetailsScreenState
   final _descriptionController = TextEditingController();
 
   final List<XFile> _selectedImages = [];
+  final List<String> _existingImageUrls = [];
   bool _submitting = false;
   double? _selectedLatitude;
   double? _selectedLongitude;
   String? _selectedLocationName;
+
+  bool get _isEditing => widget.initialListing != null;
 
   String _t(String en, String ur) =>
       Localizations.localeOf(context).languageCode == 'ur' ? ur : en;
@@ -60,6 +65,26 @@ class _ProductListingDetailsScreenState
       ),
       prefixIcon: Icon(icon),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    final listing = widget.initialListing;
+    if (listing == null) return;
+
+    _cropController.text = listing.cropName;
+    _districtController.text = listing.district;
+    _qtyController.text = listing.quantity.toStringAsFixed(0);
+    _priceController.text = listing.askingPrice.toStringAsFixed(0);
+    _unitController.text = listing.unit;
+    _gradeController.text = listing.qualityGrade;
+    _descriptionController.text = listing.description;
+    _selectedLatitude = listing.latitude;
+    _selectedLongitude = listing.longitude;
+    _selectedLocationName = listing.locationName;
+    _existingImageUrls.addAll(listing.imageUrls);
   }
 
   @override
@@ -109,7 +134,7 @@ class _ProductListingDetailsScreenState
   Future<void> _submitListing() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedImages.isEmpty) {
+    if (_selectedImages.isEmpty && _existingImageUrls.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_t(
@@ -125,40 +150,73 @@ class _ProductListingDetailsScreenState
 
     try {
       final imageUrls = <String>[];
-      for (final image in _selectedImages) {
-        imageUrls.add(await _service.uploadListingImage(image.path));
+      if (_selectedImages.isNotEmpty) {
+        for (final image in _selectedImages) {
+          imageUrls.add(await _service.uploadListingImage(image.path));
+        }
+      } else {
+        imageUrls.addAll(_existingImageUrls);
       }
 
-      await _service.createListing(
-        cropName: _cropController.text.trim(),
-        district: _districtController.text.trim(),
-        locationName: _selectedLocationName,
-        quantity: double.tryParse(_qtyController.text.trim()) ?? 0.0,
-        askingPrice: double.tryParse(_priceController.text.trim()) ?? 0.0,
-        qualityGrade:
-            _gradeController.text.trim().isEmpty
-                ? 'A'
-                : _gradeController.text.trim(),
-        unit:
-            _unitController.text.trim().isEmpty
-                ? '40kg'
-                : _unitController.text.trim(),
-        description: _descriptionController.text.trim(),
-        imageUrls: imageUrls,
-        latitude: _selectedLatitude,
-        longitude: _selectedLongitude,
-      );
+      if (_isEditing) {
+        await _service.updateListing(
+          listingId: widget.initialListing!.id,
+          cropName: _cropController.text.trim(),
+          district: _districtController.text.trim(),
+          quantity: double.tryParse(_qtyController.text.trim()) ?? 0.0,
+          askingPrice: double.tryParse(_priceController.text.trim()) ?? 0.0,
+          qualityGrade:
+              _gradeController.text.trim().isEmpty
+                  ? 'A'
+                  : _gradeController.text.trim(),
+          unit:
+              _unitController.text.trim().isEmpty
+                  ? '40kg'
+                  : _unitController.text.trim(),
+          description: _descriptionController.text.trim(),
+          imageUrls: imageUrls,
+          latitude: _selectedLatitude,
+          longitude: _selectedLongitude,
+        );
+      } else {
+        await _service.createListing(
+          cropName: _cropController.text.trim(),
+          district: _districtController.text.trim(),
+          locationName: _selectedLocationName,
+          quantity: double.tryParse(_qtyController.text.trim()) ?? 0.0,
+          askingPrice: double.tryParse(_priceController.text.trim()) ?? 0.0,
+          qualityGrade:
+              _gradeController.text.trim().isEmpty
+                  ? 'A'
+                  : _gradeController.text.trim(),
+          unit:
+              _unitController.text.trim().isEmpty
+                  ? '40kg'
+                  : _unitController.text.trim(),
+          description: _descriptionController.text.trim(),
+          imageUrls: imageUrls,
+          latitude: _selectedLatitude,
+          longitude: _selectedLongitude,
+        );
+      }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _t('Listing created successfully', 'لسٹنگ کامیابی سے بن گئی'),
+            _t(
+              _isEditing
+                  ? 'Listing updated successfully'
+                  : 'Listing created successfully',
+              _isEditing
+                  ? 'لسٹنگ کامیابی سے اپڈیٹ ہو گئی'
+                  : 'لسٹنگ کامیابی سے بن گئی',
+            ),
           ),
         ),
       );
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -174,7 +232,12 @@ class _ProductListingDetailsScreenState
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(_t('Create Product Listing', 'پروڈکٹ لسٹنگ بنائیں')),
+        title: Text(
+          _t(
+            _isEditing ? 'Edit Product Listing' : 'Create Product Listing',
+            _isEditing ? 'پروڈکٹ لسٹنگ ترمیم کریں' : 'پروڈکٹ لسٹنگ بنائیں',
+          ),
+        ),
         backgroundColor: Colors.green.shade700,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -206,25 +269,7 @@ class _ProductListingDetailsScreenState
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    if (_selectedImages.isEmpty)
-                      Column(
-                        children: [
-                          Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 40,
-                            color: Colors.green.shade400,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _t('No images selected', 'کوئی تصویر منتخب نہیں'),
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      )
-                    else
+                    if (_selectedImages.isNotEmpty)
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -262,6 +307,48 @@ class _ProductListingDetailsScreenState
                                 ),
                               ],
                             ),
+                        ],
+                      )
+                    else if (_existingImageUrls.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final imageUrl in _existingImageUrls)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                imageUrl,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                        ],
+                      )
+                    else
+                      Column(
+                        children: [
+                          Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 40,
+                            color: Colors.green.shade400,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            _t(
+                              _isEditing
+                                  ? 'Existing images will be kept unless you choose new ones'
+                                  : 'No images selected',
+                              _isEditing
+                                  ? 'موجودہ تصاویر برقرار رہیں گی جب تک آپ نئی تصاویر منتخب نہ کریں'
+                                  : 'کوئی تصویر منتخب نہیں',
+                            ),
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                            ),
+                          ),
                         ],
                       ),
                     const SizedBox(height: 12),
@@ -564,7 +651,10 @@ class _ProductListingDetailsScreenState
                         ),
                       )
                       : Text(
-                        _t('Create Listing', 'لسٹنگ بنائیں'),
+                        _t(
+                          _isEditing ? 'Save Changes' : 'Create Listing',
+                          _isEditing ? 'تبدیلیاں محفوظ کریں' : 'لسٹنگ بنائیں',
+                        ),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
