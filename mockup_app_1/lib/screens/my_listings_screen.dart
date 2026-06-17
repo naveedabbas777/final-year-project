@@ -22,6 +22,7 @@ class MyListingsScreen extends StatefulWidget {
 
 class _MyListingsScreenState extends State<MyListingsScreen> {
   final _service = MarketApiService();
+  final _listingFormKey = GlobalKey<FormState>();
   final _searchController = TextEditingController();
 
   final _cropController = TextEditingController();
@@ -281,7 +282,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
             ),
             child: SingleChildScrollView(
               child: Form(
-                key: GlobalKey<FormState>(),
+                key: _listingFormKey,
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -1223,275 +1224,278 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 2,
         shadowColor: Colors.black12,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap:
-              () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ListingDetailScreen(listing: row),
-                ),
-              ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Hero(
-                          tag: 'listing_image_${row.id}',
-                          child:
-                              row.imageUrls.isNotEmpty
-                                  ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
-                                    child: Image.network(
-                                      row.imageUrls.first,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap:
+                    () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ListingDetailScreen(listing: row),
+                      ),
+                    ),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Hero(
+                            tag: 'listing_image_${row.id}',
+                            child:
+                                row.imageUrls.isNotEmpty
+                                    ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.network(
+                                        row.imageUrls.first,
+                                        width: 64,
+                                        height: 64,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                    : Container(
                                       width: 64,
                                       height: 64,
-                                      fit: BoxFit.cover,
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade50,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        Icons.agriculture,
+                                        color: Colors.green.shade400,
+                                        size: 28,
+                                      ),
                                     ),
-                                  )
-                                  : Container(
-                                    width: 64,
-                                    height: 64,
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.shade50,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      Icons.agriculture,
-                                      color: Colors.green.shade400,
-                                      size: 28,
-                                    ),
+                          ),
+                          if (offers.isNotEmpty)
+                            Positioned(
+                              right: -8,
+                              top: -8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.shade700,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
                                   ),
-                        ),
-                        if (offers.isNotEmpty)
-                          Positioned(
-                            right: -8,
-                            top: -8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.shade700,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1.5,
                                 ),
-                              ),
-                              child: Text(
-                                '${offers.length}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                        if (unreadCount > 0)
-                          Positioned(
-                            right: -8,
-                            bottom: -8,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade700,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: Text(
-                                '$unreadCount',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${row.cropName} • ${_t('Grade', 'گریڈ')} ${row.qualityGrade}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${row.quantity.toStringAsFixed(0)} ${row.unit}',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                size: 14,
-                                color: Colors.green.shade700,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
                                 child: Text(
-                                  row.district,
-                                  style: TextStyle(
-                                    color: Colors.green.shade800,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
+                                  '${offers.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
+                          if (unreadCount > 0)
+                            Positioned(
+                              right: -8,
+                              bottom: -8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.shade700,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  '$unreadCount',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${row.cropName} • ${_t('Grade', 'گریڈ')} ${row.qualityGrade}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${row.quantity.toStringAsFixed(0)} ${row.unit}',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on,
+                                  size: 14,
+                                  color: Colors.green.shade700,
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    row.district,
+                                    style: TextStyle(
+                                      color: Colors.green.shade800,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'PKR ${row.askingPrice.toStringAsFixed(0)} • ${row.status}',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                            if (description.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                description,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 10,
                                 ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'PKR ${row.askingPrice.toStringAsFixed(0)} • ${row.status}',
-                            style: TextStyle(
-                              color: Colors.green.shade700,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 11,
-                            ),
-                          ),
-                          if (description.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
-                              description,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              '${_t('Posted', 'پوسٹ کیا گیا')} $createdLabel',
                               style: TextStyle(
-                                color: Colors.grey.shade700,
+                                color: Colors.grey.shade600,
                                 fontSize: 10,
                               ),
                             ),
                           ],
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_t('Posted', 'پوسٹ کیا گیا')} $createdLabel',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Wrap(
-                      spacing: 5,
-                      runSpacing: 5,
-                      children: [
-                        if (offers.isNotEmpty)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade100,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '${offers.length} ${_t(offers.length == 1 ? 'offer' : 'offers', offers.length == 1 ? 'آفر' : 'آفرز')}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.orange.shade900,
-                              ),
-                            ),
-                          )
-                        else
-                          Text(
-                            _t('No offers yet', 'ابھی کوئی آفر نہیں'),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 5,
+                    children: [
+                      if (offers.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade100,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${offers.length} ${_t(offers.length == 1 ? 'offer' : 'offers', offers.length == 1 ? 'آفر' : 'آفرز')}',
                             style: TextStyle(
                               fontSize: 10,
-                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange.shade900,
                             ),
                           ),
-                        if (unreadCount > 0)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 7,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade100,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              '$unreadCount ${_t(unreadCount == 1 ? 'new message' : 'new messages', unreadCount == 1 ? 'نیا پیغام' : 'نئے پیغامات')}',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.blue.shade900,
-                              ),
+                        )
+                      else
+                        Text(
+                          _t('No offers yet', 'ابھی کوئی آفر نہیں'),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      if (unreadCount > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '$unreadCount ${_t(unreadCount == 1 ? 'new message' : 'new messages', unreadCount == 1 ? 'نیا پیغام' : 'نئے پیغامات')}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue.shade900,
                             ),
                           ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      alignment: WrapAlignment.end,
-                      children: [
-                        _buildCardActionIcon(
-                          tooltip: _t('Offers', 'آفرز'),
-                          icon: Icons.receipt_long_outlined,
-                          color: Colors.orange.shade700,
-                          onPressed: () => _openOffersSheet(row),
                         ),
-                        _buildCardActionIcon(
-                          tooltip: _t('Messages', 'پیغامات'),
-                          icon: Icons.mark_chat_read_outlined,
-                          color: Colors.blue.shade700,
-                          onPressed: () => _openMessagesSheet(row),
-                        ),
-                        _buildCardActionIcon(
-                          tooltip: _t('Edit', 'ترمیم'),
-                          icon: Icons.edit_outlined,
-                          color: Colors.grey.shade800,
-                          onPressed: () => _openEditListingSheet(row),
-                        ),
-                        _buildCardActionIcon(
-                          tooltip: _t('Delete', 'حذف'),
-                          icon: Icons.delete_outline,
-                          color: Colors.red.shade700,
-                          onPressed: () => _deleteListing(row),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    alignment: WrapAlignment.end,
+                    children: [
+                      _buildCardActionIcon(
+                        tooltip: _t('Offers', 'آفرز'),
+                        icon: Icons.receipt_long_outlined,
+                        color: Colors.orange.shade700,
+                        onPressed: () => _openOffersSheet(row),
+                      ),
+                      _buildCardActionIcon(
+                        tooltip: _t('Messages', 'پیغامات'),
+                        icon: Icons.mark_chat_read_outlined,
+                        color: Colors.blue.shade700,
+                        onPressed: () => _openMessagesSheet(row),
+                      ),
+                      _buildCardActionIcon(
+                        tooltip: _t('Edit', 'ترمیم'),
+                        icon: Icons.edit_outlined,
+                        color: Colors.grey.shade800,
+                        onPressed: () => _openEditListingSheet(row),
+                      ),
+                      _buildCardActionIcon(
+                        tooltip: _t('Delete', 'حذف'),
+                        icon: Icons.delete_outline,
+                        color: Colors.red.shade700,
+                        onPressed: () => _deleteListing(row),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),

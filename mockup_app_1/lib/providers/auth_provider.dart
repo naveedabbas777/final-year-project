@@ -6,7 +6,7 @@ import '../services/firebase_service.dart';
 import '../services/notification_service.dart';
 import '../services/push_service.dart';
 
-// PHASE 1: Explicit auth bootstrap state to avoid startup race conditions
+// PHASE : Explicit auth bootstrap state to avoid startup race conditions
 enum AuthBootstrapState { unknown, authenticated, unauthenticated }
 
 /// Enhanced ChangeNotifier that exposes the current [User?] and ensures a
