@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "src/app.js",
+  "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/app.js",
+    "start": "node src/server.js",
     "seed": "node src/scripts/seedDemoData.js",
     "cleanup:conversations": "node src/scripts/cleanupConversationThreads.js"
   },
