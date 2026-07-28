@@ -23,6 +23,7 @@ import { adminRouter } from './routes/admin.routes.js';
 
 export function createApp() {
   const app = express();
+  app.set('trust proxy', true);
   const isProduction = (process.env.NODE_ENV || '').toLowerCase() === 'production';
 
   // Security headers
