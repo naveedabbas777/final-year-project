@@ -61,7 +61,220 @@ Digital Kissan.
 Gradle files. Tokens must not be committed to VCS — follow the "Secrets"
 section below.
 
-**Setup (developer machine)**
+## App Features & Screenshots
+
+**Digital Kissan** is a comprehensive agricultural mobile application designed to empower farmers with real-time market information, weather forecasts, communication tools, and a digital marketplace. Below are the key features with visual demonstrations:
+
+### 1. **Splash Screen**
+![Splash Screen](digital-kissan-app/images/splash%20screen.jpeg)
+
+The welcoming splash screen that greets users when they launch the application, featuring the Digital Kissan branding and loading animation.
+
+---
+
+### 2. **Dashboard Screen**
+![Dashboard Screen](digital-kissan-app/images/dashboard%20screen.jpeg)
+
+The main hub of the application where users can quickly access:
+- Current weather conditions and quick weather overview
+- Recent market rates for agricultural commodities
+- Shortcuts to key features (marketplace, alerts, profile)
+- User's location and relevant local information
+
+---
+
+### 3. **Weather & Forecasts**
+
+#### **7-Day Forecast**
+![7 Day Forecast](digital-kissan-app/images/7%20day%20forecast.jpeg)
+
+Provides an extended weather outlook showing:
+- Daily temperature ranges
+- Precipitation probability
+- Wind speed and direction
+- Weather conditions for the next 7 days
+
+#### **Detailed Forecast**
+![Detailed Forecast](digital-kissan-app/images/detailed%20forecast.jpeg)
+
+Comprehensive hourly and daily weather information including:
+- Temperature trends
+- Humidity levels
+- UV index
+- Visibility and atmospheric pressure
+
+---
+
+### 4. **Alerts System**
+
+#### **Alerts Button & Notifications**
+![Alerts Button](digital-kissan-app/images/alerts%20button.jpeg)
+
+Quick access button to weather and market alerts from the main interface.
+
+#### **Alerts Screen**
+![Alerts](digital-kissan-app/images/alerts.jpeg)
+
+Centralized alert management displaying:
+- Critical weather warnings (frost, storms, extreme temperatures)
+- Market price alerts for selected commodities
+- Agricultural advisory notifications
+- Customizable alert preferences
+
+---
+
+### 5. **Marketplace Features**
+
+#### **Marketplace Overview**
+![Marketplace](digital-kissan-app/images/marketplace.jpeg)
+
+The digital marketplace for buying and selling agricultural products:
+- Browse available listings from farmers and traders
+- Filter by commodity type, location, and price range
+- Real-time inventory updates
+- Seller ratings and reviews
+
+#### **Buy & Sell Interface**
+![Buy Sell](digital-kissan-app/images/buy%20sell.jpeg)
+
+Dual marketplace view allowing users to:
+- Post new listings for sale
+- Browse and purchase from others
+- Manage active listings
+- Track transaction history
+
+#### **Listing Details**
+![Listing Detail](digital-kissan-app/images/listing%20detail.jpeg)
+
+Detailed product information including:
+- Product images and specifications
+- Quantity available
+- Price and discounts
+- Seller information and contact details
+- Location on map
+- Customer reviews
+
+#### **Edit Listing**
+![Edit Listing](digital-kissan-app/images/edit%20listing.jpeg)
+
+Interface for updating product listings:
+- Modify price and quantity
+- Update product description
+- Change product images
+- Adjust delivery terms
+
+---
+
+### 6. **Market Rates & Pricing**
+![Market Rates](digital-kissan-app/images/rates.jpeg)
+
+Real-time commodity price information:
+- Current market rates for major agricultural products
+- Price trends and historical data
+- Regional price comparisons
+- Price alerts for tracked commodities
+- Data sourced from official government and market sources
+
+---
+
+### 7. **Communication & Support**
+
+#### **Chat**
+![Chat](digital-kissan-app/images/chat.jpeg)
+
+Direct messaging between buyers and sellers:
+- Real-time chat with transaction partners
+- Message history and search
+- Image and file sharing
+- Transaction-linked conversations
+
+#### **AI Chatbot Assistant**
+![Chatbot](digital-kissan-app/images/chatbot.jpeg)
+
+Intelligent agricultural guidance powered by AI:
+- Answer farming questions (crop selection, pest management, irrigation techniques)
+- Provide weather-based farming recommendations
+- Market advice and pricing insights
+- Multilingual support (English & Urdu)
+- 24/7 availability
+
+---
+
+### 8. **User Profile & Settings**
+
+#### **User Profile**
+![Profile](digital-kissan-app/images/profile.jpeg)
+
+Personal profile dashboard showing:
+- User's name, contact information, and avatar
+- Account verification status
+- Total transactions and ratings
+- Listing count and activity status
+- Quick links to edit profile and settings
+
+#### **Edit Profile**
+![Edit Profile](digital-kissan-app/images/edit%20profile.jpeg)
+
+User information management:
+- Update name and contact details
+- Change profile picture
+- Modify bio and agricultural specialization
+- Update location and service area
+- Manage account preferences
+
+#### **Seller Profile**
+![Seller Profile](digital-kissan-app/images/seller%20profile.jpeg)
+
+View other sellers' profiles including:
+- Seller ratings and review count
+- Active listings
+- Response time and reliability metrics
+- Seller specialization areas
+- Contact and location information
+
+#### **Settings**
+![Settings](digital-kissan-app/images/setting.jpeg)
+
+Comprehensive application settings:
+- Language preferences (English/Urdu)
+- Notification settings
+- Privacy and account security options
+- App version and about information
+- Help and feedback options
+
+#### **Setting Location**
+![Setting Location](digital-kissan-app/images/setting%20location.jpeg)
+
+Location and area management:
+- Set primary location for better local content
+- Add multiple operating locations
+- Configure service radius
+- Location-based alert preferences
+- Map-based location selection
+
+---
+
+## Technology Stack
+
+**Frontend:**
+- Flutter/Dart (84.6% of codebase)
+- Multi-language support (English + Urdu)
+- Firebase Authentication
+- Mapbox Integration for location services
+
+**Backend:**
+- Node.js/Express REST API
+- Firebase Firestore for data storage
+- Firebase Authentication token verification
+- Integration with third-party services:
+  - Mapbox for maps and geocoding
+  - Grok AI for chatbot functionality
+  - Cloudinary for image management
+  - OpenWeather API for weather data
+
+---
+
+## Setup (developer machine)
 
 1. Install prerequisites:
 
@@ -121,7 +334,7 @@ section below.
 	 flutter run -d <device-id>
 	 ```
 
-Secrets & safety
+## Secrets & safety
 - Do NOT commit `android/local.properties` or any file containing secrets.
 - Rotate any token that was exposed in the repository (Mapbox token found
 	previously). Create a new token in your Mapbox account and revoke the old one.
@@ -130,16 +343,16 @@ Secrets & safety
 	a tool such as the [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/)
 	or `git filter-repo`. These operations rewrite history and require care.
 
-How Gradle loads Mapbox token now
+## How Gradle loads Mapbox token now
 - `android/settings.gradle.kts` and `android/build.gradle.kts` have been
 	updated to read `MAPBOX_DOWNLOADS_TOKEN` from `android/local.properties` (key
 	`MAPBOX_DOWNLOADS_TOKEN`) or fallback to the `MAPBOX_DOWNLOADS_TOKEN` env var.
 
-Recommended `.gitignore` checks
+## Recommended `.gitignore` checks
 - Ensure `android/local.properties` is ignored (it usually is by default).
 - Avoid committing any CI or secrets files.
 
-Developer notes / architecture
+## Developer notes / architecture
 - `lib/main.dart` initializes Firebase and sets up `LanguageProvider` and
 	`AuthProvider`.
 - Phone-number authentication flows are implemented in
@@ -147,7 +360,7 @@ Developer notes / architecture
 - Map and location functionality lives in `lib/screens/location_screen.dart`
 	using `mapbox_maps_flutter`, `geolocator`, and `geocoding`.
 
-Next actions I can take (select one or more):
+## Next actions I can take (select one or more):
 - Search the repository for other leaked tokens/credentials and report findings.
 - Help rotate the exposed Mapbox token and (optionally) remove it from Git
 	history — I can prepare git commands but will need your confirmation.
@@ -157,19 +370,19 @@ Next actions I can take (select one or more):
 If you'd like me to run a repo-wide search for other secrets now, say
 "Search for tokens" and I'll scan the workspace and report matches.
 
-Backend strategy (Firebase Auth + custom REST API + Firestore)
+## Backend strategy (Firebase Auth + custom REST API + Firestore)
 - Firebase is used for authentication tokens only.
 - Domain features (rates, buy/sell listings, offers, orders) are served by the local REST backend in `backend/`.
 - See `backend/README.md` for complete setup.
 
-Run backend (local)
+## Run backend (local)
 ```powershell
 cd backend
 npm install
 npm run dev
 ```
 
-Run Flutter against backend
+## Run Flutter against backend
 - Physical Android device: use your PC LAN IP.
 - Android emulator: use `10.0.2.2`.
 - USB debugging on a physical Android device: run `adb reverse tcp:5000 tcp:5000` before launching, or pass your PC LAN IP with `--dart-define=API_BASE_URL=http://<your-pc-ip>:5000`.
@@ -178,12 +391,12 @@ Run Flutter against backend
 flutter run --dart-define=API_BASE_URL=http://192.168.X.X:5000
 ```
 
-Current local command (this machine)
+## Current local command (this machine)
 ```powershell
 flutter run --dart-define=API_BASE_URL=http://10.192.10.221:5000
 ```
 
-Phone <-> Laptop data exchange checklist
+## Phone <-> Laptop data exchange checklist
 1. Start backend on laptop:
 	```powershell
 	npm --prefix e:\fyp\mockup_app_1\backend run start
@@ -199,7 +412,7 @@ Phone <-> Laptop data exchange checklist
 4. Keep phone and laptop on the same hotspot/Wi-Fi network.
 5. If the app still cannot connect, allow TCP port 5000 in Windows Firewall.
 
-New app area
+## New app area
 - A new `Market` tab is wired in `lib/main.dart`.
 - UI is implemented in `lib/screens/market_screen.dart`.
 - Client API services are implemented in `lib/services/api_client.dart` and `lib/services/market_api_service.dart`.
@@ -247,4 +460,3 @@ flutter run --dart-define=API_BASE_URL=https://<your-render-service>.onrender.co
 ```
 
 If you want to test the mobile app against the hosted backend from a local device, use the same `API_BASE_URL` value and ensure the desktop app is not required locally.
-
