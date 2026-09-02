@@ -1,4 +1,4 @@
-# mockup_app
+# Digital Kissan app
 
 Digital Kissan — mockup_app
 
