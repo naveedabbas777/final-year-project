@@ -66,14 +66,14 @@ section below.
 **Digital Kissan** is a comprehensive agricultural mobile application designed to empower farmers with real-time market information, weather forecasts, communication tools, and a digital marketplace. Below are the key features with visual demonstrations:
 
 ### 1. **Splash Screen**
-![Splash Screen](digital-kissan-app/images/splash%20screen.jpeg)
+<a href="images/splash%20screen.jpeg"><img src="images/splash%20screen.jpeg" alt="Splash Screen" width="280"></a>
 
 The welcoming splash screen that greets users when they launch the application, featuring the Digital Kissan branding and loading animation.
 
 ---
 
 ### 2. **Dashboard Screen**
-![Dashboard Screen](digital-kissan-app/images/dashboard%20screen.jpeg)
+<a href="images/dashboard%20screen.jpeg"><img src="images/dashboard%20screen.jpeg" alt="Dashboard Screen" width="280"></a>
 
 The main hub of the application where users can quickly access:
 - Current weather conditions and quick weather overview
@@ -86,7 +86,7 @@ The main hub of the application where users can quickly access:
 ### 3. **Weather & Forecasts**
 
 #### **7-Day Forecast**
-![7 Day Forecast](digital-kissan-app/images/7%20day%20forecast.jpeg)
+<a href="images/7%20day%20forecast.jpeg"><img src="images/7%20day%20forecast.jpeg" alt="7 Day Forecast" width="280"></a>
 
 Provides an extended weather outlook showing:
 - Daily temperature ranges
@@ -95,7 +95,7 @@ Provides an extended weather outlook showing:
 - Weather conditions for the next 7 days
 
 #### **Detailed Forecast**
-![Detailed Forecast](digital-kissan-app/images/detailed%20forecast.jpeg)
+<a href="images/detailed%20forecast.jpeg"><img src="images/detailed%20forecast.jpeg" alt="Detailed Forecast" width="280"></a>
 
 Comprehensive hourly and daily weather information including:
 - Temperature trends
@@ -108,12 +108,12 @@ Comprehensive hourly and daily weather information including:
 ### 4. **Alerts System**
 
 #### **Alerts Button & Notifications**
-![Alerts Button](digital-kissan-app/images/alerts%20button.jpeg)
+<a href="images/alerts%20button.jpeg"><img src="images/alerts%20button.jpeg" alt="Alerts Button" width="280"></a>
 
 Quick access button to weather and market alerts from the main interface.
 
 #### **Alerts Screen**
-![Alerts](digital-kissan-app/images/alerts.jpeg)
+<a href="images/alerts.jpeg"><img src="images/alerts.jpeg" alt="Alerts" width="280"></a>
 
 Centralized alert management displaying:
 - Critical weather warnings (frost, storms, extreme temperatures)
@@ -126,7 +126,7 @@ Centralized alert management displaying:
 ### 5. **Marketplace Features**
 
 #### **Marketplace Overview**
-![Marketplace](digital-kissan-app/images/marketplace.jpeg)
+<a href="images/marketplace.jpeg"><img src="images/marketplace.jpeg" alt="Marketplace" width="280"></a>
 
 The digital marketplace for buying and selling agricultural products:
 - Browse available listings from farmers and traders
@@ -135,7 +135,7 @@ The digital marketplace for buying and selling agricultural products:
 - Seller ratings and reviews
 
 #### **Buy & Sell Interface**
-![Buy Sell](digital-kissan-app/images/buy%20sell.jpeg)
+<a href="images/buy%20sell.jpeg"><img src="images/buy%20sell.jpeg" alt="Buy Sell" width="280"></a>
 
 Dual marketplace view allowing users to:
 - Post new listings for sale
@@ -144,7 +144,7 @@ Dual marketplace view allowing users to:
 - Track transaction history
 
 #### **Listing Details**
-![Listing Detail](digital-kissan-app/images/listing%20detail.jpeg)
+<a href="images/listing%20detail.jpeg"><img src="images/listing%20detail.jpeg" alt="Listing Detail" width="280"></a>
 
 Detailed product information including:
 - Product images and specifications
@@ -155,7 +155,7 @@ Detailed product information including:
 - Customer reviews
 
 #### **Edit Listing**
-![Edit Listing](digital-kissan-app/images/edit%20listing.jpeg)
+<a href="images/edit%20listing.jpeg"><img src="images/edit%20listing.jpeg" alt="Edit Listing" width="280"></a>
 
 Interface for updating product listings:
 - Modify price and quantity
@@ -166,7 +166,7 @@ Interface for updating product listings:
 ---
 
 ### 6. **Market Rates & Pricing**
-![Market Rates](digital-kissan-app/images/rates.jpeg)
+<a href="images/rates.jpeg"><img src="images/rates.jpeg" alt="Market Rates" width="280"></a>
 
 Real-time commodity price information:
 - Current market rates for major agricultural products
@@ -180,7 +180,7 @@ Real-time commodity price information:
 ### 7. **Communication & Support**
 
 #### **Chat**
-![Chat](digital-kissan-app/images/chat.jpeg)
+<a href="images/chat.jpeg"><img src="images/chat.jpeg" alt="Chat" width="280"></a>
 
 Direct messaging between buyers and sellers:
 - Real-time chat with transaction partners
@@ -189,7 +189,7 @@ Direct messaging between buyers and sellers:
 - Transaction-linked conversations
 
 #### **AI Chatbot Assistant**
-![Chatbot](digital-kissan-app/images/chatbot.jpeg)
+<a href="images/chatbot.jpeg"><img src="images/chatbot.jpeg" alt="Chatbot" width="280"></a>
 
 Intelligent agricultural guidance powered by AI:
 - Answer farming questions (crop selection, pest management, irrigation techniques)
@@ -203,7 +203,7 @@ Intelligent agricultural guidance powered by AI:
 ### 8. **User Profile & Settings**
 
 #### **User Profile**
-![Profile](digital-kissan-app/images/profile.jpeg)
+<a href="images/profile.jpeg"><img src="images/profile.jpeg" alt="Profile" width="280"></a>
 
 Personal profile dashboard showing:
 - User's name, contact information, and avatar
@@ -213,7 +213,7 @@ Personal profile dashboard showing:
 - Quick links to edit profile and settings
 
 #### **Edit Profile**
-![Edit Profile](digital-kissan-app/images/edit%20profile.jpeg)
+<a href="images/edit%20profile.jpeg"><img src="images/edit%20profile.jpeg" alt="Edit Profile" width="280"></a>
 
 User information management:
 - Update name and contact details
@@ -223,7 +223,7 @@ User information management:
 - Manage account preferences
 
 #### **Seller Profile**
-![Seller Profile](digital-kissan-app/images/seller%20profile.jpeg)
+<a href="images/seller%20profile.jpeg"><img src="images/seller%20profile.jpeg" alt="Seller Profile" width="280"></a>
 
 View other sellers' profiles including:
 - Seller ratings and review count
@@ -233,7 +233,7 @@ View other sellers' profiles including:
 - Contact and location information
 
 #### **Settings**
-![Settings](digital-kissan-app/images/setting.jpeg)
+<a href="images/setting.jpeg"><img src="images/setting.jpeg" alt="Settings" width="280"></a>
 
 Comprehensive application settings:
 - Language preferences (English/Urdu)
@@ -243,7 +243,7 @@ Comprehensive application settings:
 - Help and feedback options
 
 #### **Setting Location**
-![Setting Location](digital-kissan-app/images/setting%20location.jpeg)
+<a href="images/setting%20location.jpeg"><img src="images/setting%20location.jpeg" alt="Setting Location" width="280"></a>
 
 Location and area management:
 - Set primary location for better local content

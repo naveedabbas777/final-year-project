@@ -74,7 +74,7 @@ To make the Alerts screenshots show as three smaller screens side-by-side for a 
 <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
   <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Button" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
   <img src="digital-kissan-app/images/alerts.jpeg" alt="Alerts Screen" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
-  <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Thumbnail" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
+   <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Button" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
 </div>
 
 
@@ -257,28 +257,53 @@ Location and area management:
 
 ## 📦 Project Structure
 
+The repository root contains the Flutter application and its Node.js backend.
+Generated build folders, dependency folders, and local secret files are not
+shown in this overview.
+
 ```
-digital-kissan-app/
-├── digital-kissan-app/          # Flutter mobile app
+final-year-project/
+├── README.md                         # Main project documentation
+├── digital-kissan-app/               # Active Flutter application
 │   ├── lib/
-│   │   ├── main.dart            # App entry point
-│   │   ├── screens/             # UI screens
-│   │   ├── services/            # API & Firebase services
-│   │   ├── providers/           # State management
-│   │   ├── models/              # Data models
-│   │   └── l10n/                # Localization files
-│   ├── android/                 # Android configuration
-│   ├── ios/                     # iOS configuration
-│   ├── images/                  # App screenshots & assets
-│   └── pubspec.yaml             # Flutter dependencies
-├── backend/                     # Node.js REST API
-│   ├── routes/                  # API endpoints
-│   ├── middleware/              # Auth & validation
-│   ├── models/                  # Firestore models
-│   ├── services/                # Business logic
-│   ├── .env.example             # Environment template
-│   └── package.json             # Node dependencies
-└── README.md                    # This file
+│   │   ├── main.dart                 # App entry point
+│   │   ├── config/                   # App configuration
+│   │   ├── l10n/                     # English and Urdu localization
+│   │   ├── models/                   # Application data models
+│   │   ├── providers/                # Provider state management
+│   │   ├── screens/                  # Application screens
+│   │   ├── services/                 # REST, Firebase, weather services
+│   │   ├── utils/                    # Shared utilities
+│   │   └── widgets/                  # Reusable Flutter widgets
+│   ├── assets/model/                 # TensorFlow Lite model and labels
+│   ├── images/                       # App screenshots shown above
+│   ├── test/                         # Flutter and service tests
+│   ├── android/                      # Android project and Gradle config
+│   ├── web/                          # Flutter web metadata and icons
+│   ├── backend/                      # Node.js REST API
+│   │   ├── src/
+│   │   │   ├── app.js                # Express app configuration
+│   │   │   ├── server.js             # Backend server entry point
+│   │   │   ├── config/               # Backend configuration
+│   │   │   ├── middlewares/          # Authentication and validation
+│   │   │   ├── models/               # Firestore data models
+│   │   │   ├── routes/               # REST API endpoints
+│   │   │   ├── scripts/              # Backend maintenance scripts
+│   │   │   ├── services/             # Backend business logic
+│   │   │   └── utils/                # Backend helpers
+│   │   ├── scripts/                  # API test and utility scripts
+│   │   ├── uploads/                  # Local listing and profile uploads
+│   │   ├── package.json              # Backend dependencies and commands
+│   │   └── README.md                 # Backend-specific documentation
+│   ├── pubspec.yaml                  # Flutter dependencies
+│   ├── analysis_options.yaml         # Dart analysis rules
+│   ├── firebase.json                 # Firebase configuration
+│   ├── render.yaml                   # Render deployment configuration
+│   └── README.md                     # Flutter-specific documentation
+└── mockup_app_1/                     # Alternate app copy and generated files
+   ├── lib/
+   ├── l10n/
+   └── build/
 ```
 
 ---
