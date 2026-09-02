@@ -9,6 +9,44 @@ Mapbox maps, geolocation, and localized UI.
 **This README covers:** project overview, local setup, handling secrets,
 and commands to run the app on a development machine.
 
+## App Screenshots
+
+The screenshots below show the main user journeys and screens available in
+Digital Kissan.
+
+<table>
+	<tr>
+		<td align="center"><img src="images/splash%20screen.jpeg" alt="Splash screen" width="220"><br><strong>Splash screen</strong></td>
+		<td align="center"><img src="images/dashboard%20screen.jpeg" alt="Dashboard screen" width="220"><br><strong>Dashboard</strong></td>
+		<td align="center"><img src="images/rates.jpeg" alt="Market rates" width="220"><br><strong>Market rates</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/marketplace.jpeg" alt="Marketplace" width="220"><br><strong>Marketplace</strong></td>
+		<td align="center"><img src="images/listing%20detail.jpeg" alt="Listing detail" width="220"><br><strong>Listing details</strong></td>
+		<td align="center"><img src="images/buy%20sell.jpeg" alt="Buy and sell screen" width="220"><br><strong>Buy and sell</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/seller%20profile.jpeg" alt="Seller profile" width="220"><br><strong>Seller profile</strong></td>
+		<td align="center"><img src="images/edit%20listing.jpeg" alt="Edit listing" width="220"><br><strong>Edit listing</strong></td>
+		<td align="center"><img src="images/profile.jpeg" alt="User profile" width="220"><br><strong>User profile</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/edit%20profile.jpeg" alt="Edit profile" width="220"><br><strong>Edit profile</strong></td>
+		<td align="center"><img src="images/setting.jpeg" alt="Settings" width="220"><br><strong>Settings</strong></td>
+		<td align="center"><img src="images/setting%20location.jpeg" alt="Location settings" width="220"><br><strong>Location settings</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/7%20day%20forecast.jpeg" alt="Seven day forecast" width="220"><br><strong>Seven-day forecast</strong></td>
+		<td align="center"><img src="images/detailed%20forecast.jpeg" alt="Detailed weather forecast" width="220"><br><strong>Detailed forecast</strong></td>
+		<td align="center"><img src="images/alerts.jpeg" alt="Weather alerts" width="220"><br><strong>Weather alerts</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/alerts%20button.jpeg" alt="Alerts button" width="220"><br><strong>Alerts</strong></td>
+		<td align="center"><img src="images/chat.jpeg" alt="Chat screen" width="220"><br><strong>Chat</strong></td>
+		<td align="center"><img src="images/chatbot.jpeg" alt="Agriculture chatbot" width="220"><br><strong>AI chatbot</strong></td>
+	</tr>
+</table>
+
 **Quick facts**
 - **Dart SDK constraint**: `^3.7.2` (see `pubspec.yaml`)
 - **Android Java target**: Java 11 (configured in `android/app/build.gradle.kts`)
