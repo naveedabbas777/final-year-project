@@ -1,6 +1,6 @@
 # Digital Kissan App
 
-A comprehensive agricultural mobile application designed to empower farmers with real-time market information, weather forecasts, communication tools, and a digital marketplace. Built with Flutter and Firebase.
+A comprehensive agricultural mobile application designed to empower farmers with real-time market information, weather forecasts, communication tools, and a digital marketplace. Built with Flutter [...]
 
 **Digital Kissan** (Digital Farmer) is a mobile platform connecting farmers, traders, and agricultural professionals with tools for market access, weather intelligence, and community support.
 
@@ -69,13 +69,17 @@ Comprehensive hourly and daily weather information including:
 
 ### 4. **Alerts System**
 
-#### **Alerts Button & Notifications**
-![Alerts Button](digital-kissan-app/images/alerts%20button.jpeg)
+To make the Alerts screenshots show as three smaller screens side-by-side for a clearer view, I've replaced the single large images with a small responsive gallery that displays up to three images in a row. This keeps images clear while reducing their visual footprint.
+
+<div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+  <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Button" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
+  <img src="digital-kissan-app/images/alerts.jpeg" alt="Alerts Screen" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
+  <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Thumbnail" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
+</div>
+
 
 Quick access button to weather and market alerts from the main interface.
 
-#### **Alerts Screen**
-![Alerts](digital-kissan-app/images/alerts.jpeg)
 
 Centralized alert management displaying:
 - Critical weather warnings (frost, storms, extreme temperatures)
