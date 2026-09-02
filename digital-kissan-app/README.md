@@ -1,462 +1,303 @@
-# Digital Kissan app
+# Digital Kissan
 
-Digital Kissan — mockup_app
+Digital Kissan is a Flutter-based agricultural platform for farmers, buyers,
+sellers, and agricultural professionals. It brings weather intelligence,
+market information, produce trading, communication, and farming assistance
+into one mobile application.
 
-This repository contains a Flutter mockup app for a simple agriculture-focused
-mobile application (English + Urdu). It uses Firebase (Auth, Firestore),
-Mapbox maps, geolocation, and localized UI.
+The application supports English and Urdu. Firebase provides authentication
+and cloud services, while the Node.js backend manages domain data such as
+market rates, listings, offers, and orders.
 
-**This README covers:** project overview, local setup, handling secrets,
-and commands to run the app on a development machine.
+## Project Purpose
+
+Farmers need timely information before deciding what to grow, when to work,
+or where to sell. Digital Kissan connects that information with a practical
+marketplace workflow:
+
+1. A user signs in and sets a location.
+2. The dashboard presents local weather, alerts, and market information.
+3. A farmer publishes produce, manages listings, and communicates with buyers.
+4. A buyer browses listings, contacts sellers, makes offers, and tracks orders.
+5. The assistant and plant-disease tools provide additional farming support.
+
+## Main Features
+
+### Weather and Location
+
+- Current weather, detailed forecasts, and seven-day forecasts
+- Location selection with Mapbox, geolocation, and geocoding
+- Weather and agricultural alerts
+
+### Market Information
+
+- Latest agricultural commodity rates
+- Rate administration for authorized users
+- Market data delivered through the backend API
+
+### Digital Marketplace
+
+- Browse and filter produce listings
+- Create, edit, and manage listings
+- View product and seller details
+- Create offers and manage order status
+- Upload listing and profile images through the backend
+
+### Communication and Assistance
+
+- Buyer and seller conversations
+- AI agriculture assistant
+- Farming suggestions and guidance
+- Plant-disease classification using the TensorFlow Lite model in `assets/model`
+
+### Accounts and Localization
+
+- Firebase phone and email authentication flows
+- User profiles, seller profiles, ratings, and settings
+- English and Urdu localization
+- Push notifications and local alerts
 
 ## App Screenshots
 
-The screenshots below show the main user journeys and screens available in
-Digital Kissan.
+These previews show the main user journeys. Select any image to open the
+original full-size screenshot.
 
 <table>
-	<tr>
-		<td align="center"><img src="images/splash%20screen.jpeg" alt="Splash screen" width="220"><br><strong>Splash screen</strong></td>
-		<td align="center"><img src="images/dashboard%20screen.jpeg" alt="Dashboard screen" width="220"><br><strong>Dashboard</strong></td>
-		<td align="center"><img src="images/rates.jpeg" alt="Market rates" width="220"><br><strong>Market rates</strong></td>
-	</tr>
-	<tr>
-		<td align="center"><img src="images/marketplace.jpeg" alt="Marketplace" width="220"><br><strong>Marketplace</strong></td>
-		<td align="center"><img src="images/listing%20detail.jpeg" alt="Listing detail" width="220"><br><strong>Listing details</strong></td>
-		<td align="center"><img src="images/buy%20sell.jpeg" alt="Buy and sell screen" width="220"><br><strong>Buy and sell</strong></td>
-	</tr>
-	<tr>
-		<td align="center"><img src="images/seller%20profile.jpeg" alt="Seller profile" width="220"><br><strong>Seller profile</strong></td>
-		<td align="center"><img src="images/edit%20listing.jpeg" alt="Edit listing" width="220"><br><strong>Edit listing</strong></td>
-		<td align="center"><img src="images/profile.jpeg" alt="User profile" width="220"><br><strong>User profile</strong></td>
-	</tr>
-	<tr>
-		<td align="center"><img src="images/edit%20profile.jpeg" alt="Edit profile" width="220"><br><strong>Edit profile</strong></td>
-		<td align="center"><img src="images/setting.jpeg" alt="Settings" width="220"><br><strong>Settings</strong></td>
-		<td align="center"><img src="images/setting%20location.jpeg" alt="Location settings" width="220"><br><strong>Location settings</strong></td>
-	</tr>
-	<tr>
-		<td align="center"><img src="images/7%20day%20forecast.jpeg" alt="Seven day forecast" width="220"><br><strong>Seven-day forecast</strong></td>
-		<td align="center"><img src="images/detailed%20forecast.jpeg" alt="Detailed weather forecast" width="220"><br><strong>Detailed forecast</strong></td>
-		<td align="center"><img src="images/alerts.jpeg" alt="Weather alerts" width="220"><br><strong>Weather alerts</strong></td>
-	</tr>
-	<tr>
-		<td align="center"><img src="images/alerts%20button.jpeg" alt="Alerts button" width="220"><br><strong>Alerts</strong></td>
-		<td align="center"><img src="images/chat.jpeg" alt="Chat screen" width="220"><br><strong>Chat</strong></td>
-		<td align="center"><img src="images/chatbot.jpeg" alt="Agriculture chatbot" width="220"><br><strong>AI chatbot</strong></td>
-	</tr>
+  <tr>
+    <td align="center"><a href="images/splash%20screen.jpeg"><img src="images/splash%20screen.jpeg" alt="Splash screen" width="180"></a><br><strong>Splash</strong></td>
+    <td align="center"><a href="images/dashboard%20screen.jpeg"><img src="images/dashboard%20screen.jpeg" alt="Dashboard screen" width="180"></a><br><strong>Dashboard</strong></td>
+    <td align="center"><a href="images/rates.jpeg"><img src="images/rates.jpeg" alt="Market rates" width="180"></a><br><strong>Market rates</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="images/marketplace.jpeg"><img src="images/marketplace.jpeg" alt="Marketplace" width="180"></a><br><strong>Marketplace</strong></td>
+    <td align="center"><a href="images/buy%20sell.jpeg"><img src="images/buy%20sell.jpeg" alt="Buy and sell" width="180"></a><br><strong>Buy and sell</strong></td>
+    <td align="center"><a href="images/listing%20detail.jpeg"><img src="images/listing%20detail.jpeg" alt="Listing details" width="180"></a><br><strong>Listing details</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="images/edit%20listing.jpeg"><img src="images/edit%20listing.jpeg" alt="Edit listing" width="180"></a><br><strong>Edit listing</strong></td>
+    <td align="center"><a href="images/seller%20profile.jpeg"><img src="images/seller%20profile.jpeg" alt="Seller profile" width="180"></a><br><strong>Seller profile</strong></td>
+    <td align="center"><a href="images/profile.jpeg"><img src="images/profile.jpeg" alt="User profile" width="180"></a><br><strong>User profile</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="images/edit%20profile.jpeg"><img src="images/edit%20profile.jpeg" alt="Edit profile" width="180"></a><br><strong>Edit profile</strong></td>
+    <td align="center"><a href="images/setting.jpeg"><img src="images/setting.jpeg" alt="Settings" width="180"></a><br><strong>Settings</strong></td>
+    <td align="center"><a href="images/setting%20location.jpeg"><img src="images/setting%20location.jpeg" alt="Location settings" width="180"></a><br><strong>Location</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="images/7%20day%20forecast.jpeg"><img src="images/7%20day%20forecast.jpeg" alt="Seven day forecast" width="180"></a><br><strong>7-day forecast</strong></td>
+    <td align="center"><a href="images/detailed%20forecast.jpeg"><img src="images/detailed%20forecast.jpeg" alt="Detailed forecast" width="180"></a><br><strong>Detailed forecast</strong></td>
+    <td align="center"><a href="images/alerts.jpeg"><img src="images/alerts.jpeg" alt="Alerts screen" width="180"></a><br><strong>Alerts</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><a href="images/alerts%20button.jpeg"><img src="images/alerts%20button.jpeg" alt="Alerts button" width="180"></a><br><strong>Alert button</strong></td>
+    <td align="center"><a href="images/chat.jpeg"><img src="images/chat.jpeg" alt="Chat screen" width="180"></a><br><strong>Chat</strong></td>
+    <td align="center"><a href="images/chatbot.jpeg"><img src="images/chatbot.jpeg" alt="Agriculture chatbot" width="180"></a><br><strong>AI chatbot</strong></td>
+  </tr>
 </table>
-
-**Quick facts**
-- **Dart SDK constraint**: `^3.7.2` (see `pubspec.yaml`)
-- **Android Java target**: Java 11 (configured in `android/app/build.gradle.kts`)
-- **Localization**: English (`en`) and Urdu (`ur`) via generated `lib/l10n`
-
-**Primary dependencies** (see full list in `pubspec.yaml`):
-- `firebase_core`, `firebase_auth`, `cloud_firestore`
-- `mapbox_maps_flutter`, `geolocator`, `geocoding`, `permission_handler`
-- `provider`, `shared_preferences`, `google_fonts`, `intl`, `country_picker`
-
-**Security note**: This project previously contained a Mapbox token in
-Gradle files. Tokens must not be committed to VCS — follow the "Secrets"
-section below.
-
-## App Features & Screenshots
-
-**Digital Kissan** is a comprehensive agricultural mobile application designed to empower farmers with real-time market information, weather forecasts, communication tools, and a digital marketplace. Below are the key features with visual demonstrations:
-
-### 1. **Splash Screen**
-<a href="images/splash%20screen.jpeg"><img src="images/splash%20screen.jpeg" alt="Splash Screen" width="280"></a>
-
-The welcoming splash screen that greets users when they launch the application, featuring the Digital Kissan branding and loading animation.
-
----
-
-### 2. **Dashboard Screen**
-<a href="images/dashboard%20screen.jpeg"><img src="images/dashboard%20screen.jpeg" alt="Dashboard Screen" width="280"></a>
-
-The main hub of the application where users can quickly access:
-- Current weather conditions and quick weather overview
-- Recent market rates for agricultural commodities
-- Shortcuts to key features (marketplace, alerts, profile)
-- User's location and relevant local information
-
----
-
-### 3. **Weather & Forecasts**
-
-#### **7-Day Forecast**
-<a href="images/7%20day%20forecast.jpeg"><img src="images/7%20day%20forecast.jpeg" alt="7 Day Forecast" width="280"></a>
-
-Provides an extended weather outlook showing:
-- Daily temperature ranges
-- Precipitation probability
-- Wind speed and direction
-- Weather conditions for the next 7 days
-
-#### **Detailed Forecast**
-<a href="images/detailed%20forecast.jpeg"><img src="images/detailed%20forecast.jpeg" alt="Detailed Forecast" width="280"></a>
-
-Comprehensive hourly and daily weather information including:
-- Temperature trends
-- Humidity levels
-- UV index
-- Visibility and atmospheric pressure
-
----
-
-### 4. **Alerts System**
-
-#### **Alerts Button & Notifications**
-<a href="images/alerts%20button.jpeg"><img src="images/alerts%20button.jpeg" alt="Alerts Button" width="280"></a>
-
-Quick access button to weather and market alerts from the main interface.
-
-#### **Alerts Screen**
-<a href="images/alerts.jpeg"><img src="images/alerts.jpeg" alt="Alerts" width="280"></a>
-
-Centralized alert management displaying:
-- Critical weather warnings (frost, storms, extreme temperatures)
-- Market price alerts for selected commodities
-- Agricultural advisory notifications
-- Customizable alert preferences
-
----
-
-### 5. **Marketplace Features**
-
-#### **Marketplace Overview**
-<a href="images/marketplace.jpeg"><img src="images/marketplace.jpeg" alt="Marketplace" width="280"></a>
-
-The digital marketplace for buying and selling agricultural products:
-- Browse available listings from farmers and traders
-- Filter by commodity type, location, and price range
-- Real-time inventory updates
-- Seller ratings and reviews
-
-#### **Buy & Sell Interface**
-<a href="images/buy%20sell.jpeg"><img src="images/buy%20sell.jpeg" alt="Buy Sell" width="280"></a>
-
-Dual marketplace view allowing users to:
-- Post new listings for sale
-- Browse and purchase from others
-- Manage active listings
-- Track transaction history
-
-#### **Listing Details**
-<a href="images/listing%20detail.jpeg"><img src="images/listing%20detail.jpeg" alt="Listing Detail" width="280"></a>
-
-Detailed product information including:
-- Product images and specifications
-- Quantity available
-- Price and discounts
-- Seller information and contact details
-- Location on map
-- Customer reviews
-
-#### **Edit Listing**
-<a href="images/edit%20listing.jpeg"><img src="images/edit%20listing.jpeg" alt="Edit Listing" width="280"></a>
-
-Interface for updating product listings:
-- Modify price and quantity
-- Update product description
-- Change product images
-- Adjust delivery terms
-
----
-
-### 6. **Market Rates & Pricing**
-<a href="images/rates.jpeg"><img src="images/rates.jpeg" alt="Market Rates" width="280"></a>
-
-Real-time commodity price information:
-- Current market rates for major agricultural products
-- Price trends and historical data
-- Regional price comparisons
-- Price alerts for tracked commodities
-- Data sourced from official government and market sources
-
----
-
-### 7. **Communication & Support**
-
-#### **Chat**
-<a href="images/chat.jpeg"><img src="images/chat.jpeg" alt="Chat" width="280"></a>
-
-Direct messaging between buyers and sellers:
-- Real-time chat with transaction partners
-- Message history and search
-- Image and file sharing
-- Transaction-linked conversations
-
-#### **AI Chatbot Assistant**
-<a href="images/chatbot.jpeg"><img src="images/chatbot.jpeg" alt="Chatbot" width="280"></a>
-
-Intelligent agricultural guidance powered by AI:
-- Answer farming questions (crop selection, pest management, irrigation techniques)
-- Provide weather-based farming recommendations
-- Market advice and pricing insights
-- Multilingual support (English & Urdu)
-- 24/7 availability
-
----
-
-### 8. **User Profile & Settings**
-
-#### **User Profile**
-<a href="images/profile.jpeg"><img src="images/profile.jpeg" alt="Profile" width="280"></a>
-
-Personal profile dashboard showing:
-- User's name, contact information, and avatar
-- Account verification status
-- Total transactions and ratings
-- Listing count and activity status
-- Quick links to edit profile and settings
-
-#### **Edit Profile**
-<a href="images/edit%20profile.jpeg"><img src="images/edit%20profile.jpeg" alt="Edit Profile" width="280"></a>
-
-User information management:
-- Update name and contact details
-- Change profile picture
-- Modify bio and agricultural specialization
-- Update location and service area
-- Manage account preferences
-
-#### **Seller Profile**
-<a href="images/seller%20profile.jpeg"><img src="images/seller%20profile.jpeg" alt="Seller Profile" width="280"></a>
-
-View other sellers' profiles including:
-- Seller ratings and review count
-- Active listings
-- Response time and reliability metrics
-- Seller specialization areas
-- Contact and location information
-
-#### **Settings**
-<a href="images/setting.jpeg"><img src="images/setting.jpeg" alt="Settings" width="280"></a>
-
-Comprehensive application settings:
-- Language preferences (English/Urdu)
-- Notification settings
-- Privacy and account security options
-- App version and about information
-- Help and feedback options
-
-#### **Setting Location**
-<a href="images/setting%20location.jpeg"><img src="images/setting%20location.jpeg" alt="Setting Location" width="280"></a>
-
-Location and area management:
-- Set primary location for better local content
-- Add multiple operating locations
-- Configure service radius
-- Location-based alert preferences
-- Map-based location selection
-
----
 
 ## Technology Stack
 
-**Frontend:**
-- Flutter/Dart (84.6% of codebase)
-- Multi-language support (English + Urdu)
-- Firebase Authentication
-- Mapbox Integration for location services
+### Flutter Application
 
-**Backend:**
-- Node.js/Express REST API
-- Firebase Firestore for data storage
-- Firebase Authentication token verification
-- Integration with third-party services:
-  - Mapbox for maps and geocoding
-  - Grok AI for chatbot functionality
-  - Cloudinary for image management
-  - OpenWeather API for weather data
+- Flutter and Dart
+- Provider for state management
+- Firebase Auth, Firestore, Messaging, and Core
+- Mapbox Maps Flutter, Geolocator, and Geocoding
+- HTTP client for REST API communication
+- Shared Preferences for local settings
+- TensorFlow Lite model for plant-disease classification
 
----
+### Backend
 
-## Setup (developer machine)
+- Node.js with Express
+- Firebase Admin SDK and Firestore
+- Firebase ID-token verification
+- Multer and Cloudinary for image uploads
+- Helmet, CORS, and rate limiting
+- Grok AI for assistant responses
+- OpenWeather integration for weather data
 
-1. Install prerequisites:
+## Project Structure
 
-	 - Flutter SDK (matching the project's channel and supporting Dart >= 3.7.2).
-	 - Android SDK + Android Studio or command-line tools.
-	 - Java 11 (required by Gradle config).
+```text
+digital-kissan-app/
+├── lib/
+│   ├── main.dart                 # Flutter entry point
+│   ├── config/                   # App configuration
+│   ├── l10n/                     # English and Urdu localization
+│   ├── models/                   # Application data models
+│   ├── providers/                # Shared application state
+│   ├── screens/                  # App screens and user workflows
+│   ├── services/                 # Auth, API, weather, alerts, and ML services
+│   ├── utils/                    # Shared Dart utilities
+│   └── widgets/                  # Reusable UI components
+├── assets/model/                 # Model file and classification labels
+├── images/                       # README screenshots
+├── test/                         # Flutter and service tests
+├── android/                      # Android and Gradle configuration
+├── web/                          # Flutter web configuration and icons
+├── backend/
+│   ├── src/
+│   │   ├── app.js                # Express application configuration
+│   │   ├── server.js             # Backend entry point
+│   │   ├── config/               # Backend configuration
+│   │   ├── middlewares/          # Auth and request middleware
+│   │   ├── models/               # Domain data models
+│   │   ├── routes/               # REST API routes
+│   │   ├── services/             # Backend business logic
+│   │   └── utils/                # Backend helpers
+│   ├── scripts/                  # Backend validation and utility scripts
+│   ├── uploads/                  # Local upload directories
+│   ├── package.json              # Backend dependencies and commands
+│   └── README.md                 # Backend documentation
+├── pubspec.yaml                  # Flutter dependencies and assets
+├── analysis_options.yaml         # Dart analysis rules
+├── firebase.json                 # Firebase configuration
+└── render.yaml                   # Render deployment definition
+```
 
-2. Prepare secrets (Mapbox token):
+Generated build output, installed dependencies, local environment files, and
+service-account credentials are intentionally excluded from this overview.
 
-	 - Copy the example file and provide your token in `android/local.properties`.
+## Requirements
 
-		 Example file: `android/local.properties.example`.
+- Flutter SDK with Dart `^3.7.2`
+- Android Studio and Android SDK
+- Java 17 for the current Android Gradle configuration
+- Node.js and npm for the backend
+- Firebase project with Authentication and Firestore enabled
+- Mapbox account and access token
+- Optional Grok, Cloudinary, and OpenWeather credentials
 
-		 Create `android/local.properties` (DO NOT commit this file). Example content:
+## Installation and Local Setup
 
-		 ```text
-		 # Flutter SDK path (optional on dev machines):
-		 # flutter.sdk=C:\\path\\to\\flutter
+### 1. Install Flutter dependencies
 
-		 # Mapbox downloads token used for the Mapbox Maven repository
-		 MAPBOX_DOWNLOADS_TOKEN=pk.YOUR_MAPBOX_DOWNLOADS_TOKEN_HERE
-		 ```
+Run from the `digital-kissan-app` directory:
 
-	 - Alternatively provide `MAPBOX_DOWNLOADS_TOKEN` as an environment variable.
-
-		 In **PowerShell** (session only):
-
-		 ```powershell
-		 $env:MAPBOX_DOWNLOADS_TOKEN = 'pk.YOUR_MAPBOX_TOKEN'
-		 ```
-
-		 Persist across sessions (PowerShell):
-
-		 ```powershell
-		 setx MAPBOX_DOWNLOADS_TOKEN "pk.YOUR_MAPBOX_TOKEN"
-		 ```
-
-3. Firebase configuration:
-
-	 - `android/app/google-services.json` should be present for Android builds.
-		 This repository currently contains a `google-services.json` file under
-		 `android/app/` — treat it as sensitive configuration.
-	 - Ensure your Firebase project is configured for the app's package id
-		 `com.example.mockup_app` or update `applicationId` in
-		 `android/app/build.gradle.kts`.
-
-4. Install Dart/Flutter packages and build:
-
-	 ```powershell
-	 flutter pub get
-	 flutter pub run build_runner build --delete-conflicting-outputs  # if needed for generated code
-	 ```
-
-5. Run the app on a connected device or emulator:
-
-	 ```powershell
-	 flutter run -d <device-id>
-	 ```
-
-## Secrets & safety
-- Do NOT commit `android/local.properties` or any file containing secrets.
-- Rotate any token that was exposed in the repository (Mapbox token found
-	previously). Create a new token in your Mapbox account and revoke the old one.
-- Consider restricting tokens (scopes, allowed domains/hosts) where possible.
-- If a secret has been committed to Git history, remove it from history using
-	a tool such as the [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/)
-	or `git filter-repo`. These operations rewrite history and require care.
-
-## How Gradle loads Mapbox token now
-- `android/settings.gradle.kts` and `android/build.gradle.kts` have been
-	updated to read `MAPBOX_DOWNLOADS_TOKEN` from `android/local.properties` (key
-	`MAPBOX_DOWNLOADS_TOKEN`) or fallback to the `MAPBOX_DOWNLOADS_TOKEN` env var.
-
-## Recommended `.gitignore` checks
-- Ensure `android/local.properties` is ignored (it usually is by default).
-- Avoid committing any CI or secrets files.
-
-## Developer notes / architecture
-- `lib/main.dart` initializes Firebase and sets up `LanguageProvider` and
-	`AuthProvider`.
-- Phone-number authentication flows are implemented in
-	`lib/screens/login_screen.dart` using `AuthService` and `FirebaseService`.
-- Map and location functionality lives in `lib/screens/location_screen.dart`
-	using `mapbox_maps_flutter`, `geolocator`, and `geocoding`.
-
-## Next actions I can take (select one or more):
-- Search the repository for other leaked tokens/credentials and report findings.
-- Help rotate the exposed Mapbox token and (optionally) remove it from Git
-	history — I can prepare git commands but will need your confirmation.
-- Add a short docs section in `CONTRIBUTING.md` or expand this README with
-	CI setup steps.
-
-If you'd like me to run a repo-wide search for other secrets now, say
-"Search for tokens" and I'll scan the workspace and report matches.
-
-## Backend strategy (Firebase Auth + custom REST API + Firestore)
-- Firebase is used for authentication tokens only.
-- Domain features (rates, buy/sell listings, offers, orders) are served by the local REST backend in `backend/`.
-- See `backend/README.md` for complete setup.
-
-## Run backend (local)
 ```powershell
-cd backend
+flutter pub get
+```
+
+### 2. Configure Android secrets
+
+Copy `android/local.properties.example` to `android/local.properties` and add:
+
+```properties
+MAPBOX_DOWNLOADS_TOKEN=pk.YOUR_MAPBOX_DOWNLOADS_TOKEN_HERE
+```
+
+Do not commit `android/local.properties`.
+
+### 3. Configure Firebase
+
+Place the Firebase Android configuration file at
+`android/app/google-services.json` and confirm that its package ID matches
+`com.example.mockup_app`.
+
+### 4. Start the backend
+
+From `digital-kissan-app/backend`, create `.env` from `.env.example`, add the
+required credentials, and run:
+
+```powershell
 npm install
+npm run seed
 npm run dev
 ```
 
-## Run Flutter against backend
-- Physical Android device: use your PC LAN IP.
-- Android emulator: use `10.0.2.2`.
-- USB debugging on a physical Android device: run `adb reverse tcp:5000 tcp:5000` before launching, or pass your PC LAN IP with `--dart-define=API_BASE_URL=http://<your-pc-ip>:5000`.
+The API is normally available at `http://localhost:5000`.
+
+### 5. Run the Flutter application
+
+For an Android emulator:
 
 ```powershell
-flutter run --dart-define=API_BASE_URL=http://192.168.X.X:5000
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5000
 ```
 
-## Current local command (this machine)
+For a physical device, replace the address with the computer's LAN IP:
+
 ```powershell
-flutter run --dart-define=API_BASE_URL=http://10.192.10.221:5000
+flutter run --dart-define=API_BASE_URL=http://YOUR-LAN-IP:5000
 ```
 
-## Phone <-> Laptop data exchange checklist
-1. Start backend on laptop:
-	```powershell
-	npm --prefix e:\fyp\mockup_app_1\backend run start
-	```
-2. Verify backend is reachable from laptop on LAN IP:
-	```powershell
-	Invoke-RestMethod -Method GET -Uri http://10.192.10.221:5000/api/health
-	```
-3. Run Flutter with API base URL:
-	```powershell
-	flutter run --dart-define=API_BASE_URL=http://10.192.10.221:5000
-	```
-4. Keep phone and laptop on the same hotspot/Wi-Fi network.
-5. If the app still cannot connect, allow TCP port 5000 in Windows Firewall.
+Keep the phone and computer on the same network. For USB debugging, use
+`adb reverse tcp:5000 tcp:5000` when appropriate.
 
-## New app area
-- A new `Market` tab is wired in `lib/main.dart`.
-- UI is implemented in `lib/screens/market_screen.dart`.
-- Client API services are implemented in `lib/services/api_client.dart` and `lib/services/market_api_service.dart`.
+## Backend Authentication and API
+
+Firebase handles user identity. The Flutter client sends the Firebase ID token
+to protected backend routes as:
+
+```text
+Authorization: Bearer <firebase_id_token>
+```
+
+The backend verifies the token with Firebase Admin before allowing protected
+operations. Domain data such as rates, listings, offers, and orders is served
+through the REST API.
+
+Important routes include:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET | `/api/health` | Service health check |
+| GET | `/api/config/public` | Public app configuration |
+| GET | `/api/rates/latest` | Latest market rates |
+| GET | `/api/listings` | Browse marketplace listings |
+| POST | `/api/listings` | Create a listing |
+| POST | `/api/offers` | Create an offer |
+| GET | `/api/orders/me` | View the signed-in user's orders |
+| POST | `/api/assistant/chat` | Ask the agriculture assistant |
+
+See `backend/README.md` for the complete route list and environment setup.
+
+## Testing
+
+Run Flutter tests and static analysis from the project directory:
+
+```powershell
+flutter test
+flutter analyze
+```
+
+Backend validation and integration scripts are available in `backend/scripts`.
 
 ## Deployment
 
-This repo includes a backend service suitable for deployment on Render.
-The backend service definition is available in `render.yaml` at the repository root.
+The backend includes `render.yaml` for Render deployment. Configure secrets in
+the hosting provider rather than committing them:
 
-### Render deployment steps
-1. Push this repo to your Git branch.
-2. Create a new Render Web Service using the `backend` folder as the root.
-3. Set the service build command to:
-   ```bash
-   npm install
-   ```
-4. Set the start command to:
-   ```bash
-   npm start
-   ```
-5. Configure required environment variables in Render:
-   - `FIREBASE_PROJECT_ID`
-   - `FIREBASE_SERVICE_ACCOUNT_JSON` (preferred) or `GOOGLE_APPLICATION_CREDENTIALS`
-   - `MAPBOX_ACCESS_TOKEN`
-   - `GROK_API_KEY`
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
-6. Optional environment variables:
-   - `OPENWEATHER_KEY`
-   - `OPENAI_API_KEY`
-   - `OPENAI_MODEL`
-   - `OPENAI_MAX_TOKENS`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_SERVICE_ACCOUNT_JSON` or `GOOGLE_APPLICATION_CREDENTIALS`
+- `MAPBOX_ACCESS_TOKEN`
+- `GROK_API_KEY`
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
 
-### Notes
-- Do not commit `serviceAccountKey.json` or other secret files.
-- The backend reads the API port from `process.env.PORT`, so Render's runtime port configuration is supported automatically.
-- For Flutter local development with Render-hosted API, point `API_BASE_URL` to the deployed service URL.
-
-### Flutter with deployed backend
-After Render deploys the backend, use the deployed service URL in Flutter:
+After deployment, run Flutter with the hosted API URL:
 
 ```powershell
-flutter run --dart-define=API_BASE_URL=https://<your-render-service>.onrender.com
+flutter run --dart-define=API_BASE_URL=https://YOUR-SERVICE.onrender.com
 ```
 
-If you want to test the mobile app against the hosted backend from a local device, use the same `API_BASE_URL` value and ensure the desktop app is not required locally.
+## Security Guidelines
+
+- Never commit `.env`, `android/local.properties`, or service-account files.
+- Never place private API keys in Flutter source code.
+- Rotate credentials exposed in source control or build logs.
+- Restrict third-party keys to the required scopes and environments.
+- Use secret management provided by the deployment platform in production.
+
+## Project Status
+
+Digital Kissan is an active final-year project implementation. Authentication,
+weather, market, marketplace, messaging, assistant, profile, localization,
+plant-disease, and Android workflows are present in the current codebase.
+
+## License
+
+This project is currently maintained as a private academic project. Add a
+license file before distributing it publicly.
