@@ -1,13 +1,22 @@
 # Digital Kissan app
 
-Digital Kissan — mockup_app
+Digital Kissan is a Flutter-based agricultural mobile application designed to
+help farmers make informed decisions, access local agricultural information,
+and connect directly with buyers and sellers. The platform brings weather
+forecasts, market rates, produce listings, communication tools, alerts, and
+AI-powered farming assistance together in one accessible application.
 
-This repository contains a Flutter mockup app for a simple agriculture-focused
-mobile application (English + Urdu). It uses Firebase (Auth, Firestore),
-Mapbox maps, geolocation, and localized UI.
+The app is designed for farmers, agricultural traders, and other participants
+in the agriculture supply chain. Users can monitor weather and commodity
+prices, publish or browse marketplace listings, communicate with trading
+partners, and receive practical guidance for everyday farming activities.
 
-**This README covers:** project overview, local setup, handling secrets,
-and commands to run the app on a development machine.
+Digital Kissan supports English and Urdu to make its services more accessible
+to local users. The Flutter client uses Firebase for authentication and cloud
+services, while the Node.js backend manages application data and protected API
+operations. Mapbox and device location services provide location-aware
+features, and supporting integrations enable weather data, image uploads, and
+AI assistance.
 
 ## App Screenshots
 
