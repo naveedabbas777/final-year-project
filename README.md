@@ -11,39 +11,39 @@ and commands to run the app on a development machine.
 
 ## App Screenshots
 
-The screenshots below show the main user journeys and screens available in
-Digital Kissan.
+The gallery below gives a quick visual overview of the app. Click any image to
+open the clear, full-size screenshot.
 
 <table>
 	<tr>
-		<td align="center"><img src="images/splash%20screen.jpeg" alt="Splash screen" width="220"><br><strong>Splash screen</strong></td>
-		<td align="center"><img src="images/dashboard%20screen.jpeg" alt="Dashboard screen" width="220"><br><strong>Dashboard</strong></td>
-		<td align="center"><img src="images/rates.jpeg" alt="Market rates" width="220"><br><strong>Market rates</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/splash%20screen.jpeg"><img src="digital-kissan-app/images/splash%20screen.jpeg" alt="Splash screen" width="180"></a><br><strong>Splash</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/dashboard%20screen.jpeg"><img src="digital-kissan-app/images/dashboard%20screen.jpeg" alt="Dashboard screen" width="180"></a><br><strong>Dashboard</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/rates.jpeg"><img src="digital-kissan-app/images/rates.jpeg" alt="Market rates" width="180"></a><br><strong>Market rates</strong></td>
 	</tr>
 	<tr>
-		<td align="center"><img src="images/marketplace.jpeg" alt="Marketplace" width="220"><br><strong>Marketplace</strong></td>
-		<td align="center"><img src="images/listing%20detail.jpeg" alt="Listing detail" width="220"><br><strong>Listing details</strong></td>
-		<td align="center"><img src="images/buy%20sell.jpeg" alt="Buy and sell screen" width="220"><br><strong>Buy and sell</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/marketplace.jpeg"><img src="digital-kissan-app/images/marketplace.jpeg" alt="Marketplace" width="180"></a><br><strong>Marketplace</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/buy%20sell.jpeg"><img src="digital-kissan-app/images/buy%20sell.jpeg" alt="Buy and sell" width="180"></a><br><strong>Buy &amp; sell</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/listing%20detail.jpeg"><img src="digital-kissan-app/images/listing%20detail.jpeg" alt="Listing details" width="180"></a><br><strong>Listing details</strong></td>
 	</tr>
 	<tr>
-		<td align="center"><img src="images/seller%20profile.jpeg" alt="Seller profile" width="220"><br><strong>Seller profile</strong></td>
-		<td align="center"><img src="images/edit%20listing.jpeg" alt="Edit listing" width="220"><br><strong>Edit listing</strong></td>
-		<td align="center"><img src="images/profile.jpeg" alt="User profile" width="220"><br><strong>User profile</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/edit%20listing.jpeg"><img src="digital-kissan-app/images/edit%20listing.jpeg" alt="Edit listing" width="180"></a><br><strong>Edit listing</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/seller%20profile.jpeg"><img src="digital-kissan-app/images/seller%20profile.jpeg" alt="Seller profile" width="180"></a><br><strong>Seller profile</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/profile.jpeg"><img src="digital-kissan-app/images/profile.jpeg" alt="User profile" width="180"></a><br><strong>User profile</strong></td>
 	</tr>
 	<tr>
-		<td align="center"><img src="images/edit%20profile.jpeg" alt="Edit profile" width="220"><br><strong>Edit profile</strong></td>
-		<td align="center"><img src="images/setting.jpeg" alt="Settings" width="220"><br><strong>Settings</strong></td>
-		<td align="center"><img src="images/setting%20location.jpeg" alt="Location settings" width="220"><br><strong>Location settings</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/edit%20profile.jpeg"><img src="digital-kissan-app/images/edit%20profile.jpeg" alt="Edit profile" width="180"></a><br><strong>Edit profile</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/setting.jpeg"><img src="digital-kissan-app/images/setting.jpeg" alt="Settings" width="180"></a><br><strong>Settings</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/setting%20location.jpeg"><img src="digital-kissan-app/images/setting%20location.jpeg" alt="Location settings" width="180"></a><br><strong>Location</strong></td>
 	</tr>
 	<tr>
-		<td align="center"><img src="images/7%20day%20forecast.jpeg" alt="Seven day forecast" width="220"><br><strong>Seven-day forecast</strong></td>
-		<td align="center"><img src="images/detailed%20forecast.jpeg" alt="Detailed weather forecast" width="220"><br><strong>Detailed forecast</strong></td>
-		<td align="center"><img src="images/alerts.jpeg" alt="Weather alerts" width="220"><br><strong>Weather alerts</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/7%20day%20forecast.jpeg"><img src="digital-kissan-app/images/7%20day%20forecast.jpeg" alt="Seven day forecast" width="180"></a><br><strong>7-day forecast</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/detailed%20forecast.jpeg"><img src="digital-kissan-app/images/detailed%20forecast.jpeg" alt="Detailed forecast" width="180"></a><br><strong>Detailed forecast</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/alerts.jpeg"><img src="digital-kissan-app/images/alerts.jpeg" alt="Alerts screen" width="180"></a><br><strong>Alerts</strong></td>
 	</tr>
 	<tr>
-		<td align="center"><img src="images/alerts%20button.jpeg" alt="Alerts button" width="220"><br><strong>Alerts</strong></td>
-		<td align="center"><img src="images/chat.jpeg" alt="Chat screen" width="220"><br><strong>Chat</strong></td>
-		<td align="center"><img src="images/chatbot.jpeg" alt="Agriculture chatbot" width="220"><br><strong>AI chatbot</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/alerts%20button.jpeg"><img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts button" width="180"></a><br><strong>Alert button</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/chat.jpeg"><img src="digital-kissan-app/images/chat.jpeg" alt="Chat screen" width="180"></a><br><strong>Chat</strong></td>
+		<td align="center"><a href="digital-kissan-app/images/chatbot.jpeg"><img src="digital-kissan-app/images/chatbot.jpeg" alt="Agriculture chatbot" width="180"></a><br><strong>AI chatbot</strong></td>
 	</tr>
 </table>
 
@@ -60,206 +60,6 @@ Digital Kissan.
 **Security note**: This project previously contained a Mapbox token in
 Gradle files. Tokens must not be committed to VCS — follow the "Secrets"
 section below.
-
-## App Features & Screenshots
-
-**Digital Kissan** is a comprehensive agricultural mobile application designed to empower farmers with real-time market information, weather forecasts, communication tools, and a digital marketplace. Below are the key features with visual demonstrations:
-
-### 1. **Splash Screen**
-![Splash Screen](digital-kissan-app/images/splash%20screen.jpeg)
-
-The welcoming splash screen that greets users when they launch the application, featuring the Digital Kissan branding and loading animation.
-
----
-
-### 2. **Dashboard Screen**
-![Dashboard Screen](digital-kissan-app/images/dashboard%20screen.jpeg)
-
-The main hub of the application where users can quickly access:
-- Current weather conditions and quick weather overview
-- Recent market rates for agricultural commodities
-- Shortcuts to key features (marketplace, alerts, profile)
-- User's location and relevant local information
-
----
-
-### 3. **Weather & Forecasts**
-
-#### **7-Day Forecast**
-![7 Day Forecast](digital-kissan-app/images/7%20day%20forecast.jpeg)
-
-Provides an extended weather outlook showing:
-- Daily temperature ranges
-- Precipitation probability
-- Wind speed and direction
-- Weather conditions for the next 7 days
-
-#### **Detailed Forecast**
-![Detailed Forecast](digital-kissan-app/images/detailed%20forecast.jpeg)
-
-Comprehensive hourly and daily weather information including:
-- Temperature trends
-- Humidity levels
-- UV index
-- Visibility and atmospheric pressure
-
----
-
-### 4. **Alerts System**
-
-#### **Alerts Button & Notifications**
-To make the Alerts screenshots show as three smaller screens side-by-side for a clearer view, I've replaced the single large images with a small responsive gallery that displays up to three images in a row. This keeps images clear while reducing their visual footprint.
-
-<div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
-  <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Button" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
-  <img src="digital-kissan-app/images/alerts.jpeg" alt="Alerts Screen" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
-  <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Button" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
-</div>
-
-
-Quick access button to weather and market alerts from the main interface.
-
-#### **Alerts Screen**
-![Alerts](digital-kissan-app/images/alerts.jpeg)
-
-Centralized alert management displaying:
-- Critical weather warnings (frost, storms, extreme temperatures)
-- Market price alerts for selected commodities
-- Agricultural advisory notifications
-- Customizable alert preferences
-
----
-
-### 5. **Marketplace Features**
-
-#### **Marketplace Overview**
-![Marketplace](digital-kissan-app/images/marketplace.jpeg)
-
-The digital marketplace for buying and selling agricultural products:
-- Browse available listings from farmers and traders
-- Filter by commodity type, location, and price range
-- Real-time inventory updates
-- Seller ratings and reviews
-
-#### **Buy & Sell Interface**
-![Buy Sell](digital-kissan-app/images/buy%20sell.jpeg)
-
-Dual marketplace view allowing users to:
-- Post new listings for sale
-- Browse and purchase from others
-- Manage active listings
-- Track transaction history
-
-#### **Listing Details**
-![Listing Detail](digital-kissan-app/images/listing%20detail.jpeg)
-
-Detailed product information including:
-- Product images and specifications
-- Quantity available
-- Price and discounts
-- Seller information and contact details
-- Location on map
-- Customer reviews
-
-#### **Edit Listing**
-![Edit Listing](digital-kissan-app/images/edit%20listing.jpeg)
-
-Interface for updating product listings:
-- Modify price and quantity
-- Update product description
-- Change product images
-- Adjust delivery terms
-
----
-
-### 6. **Market Rates & Pricing**
-![Market Rates](digital-kissan-app/images/rates.jpeg)
-
-Real-time commodity price information:
-- Current market rates for major agricultural products
-- Price trends and historical data
-- Regional price comparisons
-- Price alerts for tracked commodities
-- Data sourced from official government and market sources
-
----
-
-### 7. **Communication & Support**
-
-#### **Chat**
-![Chat](digital-kissan-app/images/chat.jpeg)
-
-Direct messaging between buyers and sellers:
-- Real-time chat with transaction partners
-- Message history and search
-- Image and file sharing
-- Transaction-linked conversations
-
-#### **AI Chatbot Assistant**
-![Chatbot](digital-kissan-app/images/chatbot.jpeg)
-
-Intelligent agricultural guidance powered by AI:
-- Answer farming questions (crop selection, pest management, irrigation techniques)
-- Provide weather-based farming recommendations
-- Market advice and pricing insights
-- Multilingual support (English & Urdu)
-- 24/7 availability
-
----
-
-### 8. **User Profile & Settings**
-
-#### **User Profile**
-![Profile](digital-kissan-app/images/profile.jpeg)
-
-Personal profile dashboard showing:
-- User's name, contact information, and avatar
-- Account verification status
-- Total transactions and ratings
-- Listing count and activity status
-- Quick links to edit profile and settings
-
-#### **Edit Profile**
-![Edit Profile](digital-kissan-app/images/edit%20profile.jpeg)
-
-User information management:
-- Update name and contact details
-- Change profile picture
-- Modify bio and agricultural specialization
-- Update location and service area
-- Manage account preferences
-
-#### **Seller Profile**
-![Seller Profile](digital-kissan-app/images/seller%20profile.jpeg)
-
-View other sellers' profiles including:
-- Seller ratings and review count
-- Active listings
-- Response time and reliability metrics
-- Seller specialization areas
-- Contact and location information
-
-#### **Settings**
-![Settings](digital-kissan-app/images/setting.jpeg)
-
-Comprehensive application settings:
-- Language preferences (English/Urdu)
-- Notification settings
-- Privacy and account security options
-- App version and about information
-- Help and feedback options
-
-#### **Setting Location**
-![Setting Location](digital-kissan-app/images/setting%20location.jpeg)
-
-Location and area management:
-- Set primary location for better local content
-- Add multiple operating locations
-- Configure service radius
-- Location-based alert preferences
-- Map-based location selection
-
----
 
 ## Technology Stack
 
