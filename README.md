@@ -1,31 +1,69 @@
-# Digital Kissan App
+# Digital Kissan app
 
-A comprehensive agricultural mobile application designed to empower farmers with real-time market information, weather forecasts, communication tools, and a digital marketplace. Built with Flutter [...]
+Digital Kissan — mockup_app
 
-**Digital Kissan** (Digital Farmer) is a mobile platform connecting farmers, traders, and agricultural professionals with tools for market access, weather intelligence, and community support.
+This repository contains a Flutter mockup app for a simple agriculture-focused
+mobile application (English + Urdu). It uses Firebase (Auth, Firestore),
+Mapbox maps, geolocation, and localized UI.
 
----
+**This README covers:** project overview, local setup, handling secrets,
+and commands to run the app on a development machine.
 
-## 🌾 Project Overview
+## App Screenshots
 
-**Digital Kissan** is a Flutter-based mobile application that provides:
-- **Real-time weather forecasts** for agricultural planning
-- **Market rate monitoring** for agricultural commodities
-- **Digital marketplace** for buying and selling produce
-- **AI-powered chatbot** for farming guidance
-- **Direct messaging** between buyers and sellers
-- **Alert system** for weather and price changes
-- **Multi-language support** (English & Urdu)
+The screenshots below show the main user journeys and screens available in
+Digital Kissan.
 
-**Quick Facts:**
-- **Language Composition:** Dart (84.6%), JavaScript (15.3%), Other (0.1%)
-- **Dart SDK constraint:** `^3.7.2`
-- **Android Java target:** Java 11
-- **Platform:** Flutter (iOS & Android)
+<table>
+	<tr>
+		<td align="center"><img src="images/splash%20screen.jpeg" alt="Splash screen" width="220"><br><strong>Splash screen</strong></td>
+		<td align="center"><img src="images/dashboard%20screen.jpeg" alt="Dashboard screen" width="220"><br><strong>Dashboard</strong></td>
+		<td align="center"><img src="images/rates.jpeg" alt="Market rates" width="220"><br><strong>Market rates</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/marketplace.jpeg" alt="Marketplace" width="220"><br><strong>Marketplace</strong></td>
+		<td align="center"><img src="images/listing%20detail.jpeg" alt="Listing detail" width="220"><br><strong>Listing details</strong></td>
+		<td align="center"><img src="images/buy%20sell.jpeg" alt="Buy and sell screen" width="220"><br><strong>Buy and sell</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/seller%20profile.jpeg" alt="Seller profile" width="220"><br><strong>Seller profile</strong></td>
+		<td align="center"><img src="images/edit%20listing.jpeg" alt="Edit listing" width="220"><br><strong>Edit listing</strong></td>
+		<td align="center"><img src="images/profile.jpeg" alt="User profile" width="220"><br><strong>User profile</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/edit%20profile.jpeg" alt="Edit profile" width="220"><br><strong>Edit profile</strong></td>
+		<td align="center"><img src="images/setting.jpeg" alt="Settings" width="220"><br><strong>Settings</strong></td>
+		<td align="center"><img src="images/setting%20location.jpeg" alt="Location settings" width="220"><br><strong>Location settings</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/7%20day%20forecast.jpeg" alt="Seven day forecast" width="220"><br><strong>Seven-day forecast</strong></td>
+		<td align="center"><img src="images/detailed%20forecast.jpeg" alt="Detailed weather forecast" width="220"><br><strong>Detailed forecast</strong></td>
+		<td align="center"><img src="images/alerts.jpeg" alt="Weather alerts" width="220"><br><strong>Weather alerts</strong></td>
+	</tr>
+	<tr>
+		<td align="center"><img src="images/alerts%20button.jpeg" alt="Alerts button" width="220"><br><strong>Alerts</strong></td>
+		<td align="center"><img src="images/chat.jpeg" alt="Chat screen" width="220"><br><strong>Chat</strong></td>
+		<td align="center"><img src="images/chatbot.jpeg" alt="Agriculture chatbot" width="220"><br><strong>AI chatbot</strong></td>
+	</tr>
+</table>
 
----
+**Quick facts**
+- **Dart SDK constraint**: `^3.7.2` (see `pubspec.yaml`)
+- **Android Java target**: Java 11 (configured in `android/app/build.gradle.kts`)
+- **Localization**: English (`en`) and Urdu (`ur`) via generated `lib/l10n`
 
-## 🎨 App Features & Screenshots
+**Primary dependencies** (see full list in `pubspec.yaml`):
+- `firebase_core`, `firebase_auth`, `cloud_firestore`
+- `mapbox_maps_flutter`, `geolocator`, `geocoding`, `permission_handler`
+- `provider`, `shared_preferences`, `google_fonts`, `intl`, `country_picker`
+
+**Security note**: This project previously contained a Mapbox token in
+Gradle files. Tokens must not be committed to VCS — follow the "Secrets"
+section below.
+
+## App Features & Screenshots
+
+**Digital Kissan** is a comprehensive agricultural mobile application designed to empower farmers with real-time market information, weather forecasts, communication tools, and a digital marketplace. Below are the key features with visual demonstrations:
 
 ### 1. **Splash Screen**
 ![Splash Screen](digital-kissan-app/images/splash%20screen.jpeg)
@@ -69,17 +107,20 @@ Comprehensive hourly and daily weather information including:
 
 ### 4. **Alerts System**
 
+#### **Alerts Button & Notifications**
 To make the Alerts screenshots show as three smaller screens side-by-side for a clearer view, I've replaced the single large images with a small responsive gallery that displays up to three images in a row. This keeps images clear while reducing their visual footprint.
 
 <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
   <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Button" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
   <img src="digital-kissan-app/images/alerts.jpeg" alt="Alerts Screen" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
-   <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Button" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
+  <img src="digital-kissan-app/images/alerts%20button.jpeg" alt="Alerts Button" style="width:32%;max-width:320px;object-fit:cover;border-radius:8px;" />
 </div>
 
 
 Quick access button to weather and market alerts from the main interface.
 
+#### **Alerts Screen**
+![Alerts](digital-kissan-app/images/alerts.jpeg)
 
 Centralized alert management displaying:
 - Critical weather warnings (frost, storms, extreme temperatures)
@@ -220,42 +261,29 @@ Location and area management:
 
 ---
 
-## 🛠 Technology Stack
+## Technology Stack
 
-### Frontend
-- **Framework:** Flutter (Dart 84.6%)
-- **UI:** Material Design & Custom UI components
-- **State Management:** Provider
-- **Localization:** English (en) & Urdu (ur)
-- **Maps:** Mapbox Maps Flutter
-- **Location Services:** Geolocator, Geocoding
-- **Authentication:** Firebase Auth
-- **Storage:** Shared Preferences
+**Frontend:**
+- Flutter/Dart (84.6% of codebase)
+- Multi-language support (English + Urdu)
+- Firebase Authentication
+- Mapbox Integration for location services
 
-### Backend
-- **Runtime:** Node.js/Express
-- **REST API:** Express.js
-- **Database:** Firebase Firestore
-- **Authentication:** Firebase Admin SDK
-- **Third-party Integrations:**
-  - **Mapbox:** Maps and geocoding services
-  - **Grok AI:** Chatbot and agricultural guidance
-  - **Cloudinary:** Image management and uploads
-  - **OpenWeather API:** Weather data and forecasts
-  - **Firebase:** Auth, database, storage
-
-### Key Dependencies (Frontend)
-```
-- firebase_core, firebase_auth, cloud_firestore
-- mapbox_maps_flutter, geolocator, geocoding
-- provider, shared_preferences
-- google_fonts, intl, country_picker
-- permission_handler
-```
+**Backend:**
+- Node.js/Express REST API
+- Firebase Firestore for data storage
+- Firebase Authentication token verification
+- Integration with third-party services:
+  - Mapbox for maps and geocoding
+  - Grok AI for chatbot functionality
+  - Cloudinary for image management
+  - OpenWeather API for weather data
 
 ---
 
-## 📦 Project Structure
+## Setup (developer machine)
+
+1. Install prerequisites:
 
 The repository root contains the Flutter application and its Node.js backend.
 Generated build folders, dependency folders, and local secret files are not
@@ -306,274 +334,185 @@ final-year-project/
    └── build/
 ```
 
----
+	 - Flutter SDK (matching the project's channel and supporting Dart >= 3.7.2).
+	 - Android SDK + Android Studio or command-line tools.
+	 - Java 11 (required by Gradle config).
 
-## 🚀 Getting Started
+2. Prepare secrets (Mapbox token):
 
-### Prerequisites
-- **Flutter SDK:** ^3.7.2 or higher
-- **Dart SDK:** ^3.7.2 or higher
-- **Java:** JDK 11 or higher
-- **Android Studio** or command-line tools
-- **Firebase Account** with Firestore enabled
-- **Mapbox Account** with access token
+	 - Copy the example file and provide your token in `android/local.properties`.
 
-### Installation
+		 Example file: `android/local.properties.example`.
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/naveedabbas777/digital-kissan-app.git
-   cd digital-kissan-app
-   ```
+		 Create `android/local.properties` (DO NOT commit this file). Example content:
 
-2. **Setup secrets (Mapbox token):**
-   ```bash
-   # Create local.properties in android/ directory
-   cp android/local.properties.example android/local.properties
-   ```
-   
-   Edit `android/local.properties`:
-   ```properties
-   MAPBOX_DOWNLOADS_TOKEN=pk.YOUR_MAPBOX_DOWNLOADS_TOKEN_HERE
-   ```
+		 ```text
+		 # Flutter SDK path (optional on dev machines):
+		 # flutter.sdk=C:\\path\\to\\flutter
 
-3. **Firebase Configuration:**
-   - Ensure `android/app/google-services.json` is present
-   - Update package ID if needed in `android/app/build.gradle.kts`
+		 # Mapbox downloads token used for the Mapbox Maven repository
+		 MAPBOX_DOWNLOADS_TOKEN=pk.YOUR_MAPBOX_DOWNLOADS_TOKEN_HERE
+		 ```
 
-4. **Install Flutter dependencies:**
-   ```bash
-   flutter pub get
-   flutter pub run build_runner build --delete-conflicting-outputs
-   ```
+	 - Alternatively provide `MAPBOX_DOWNLOADS_TOKEN` as an environment variable.
 
-5. **Run the app:**
-   ```bash
-   flutter run
-   ```
+		 In **PowerShell** (session only):
 
----
+		 ```powershell
+		 $env:MAPBOX_DOWNLOADS_TOKEN = 'pk.YOUR_MAPBOX_TOKEN'
+		 ```
 
-## 🔐 Secrets & Security
+		 Persist across sessions (PowerShell):
 
-⚠️ **Important Security Notes:**
-- **Never commit** `android/local.properties` or any secrets file
-- **Rotate tokens** if exposed in repository history
-- Use `git filter-repo` or BFG Repo-Cleaner to remove secrets from history
+		 ```powershell
+		 setx MAPBOX_DOWNLOADS_TOKEN "pk.YOUR_MAPBOX_TOKEN"
+		 ```
 
-### Setting Mapbox Token (Windows PowerShell)
+3. Firebase configuration:
 
-**Session only:**
+	 - `android/app/google-services.json` should be present for Android builds.
+		 This repository currently contains a `google-services.json` file under
+		 `android/app/` — treat it as sensitive configuration.
+	 - Ensure your Firebase project is configured for the app's package id
+		 `com.example.mockup_app` or update `applicationId` in
+		 `android/app/build.gradle.kts`.
+
+4. Install Dart/Flutter packages and build:
+
+	 ```powershell
+	 flutter pub get
+	 flutter pub run build_runner build --delete-conflicting-outputs  # if needed for generated code
+	 ```
+
+5. Run the app on a connected device or emulator:
+
+	 ```powershell
+	 flutter run -d <device-id>
+	 ```
+
+## Secrets & safety
+- Do NOT commit `android/local.properties` or any file containing secrets.
+- Rotate any token that was exposed in the repository (Mapbox token found
+	previously). Create a new token in your Mapbox account and revoke the old one.
+- Consider restricting tokens (scopes, allowed domains/hosts) where possible.
+- If a secret has been committed to Git history, remove it from history using
+	a tool such as the [BFG Repo-Cleaner](https://rtyley.github.io/bfg-repo-cleaner/)
+	or `git filter-repo`. These operations rewrite history and require care.
+
+## How Gradle loads Mapbox token now
+- `android/settings.gradle.kts` and `android/build.gradle.kts` have been
+	updated to read `MAPBOX_DOWNLOADS_TOKEN` from `android/local.properties` (key
+	`MAPBOX_DOWNLOADS_TOKEN`) or fallback to the `MAPBOX_DOWNLOADS_TOKEN` env var.
+
+## Recommended `.gitignore` checks
+- Ensure `android/local.properties` is ignored (it usually is by default).
+- Avoid committing any CI or secrets files.
+
+## Developer notes / architecture
+- `lib/main.dart` initializes Firebase and sets up `LanguageProvider` and
+	`AuthProvider`.
+- Phone-number authentication flows are implemented in
+	`lib/screens/login_screen.dart` using `AuthService` and `FirebaseService`.
+- Map and location functionality lives in `lib/screens/location_screen.dart`
+	using `mapbox_maps_flutter`, `geolocator`, and `geocoding`.
+
+## Next actions I can take (select one or more):
+- Search the repository for other leaked tokens/credentials and report findings.
+- Help rotate the exposed Mapbox token and (optionally) remove it from Git
+	history — I can prepare git commands but will need your confirmation.
+- Add a short docs section in `CONTRIBUTING.md` or expand this README with
+	CI setup steps.
+
+If you'd like me to run a repo-wide search for other secrets now, say
+"Search for tokens" and I'll scan the workspace and report matches.
+
+## Backend strategy (Firebase Auth + custom REST API + Firestore)
+- Firebase is used for authentication tokens only.
+- Domain features (rates, buy/sell listings, offers, orders) are served by the local REST backend in `backend/`.
+- See `backend/README.md` for complete setup.
+
+## Run backend (local)
 ```powershell
-$env:MAPBOX_DOWNLOADS_TOKEN = 'pk.YOUR_MAPBOX_TOKEN'
+cd backend
+npm install
+npm run dev
 ```
 
-**Persistent:**
+## Run Flutter against backend
+- Physical Android device: use your PC LAN IP.
+- Android emulator: use `10.0.2.2`.
+- USB debugging on a physical Android device: run `adb reverse tcp:5000 tcp:5000` before launching, or pass your PC LAN IP with `--dart-define=API_BASE_URL=http://<your-pc-ip>:5000`.
+
 ```powershell
-setx MAPBOX_DOWNLOADS_TOKEN "pk.YOUR_MAPBOX_TOKEN"
+flutter run --dart-define=API_BASE_URL=http://192.168.X.X:5000
 ```
 
----
+## Current local command (this machine)
+```powershell
+flutter run --dart-define=API_BASE_URL=http://10.192.10.221:5000
+```
 
-## 🔗 Backend Setup
-
-### Local Development
-
-1. **Navigate to backend:**
-   ```bash
-   cd digital-kissan-app/backend
-   ```
-
-2. **Setup environment:**
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Configure .env:**
-   ```env
-   FIREBASE_PROJECT_ID=your_project_id
-   GOOGLE_APPLICATION_CREDENTIALS=./serviceAccountKey.json
-   MAPBOX_ACCESS_TOKEN=your_mapbox_token
-   GROK_API_KEY=your_grok_api_key
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key
-   CLOUDINARY_API_SECRET=your_api_secret
-   OPENWEATHER_KEY=your_weather_key
-   ```
-
-4. **Install & run:**
-   ```bash
-   npm install
-   npm run seed    # Load demo data
-   npm run dev     # Start development server
-   ```
-
-5. **Connect Flutter to backend:**
-   ```bash
-   flutter run --dart-define=API_BASE_URL=http://192.168.X.X:5000
-   ```
-
----
-
-## 📱 Phone ↔ Laptop Data Exchange
-
-### Checklist
+## Phone <-> Laptop data exchange checklist
 1. Start backend on laptop:
-   ```bash
-   npm --prefix backend run start
-   ```
+	```powershell
+	npm --prefix e:\fyp\mockup_app_1\backend run start
+	```
+2. Verify backend is reachable from laptop on LAN IP:
+	```powershell
+	Invoke-RestMethod -Method GET -Uri http://10.192.10.221:5000/api/health
+	```
+3. Run Flutter with API base URL:
+	```powershell
+	flutter run --dart-define=API_BASE_URL=http://10.192.10.221:5000
+	```
+4. Keep phone and laptop on the same hotspot/Wi-Fi network.
+5. If the app still cannot connect, allow TCP port 5000 in Windows Firewall.
 
-2. Verify backend health:
-   ```powershell
-   Invoke-RestMethod -Method GET -Uri http://10.192.10.221:5000/api/health
-   ```
+## New app area
+- A new `Market` tab is wired in `lib/main.dart`.
+- UI is implemented in `lib/screens/market_screen.dart`.
+- Client API services are implemented in `lib/services/api_client.dart` and `lib/services/market_api_service.dart`.
 
-3. Run Flutter with API URL:
-   ```bash
-   flutter run --dart-define=API_BASE_URL=http://10.192.10.221:5000
-   ```
+## Deployment
 
-4. Ensure phone and laptop on same network
-5. Allow TCP port 5000 in Windows Firewall
+This repo includes a backend service suitable for deployment on Render.
+The backend service definition is available in `render.yaml` at the repository root.
 
----
-
-## ☁️ Deployment
-
-### Render Deployment
-
-1. Push repository to Git
-2. Create new Render Web Service from `backend` folder
-3. Set build command:
+### Render deployment steps
+1. Push this repo to your Git branch.
+2. Create a new Render Web Service using the `backend` folder as the root.
+3. Set the service build command to:
    ```bash
    npm install
    ```
-4. Set start command:
+4. Set the start command to:
    ```bash
    npm start
    ```
-5. Configure environment variables:
+5. Configure required environment variables in Render:
    - `FIREBASE_PROJECT_ID`
-   - `FIREBASE_SERVICE_ACCOUNT_JSON`
+   - `FIREBASE_SERVICE_ACCOUNT_JSON` (preferred) or `GOOGLE_APPLICATION_CREDENTIALS`
    - `MAPBOX_ACCESS_TOKEN`
    - `GROK_API_KEY`
    - `CLOUDINARY_CLOUD_NAME`
    - `CLOUDINARY_API_KEY`
    - `CLOUDINARY_API_SECRET`
+6. Optional environment variables:
+   - `OPENWEATHER_KEY`
+   - `OPENAI_API_KEY`
+   - `OPENAI_MODEL`
+   - `OPENAI_MAX_TOKENS`
 
-### Connect Deployed Backend to Flutter
-```bash
-flutter run --dart-define=API_BASE_URL=https://your-render-service.onrender.com
+### Notes
+- Do not commit `serviceAccountKey.json` or other secret files.
+- The backend reads the API port from `process.env.PORT`, so Render's runtime port configuration is supported automatically.
+- For Flutter local development with Render-hosted API, point `API_BASE_URL` to the deployed service URL.
+
+### Flutter with deployed backend
+After Render deploys the backend, use the deployed service URL in Flutter:
+
+```powershell
+flutter run --dart-define=API_BASE_URL=https://<your-render-service>.onrender.com
 ```
 
----
-
-## 📋 Backend API Routes
-
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| GET | `/api/health` | - | Health check |
-| GET | `/api/users/me` | ✅ | Get current user |
-| PATCH | `/api/users/me` | ✅ | Update user profile |
-| GET | `/api/rates/latest` | - | Get latest market rates |
-| GET | `/api/config/public` | - | Get public config |
-| POST | `/api/rates` | ✅ Admin | Create rate entry |
-| GET | `/api/listings` | - | Browse listings |
-| POST | `/api/listings` | ✅ | Create listing |
-| PATCH | `/api/listings/:id/status` | ✅ | Update listing status |
-| POST | `/api/offers` | ✅ | Create offer |
-| POST | `/api/offers/:id/accept` | ✅ | Accept offer |
-| GET | `/api/orders/me` | ✅ | Get user orders |
-| PATCH | `/api/orders/:id/status` | ✅ | Update order status |
-| POST | `/api/assistant/chat` | ✅ | AI chatbot |
-
----
-
-## 🎯 Key Features Implemented
-
-✅ User authentication (Phone + Firebase)
-✅ Location-based services (Mapbox)
-✅ Real-time weather data
-✅ Market rates monitoring
-✅ Digital marketplace (buy/sell)
-✅ Messaging system
-✅ AI chatbot integration
-✅ Multi-language support
-✅ User profiles & ratings
-✅ Alert system
-✅ Image uploads (Cloudinary)
-
----
-
-## 📸 Screenshots Summary
-
-All app screenshots are available in the `digital-kissan-app/images/` folder:
-
-1. splash screen.jpeg
-2. dashboard screen.jpeg
-3. 7 day forecast.jpeg
-4. detailed forecast.jpeg
-5. alerts button.jpeg
-6. alerts.jpeg
-7. marketplace.jpeg
-8. buy sell.jpeg
-9. listing detail.jpeg
-10. edit listing.jpeg
-11. rates.jpeg
-12. chat.jpeg
-13. chatbot.jpeg
-14. profile.jpeg
-15. edit profile.jpeg
-16. seller profile.jpeg
-17. setting.jpeg
-18. setting location.jpeg
-
----
-
-## 👨‍💻 Developer Notes
-
-- **Main Entry:** `lib/main.dart` - Initializes Firebase & providers
-- **Authentication:** `lib/screens/login_screen.dart` - Phone auth flow
-- **Maps & Location:** `lib/screens/location_screen.dart` - Mapbox integration
-- **Market Screen:** `lib/screens/market_screen.dart` - Buy/sell marketplace
-- **API Services:** `lib/services/api_client.dart` - REST API client
-
----
-
-## 🔄 Next Steps
-
-- [ ] Search for leaked tokens/credentials
-- [ ] Set up CI/CD pipeline
-- [ ] Add CONTRIBUTING.md
-- [ ] Implement unit & widget tests
-- [ ] Add offline support
-- [ ] Expand multilingual support
-
----
-
-## 📞 Support
-
-For issues, questions, or contributions:
-1. Check existing issues on GitHub
-2. Create a new issue with detailed description
-3. Contact via repository discussions
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see LICENSE file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- Flutter & Dart community
-- Firebase team
-- Mapbox for mapping services
-- Open Weather API
-- Grok AI for chatbot capabilities
-
----
-
-**Built with ❤️ for farmers | Digital Kissan**
+If you want to test the mobile app against the hosted backend from a local device, use the same `API_BASE_URL` value and ensure the desktop app is not required locally.
